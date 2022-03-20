@@ -21,7 +21,7 @@
     <ClCompile Include="src\InstanceManagement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PhysicalDeviceProperties.cpp">
+    <ClCompile Include="src\PhysicalDeviceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DebugConsole.cpp">
@@ -30,15 +30,21 @@
     <ClCompile Include="src\VulkanSuface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ExtensionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\InstanceManagement.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\PhysicalDeviceProperties.hpp">
+    <ClInclude Include="include\PhysicalDeviceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\VulkanSurface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ExtensionManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

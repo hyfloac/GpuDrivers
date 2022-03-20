@@ -2,11 +2,31 @@
 #include <cstring>
 #include <new>
 #include <Windows.h>
+#include <ConPrinter.hpp>
 #include "InstanceManagement.hpp"
+
+namespace vk {
+
+VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceVersion(uint32_t* const pApiVersion) noexcept
+{
+	// Inform the application that we support Vulkan 1.3.
+	// This may need to change in the future to a lower, true level of support.
+	*pApiVersion = VK_API_VERSION_1_3;
+	return VK_SUCCESS;
+}
 
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo* const pCreateInfo, const VkAllocationCallbacks* const pAllocator, VkInstance* const pInstance) noexcept
 {
-	OutputDebugStringA("Creating VkInstance.\n");
+#ifdef _DEBUG
+	if(pCreateInfo && pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->pApplicationName)
+	{
+		ConPrinter::Print("Application {} is creating a VkInstance.\n", pCreateInfo->pApplicationInfo->pApplicationName);
+	}
+	else
+	{
+		ConPrinter::Print("Application is creating a VkInstance.\n");
+	}
+#endif
 
 	// The targeted API version.
 	uint32_t apiVersion = 0;
@@ -79,6 +99,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo
 	// Our internal version of VkInstance;
 	DriverVkInstance* driverInstance = new(placement) DriverVkInstance;
 
+	// Store the magic value for the loader.
 	set_loader_magic_value(driverInstance);
 
 	// Store the creation information.
@@ -138,24 +159,4 @@ VKAPI_ATTR void VKAPI_CALL DriverVkDestroyInstance(VkInstance instance, const Vk
 	}
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceExtensionProperties(const char* const pLayerName, uint32_t* const pPropertyCount, VkExtensionProperties* const pProperties) noexcept
-{
-	(void) pLayerName;
-	(void) pPropertyCount;
-	(void) pProperties;
-
-	OutputDebugStringA("Loader is attempting enumerate instance extension properties by layer ");
-	OutputDebugStringA(pLayerName);
-	OutputDebugStringA("\n");
-
-	for(uint32_t i = 0; i < *pPropertyCount; ++i)
-	{
-		OutputDebugStringA("Property ");
-		OutputDebugStringA(pProperties[i].extensionName);
-		OutputDebugStringA("\n");
-	}
-
-	*pPropertyCount = 15;
-
-	return VK_SUCCESS;
 }

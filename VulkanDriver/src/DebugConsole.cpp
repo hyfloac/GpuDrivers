@@ -1,6 +1,5 @@
 #include <Windows.h>
-#include <cstdio>
-#include <io.h>
+#include <Console.hpp>
 
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpReserved)
 {
@@ -12,10 +11,16 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpReserved)
 	switch(fdwReason)
 	{
 		case DLL_PROCESS_ATTACH:
-			// AllocConsole();
+			// As a DLL create a Console window.
+			Console::Create();
+			// Initialize the Console window to the correct settings.
+			Console::Init();
 			break;
 		case DLL_PROCESS_DETACH:
-			// FreeConsole();
+			// Reset the Console settings back to their original form.
+			Console::Reset();
+			// Close the Console window if we created it.
+			Console::Close();
 			break;
 		case DLL_THREAD_ATTACH:
 		case DLL_THREAD_DETACH:
