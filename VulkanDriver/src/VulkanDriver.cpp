@@ -1,43 +1,42 @@
+// See https://vulkan.lunarg.com/doc/view/1.3.204.1/mac/LoaderDriverInterface.html
 #define VK_NO_PROTOTYPES
 #include <vulkan/vk_icd.h>
 #include <cstring>
 #include <Windows.h>
 #include <ConPrinter.hpp>
+#include <String.hpp>
 
 #include "ExtensionManager.hpp"
-#include "InstanceManagement.hpp"
+#include "InstanceManager.hpp"
 #include "PhysicalDeviceManager.hpp"
 #include "VulkanSurface.hpp"
+#include "ConfigMacros.hpp"
+
+#include "_Resharper.h"
+
+#define STRING_CASE(FUNC_NAME, FUNC) STR_CASE(FUNC_NAME, { return reinterpret_cast<PFN_vkVoidFunction>(FUNC); })
 
 #ifdef _DEBUG
-static void TestThatFunctionDeclarationsMatch();
+[[maybe_unused]] static void TestThatFunctionDeclarationsMatch() noexcept;
 #endif
 
-template<size_t Len>
-inline consteval size_t FindHashCodeConst(const char(&str)[Len]) noexcept
-{
-	size_t hash = 0;
-	for(size_t i = 0; str[i]; ++i)
-	{
-		hash = 31u * hash + static_cast<size_t>(str[i]);
-	}
-	return hash;
-}
-
-inline size_t FindHashCode(const char* str) noexcept;
-
+namespace vk {
 uint32_t g_VulkanLoaderVersion = 0;
+}
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-__declspec(dllexport) VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* const pVersion)
+__declspec(dllexport) VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* const pVersion) noexcept
 {
-#ifdef _DEBUG
+#if _DEBUG
 	// Dummy to ignore the unused warning. This should do literally nothing.
 	TestThatFunctionDeclarationsMatch();
-	OutputDebugStringA("Negotiating ICD Interface\n");
+#endif
+
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print(u"Vulkan Loader is negotiating for loader version {}.\n", *pVersion);
 #endif
 
 	// Check that the pointer is not null. This should never actually enter.
@@ -50,7 +49,7 @@ __declspec(dllexport) VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInt
 	const uint32_t version = *pVersion;
 
 	// Cache the loader version in global memory.
-	g_VulkanLoaderVersion = version;
+    vk::g_VulkanLoaderVersion = version;
 
 	// We support Loader V5, if less than 5 we fail.
 	if(version <= 4)
@@ -66,7 +65,7 @@ __declspec(dllexport) VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInt
 		// Tell the loader use V5.
 		*pVersion = 5;
 		// Update the global cache to be V5.
-		g_VulkanLoaderVersion = 5;
+		vk::g_VulkanLoaderVersion = 5;
 		return VK_SUCCESS;
 	}
 
@@ -74,83 +73,138 @@ __declspec(dllexport) VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInt
 	return VK_ERROR_INCOMPATIBLE_DRIVER;
 }
 
-#define STRING_CASE(FUNC_NAME, FUNC) \
-	case FindHashCodeConst(FUNC_NAME): \
-		if(::std::strcmp(FUNC_NAME, pName) == 0) { return reinterpret_cast<PFN_vkVoidFunction>(FUNC); } else { break; }
-
-__declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance instance, const char* const pName)
+__declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(const VkInstance instance, const char* const pName) noexcept
 {
-	(void)instance;
-	(void)pName;
-
 	// If pName is null behaviour is undefined, we'll just return null.
 	if(!pName)
 	{
 		return nullptr;
 	}
 
-#ifdef _DEBUG
-	ConPrinter::Print("Loader is attempting to get function {}.\n", pName);
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print(u"Loader is attempting to get function {}.\n", pName);
 #endif
 
-	// Get global functions
+	// Containerize the function name so that we use its hash for switch statements.
+	const DynString funcName(pName);
+
+	// Get a global function.
 	if(!instance)
 	{
-		switch(FindHashCode(pName))
+		STR_SWITCH(funcName, 
 		{
-			STRING_CASE("vkEnumerateInstanceVersion", vk::DriverVkEnumerateInstanceVersion)
-			STRING_CASE("vkCreateInstance", vk::DriverVkCreateInstance)
-			STRING_CASE("vkEnumerateInstanceExtensionProperties", vk::DriverVkEnumerateInstanceExtensionProperties)
-			default: break;
-		}
+			STRING_CASE("vkEnumerateInstanceVersion", vk::DriverVkEnumerateInstanceVersion);
+		    STRING_CASE("vkCreateInstance", vk::DriverVkCreateInstance);
+			STRING_CASE("vkEnumerateInstanceExtensionProperties", vk::DriverVkEnumerateInstanceExtensionProperties);
+		}, { });
 	}
-	else
+	else // Get an instance function.
 	{
+		// Get our DriverVkInstance class from the passed in instance.
 		const vk::DriverVkInstance* const driverInstance = vk::DriverVkInstance::FromVkInstance(instance);
-
+		// Cache the API version in a register. Strictly speaking, this is unnecessary, but does reduce some verbosity.
 		const uint32_t apiVersion = driverInstance->ApiVersion;
 
+		// Get a function from Vulkan 1.3.
+		if(apiVersion >= VK_API_VERSION_1_3)
+		{
+
+		}
+
+		// Get a function from Vulkan 1.2.
 		if(apiVersion >= VK_API_VERSION_1_2)
 		{
 			
 		}
 
+		// Get a function from Vulkan 1.1.
 		if(apiVersion >= VK_API_VERSION_1_1)
 		{
-			
+			STR_SWITCH(funcName,
+			{
+				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
+			}, { });
 		}
 
+		// Get a function from Vulkan 1.0.
 		if(apiVersion >= VK_API_VERSION_1_0)
 		{
-			switch(FindHashCode(pName))
+			STR_SWITCH(funcName,
 			{
-				STRING_CASE("vkDestroyInstance", vk::DriverVkDestroyInstance)
-				STRING_CASE("vkEnumeratePhysicalDevices", vk::DriverVkEnumeratePhysicalDevices)
-				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties)
+				STRING_CASE("vkDestroyInstance", vk::DriverVkDestroyInstance);
+				STRING_CASE("vkEnumeratePhysicalDevices", vk::DriverVkEnumeratePhysicalDevices);
+				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
 				STRING_CASE("vkCreateWin32SurfaceKHR", vk::DriverVkCreateWin32SurfaceKHR);
-				default: break;
-			}
+			}, { });
 		}
 	}
 
-#ifdef _DEBUG
-	ConPrinter::Print("Failed to find function.\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print(u"Failed to find function.\n");
 #endif
 
 	return nullptr;
 }
 
-__declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* const pName)
+__declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(const VkInstance instance, const char* const pName) noexcept
 {
-	(void) instance;
-	(void) pName;
+	// If pName is null behaviour is undefined, we'll just return null.
+	if(!pName)
+	{
+		return nullptr;
+	}
 
-#ifdef _DEBUG
-	ConPrinter::Print("Loader is attempting to get physical device function {}.\n", pName);
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print(u"Loader is attempting to get physical device function {}.\n", pName);
 #endif
 
+	// Get a global function. This should never occur in this function.
+	if(!instance)
+	{
+		return nullptr;
+	}
+	else // Get an instance function.
+	{
+	    // Containerize the function name so that we use its hash for switch statements.
+		const DynString funcName(pName);
+		// Get our DriverVkInstance class from the passed in instance.
+		const vk::DriverVkInstance* const driverInstance = vk::DriverVkInstance::FromVkInstance(instance);
+		// Cache the API version in a register. Strictly speaking, this is unnecessary, but does reduce some verbosity.
+		const uint32_t apiVersion = driverInstance->ApiVersion;
+
+		// Get a function from Vulkan 1.3.
+		if(apiVersion >= VK_API_VERSION_1_3)
+		{
+
+		}
+
+		// Get a function from Vulkan 1.2.
+		if(apiVersion >= VK_API_VERSION_1_2)
+		{
+
+		}
+
+		// Get a function from Vulkan 1.1.
+		if(apiVersion >= VK_API_VERSION_1_1)
+		{
+			STR_SWITCH(funcName, 
+			{
+				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
+			}, { });
+		}
+
+		// Get a function from Vulkan 1.1.
+		if(apiVersion >= VK_API_VERSION_1_0)
+		{
+			STR_SWITCH(funcName,
+			{
+				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
+			}, { });
+		}
+	}
+
 #ifdef _DEBUG
-	ConPrinter::Print("Failed to find function.\n");
+	ConPrinter::Print(u"Failed to find function.\n");
 #endif
 
 	return nullptr;
@@ -160,18 +214,8 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 } /* extern "C" */
 #endif
 
-inline size_t FindHashCode(const char* str) noexcept
-{
-	size_t hash = 0;
-	for(size_t i = 0; str[i]; ++i)
-	{
-		hash = 31u * hash + static_cast<size_t>(str[i]);
-	}
-	return hash;
-}
-
 #ifdef _DEBUG
-static void TestThatFunctionDeclarationsMatch()
+static void TestThatFunctionDeclarationsMatch() noexcept
 {
 #define FUNC_DECL_TESTER(TYPEDEF, FUNC) { const TYPEDEF func = FUNC; (void) func; }
 
@@ -189,6 +233,7 @@ static void TestThatFunctionDeclarationsMatch()
 
 	FUNC_DECL_TESTER(PFN_vkEnumeratePhysicalDevices, vk::DriverVkEnumeratePhysicalDevices);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceProperties, vk::DriverVkGetPhysicalDeviceProperties);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceProperties2, vk::DriverVkGetPhysicalDeviceProperties2);
+#undef FUNC_DECL_TESTER
 }
 #endif
-

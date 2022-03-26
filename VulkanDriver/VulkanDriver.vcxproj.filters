@@ -18,7 +18,7 @@
     <ClCompile Include="src\VulkanDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\InstanceManagement.cpp">
+    <ClCompile Include="src\InstanceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\PhysicalDeviceManager.cpp">
@@ -35,7 +35,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\InstanceManagement.hpp">
+    <ClInclude Include="include\InstanceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\PhysicalDeviceManager.hpp">
@@ -45,6 +45,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ExtensionManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\_Resharper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ConfigMacros.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\VulkanDriver.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

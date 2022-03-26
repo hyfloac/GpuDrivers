@@ -3,6 +3,7 @@
 #include <Utils.hpp>
 
 #include "ExtensionManager.hpp"
+#include "ConfigMacros.hpp"
 
 namespace vk {
 
@@ -17,20 +18,20 @@ static constexpr VkExtensionProperties GlobalExtensions[] = {
 	}
 };
 
-static constexpr uint32_t ExtensionCount = std::size(GlobalExtensions);
+static constexpr uint32_t ExtensionCount = ::std::size(GlobalExtensions);
 
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceExtensionProperties(const char* const pLayerName, uint32_t* const pPropertyCount, VkExtensionProperties* const pProperties) noexcept
 {
 	UNUSED(pLayerName);
 
-#ifdef _DEBUG
+#if DRIVER_DEBUG_LOG
 	if(pLayerName)
 	{
-		ConPrinter::Print("Application is attempting to query {} extensions from layer {}.\n", *pPropertyCount, pLayerName);
+		ConPrinter::Print(u"Application is attempting to query {} extensions from layer {}.\n", *pPropertyCount, pLayerName);
 	}
 	else
 	{
-		ConPrinter::Print("Application is attempting to query {} extensions.\n", *pPropertyCount);
+		ConPrinter::Print(u"Application is attempting to query {} extensions.\n", *pPropertyCount);
 	}
 #endif
 
@@ -73,18 +74,18 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceExtensionProperties(cons
 	}
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties) noexcept
+VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateDeviceExtensionProperties(const VkPhysicalDevice physicalDevice, const char* const pLayerName, uint32_t* const pPropertyCount, VkExtensionProperties* const pProperties) noexcept
 {
 	UNUSED2(physicalDevice, pLayerName);
 
-#ifdef _DEBUG
+#if DRIVER_DEBUG_LOG
 	if(pLayerName)
 	{
-		ConPrinter::Print("Application is attempting to query {} device extensions from layer {}.\n", *pPropertyCount, pLayerName);
+		ConPrinter::Print(u"Application is attempting to query {} device extensions from layer {}.\n", *pPropertyCount, pLayerName);
 	}
 	else
 	{
-		ConPrinter::Print("Application is attempting to query {} device extensions.\n", *pPropertyCount);
+		ConPrinter::Print(u"Application is attempting to query {} device extensions.\n", *pPropertyCount);
 	}
 #endif
 

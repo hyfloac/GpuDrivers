@@ -3,7 +3,9 @@
 #include <new>
 #include <Windows.h>
 #include <ConPrinter.hpp>
-#include "InstanceManagement.hpp"
+#include "InstanceManager.hpp"
+
+#include "_Resharper.h"
 
 namespace vk {
 
@@ -118,8 +120,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo
 	// If were able to successfully use the custom allocator tag the pointer.
 	if(isCustomAllocated)
 	{
-		const uintptr_t tagged = reinterpret_cast<uintptr_t>(reinterpret_cast<void*>(driverInstance)) | 1;
-		*pInstance = reinterpret_cast<VkInstance>(reinterpret_cast<void*>(tagged));
+		// Offset by one byte to tag the pointer instead of performing bitwise or.
+		// This protects provenance information: https://reviews.llvm.org/D91055
+		*pInstance = reinterpret_cast<VkInstance>(reinterpret_cast<char*>(driverInstance) + 1);
 	}
 	else
 	{

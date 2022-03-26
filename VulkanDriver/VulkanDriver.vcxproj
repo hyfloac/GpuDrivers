@@ -122,7 +122,9 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>$(IncludePath)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,7 +152,8 @@
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(IncludePath)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -180,6 +183,10 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -209,6 +216,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -225,16 +233,19 @@
   <ItemGroup>
     <ClCompile Include="src\DebugConsole.cpp" />
     <ClCompile Include="src\ExtensionManager.cpp" />
-    <ClCompile Include="src\InstanceManagement.cpp" />
+    <ClCompile Include="src\InstanceManager.cpp" />
     <ClCompile Include="src\PhysicalDeviceManager.cpp" />
     <ClCompile Include="src\VulkanDriver.cpp" />
     <ClCompile Include="src\VulkanSuface.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\ConfigMacros.hpp" />
     <ClInclude Include="include\ExtensionManager.hpp" />
-    <ClInclude Include="include\InstanceManagement.hpp" />
+    <ClInclude Include="include\InstanceManager.hpp" />
     <ClInclude Include="include\PhysicalDeviceManager.hpp" />
+    <ClInclude Include="include\VulkanDriver.hpp" />
     <ClInclude Include="include\VulkanSurface.hpp" />
+    <ClInclude Include="include\_Resharper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
