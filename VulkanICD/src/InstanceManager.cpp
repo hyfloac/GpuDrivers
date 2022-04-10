@@ -3,7 +3,9 @@
 #include <new>
 #include <Windows.h>
 #include <ConPrinter.hpp>
+
 #include "InstanceManager.hpp"
+#include "ConfigMacros.hpp"
 
 #include "_Resharper.h"
 
@@ -11,6 +13,10 @@ namespace vk {
 
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceVersion(uint32_t* const pApiVersion) noexcept
 {
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print(u"Informing Loader/Application that we support Vulkan 1.3.\n");
+#endif
+
 	// Inform the application that we support Vulkan 1.3.
 	// This may need to change in the future to a lower, true level of support.
 	*pApiVersion = VK_API_VERSION_1_3;
@@ -19,7 +25,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceVersion(uint32_t* const 
 
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo* const pCreateInfo, const VkAllocationCallbacks* const pAllocator, VkInstance* const pInstance) noexcept
 {
-#ifdef _DEBUG
+#if DRIVER_DEBUG_LOG
 	if(pCreateInfo && pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->pApplicationName)
 	{
 		ConPrinter::Print("Application {} is creating a VkInstance.\n", pCreateInfo->pApplicationInfo->pApplicationName);
@@ -98,15 +104,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo
 		}
 	}
 
-	// Our internal version of VkInstance;
-	DriverVkInstance* driverInstance = new(placement) DriverVkInstance;
-
-	// Store the magic value for the loader.
-	set_loader_magic_value(driverInstance);
-
-	// Store the creation information.
-	driverInstance->ApiVersion = apiVersion;
-
+	// Create and initialize our internal version of VkInstance;
+	DriverVkInstance* driverInstance = new(placement) DriverVkInstance(apiVersion, isCustomAllocated);
+	
 	// If the application name was set, store it, otherwise set it to a null string.
 	if(applicationNameLength > 1)
 	{
@@ -117,28 +117,29 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo
 		*reinterpret_cast<char*>(driverInstance + 1) = '\0';
 	}
 
-	// If were able to successfully use the custom allocator tag the pointer.
-	if(isCustomAllocated)
-	{
-		// Offset by one byte to tag the pointer instead of performing bitwise or.
-		// This protects provenance information: https://reviews.llvm.org/D91055
-		*pInstance = reinterpret_cast<VkInstance>(reinterpret_cast<char*>(driverInstance) + 1);
-	}
-	else
-	{
-		*pInstance = reinterpret_cast<VkInstance>(driverInstance);
-	}
+	*pInstance = reinterpret_cast<VkInstance>(driverInstance);
 
 	return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL DriverVkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* const pAllocator) noexcept
+VKAPI_ATTR void VKAPI_CALL DriverVkDestroyInstance(const VkInstance instance, const VkAllocationCallbacks* const pAllocator) noexcept
 {
 	// If instance is null fast-exit.
 	if(!instance)
 	{
 		return;
 	}
+
+#if DRIVER_DEBUG_LOG
+	if(*DriverVkInstance::GetApplicationName(instance))
+	{
+		ConPrinter::Print(u"Freeing VkInstance from application {}.\n", DriverVkInstance::GetApplicationName(instance));
+	}
+	else
+	{
+		ConPrinter::Print(u"Freeing VkInstance from unnamed application.\n");
+	}
+#endif
 
 	// If this was custom allocated we need to deallocate with the allocator callbacks.
 	if(DriverVkInstance::IsCustomAllocated(instance))

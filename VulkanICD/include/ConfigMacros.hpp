@@ -7,3 +7,7 @@
     #define DRIVER_DEBUG_LOG (0)
   #endif
 #endif
+
+#ifndef DRIVER_DUMMY_PUCK_FUNCTION
+  #define DRIVER_DUMMY_PUCK_FUNCTION (0)
+#endif

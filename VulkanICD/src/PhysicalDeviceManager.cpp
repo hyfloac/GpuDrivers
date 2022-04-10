@@ -14,6 +14,8 @@ static void FillVkPhysicalDeviceLimits(VkPhysicalDevice physicalDevice, VkPhysic
 static void FillVkPhysicalDeviceDepthStencilResolveProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceDepthStencilResolveProperties* pProperties) noexcept;
 static void FillVkPhysicalDeviceDescriptorIndexingProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceDescriptorIndexingProperties* pProperties) noexcept;
 
+static void FillVkPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) noexcept;
+
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumeratePhysicalDevices(const VkInstance instance, uint32_t* const pPhysicalDeviceCount, VkPhysicalDevice* const pPhysicalDevices) noexcept
 {
 	UNUSED(instance);
@@ -101,6 +103,16 @@ VKAPI_ATTR void VKAPI_CALL DriverVkGetPhysicalDeviceProperties2(const VkPhysical
 	}
 }
 
+VKAPI_ATTR void VKAPI_CALL DriverVkGetPhysicalDeviceFeatures(const VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* const pFeatures) noexcept
+{
+	FillVkPhysicalDeviceFeatures(physicalDevice, pFeatures);
+}
+
+VKAPI_ATTR void VKAPI_CALL DriverVkGetPhysicalDeviceFeatures2(const VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* const pFeatures) noexcept
+{
+	FillVkPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
+}
+
 static void FillVkPhysicalDeviceLimits(const VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits* const pLimits) noexcept
 {
 	UNUSED(physicalDevice);
@@ -137,6 +149,67 @@ static void FillVkPhysicalDeviceDescriptorIndexingProperties(const VkPhysicalDev
 	UNUSED(physicalDevice);
 	UNUSED(pProperties);
 	
+}
+
+static void FillVkPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) noexcept
+{
+	UNUSED(physicalDevice);
+
+	pFeatures->robustBufferAccess = VK_TRUE;
+	pFeatures->fullDrawIndexUint32 = VK_TRUE;
+	pFeatures->imageCubeArray = VK_TRUE;
+	pFeatures->independentBlend = VK_TRUE;
+	pFeatures->geometryShader = VK_FALSE;
+	pFeatures->tessellationShader = VK_FALSE;
+	pFeatures->sampleRateShading = VK_FALSE;
+	pFeatures->dualSrcBlend = VK_TRUE;
+	pFeatures->logicOp = VK_TRUE;
+	pFeatures->multiDrawIndirect = VK_TRUE;
+	pFeatures->drawIndirectFirstInstance = VK_TRUE;
+	pFeatures->depthClamp = VK_FALSE;
+	pFeatures->depthBiasClamp = VK_FALSE;
+	pFeatures->fillModeNonSolid = VK_TRUE;
+	pFeatures->depthBounds = VK_TRUE;
+	pFeatures->wideLines = VK_TRUE;
+	pFeatures->largePoints = VK_TRUE;
+	pFeatures->alphaToOne = VK_TRUE;
+	pFeatures->multiViewport = VK_FALSE;
+	pFeatures->samplerAnisotropy = VK_TRUE;
+	pFeatures->textureCompressionETC2 = VK_FALSE;
+	pFeatures->textureCompressionASTC_LDR = VK_FALSE;
+	pFeatures->textureCompressionBC = VK_TRUE;
+	pFeatures->occlusionQueryPrecise = VK_TRUE;
+	pFeatures->pipelineStatisticsQuery = VK_TRUE;
+	pFeatures->vertexPipelineStoresAndAtomics = VK_TRUE;
+	pFeatures->fragmentStoresAndAtomics = VK_TRUE;
+	pFeatures->shaderTessellationAndGeometryPointSize = VK_FALSE;
+	pFeatures->shaderImageGatherExtended = VK_FALSE;
+	pFeatures->shaderStorageImageExtendedFormats = VK_TRUE;
+	pFeatures->shaderStorageImageMultisample = VK_FALSE;
+	pFeatures->shaderStorageImageReadWithoutFormat = VK_TRUE;
+	pFeatures->shaderStorageImageWriteWithoutFormat = VK_TRUE;
+	pFeatures->shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
+	pFeatures->shaderSampledImageArrayDynamicIndexing = VK_TRUE;
+	pFeatures->shaderStorageBufferArrayDynamicIndexing = VK_TRUE;
+	pFeatures->shaderStorageImageArrayDynamicIndexing = VK_TRUE;
+	pFeatures->shaderClipDistance = VK_FALSE;
+	pFeatures->shaderCullDistance = VK_FALSE;
+	pFeatures->shaderFloat64 = VK_TRUE;
+	pFeatures->shaderInt64 = VK_TRUE;
+	pFeatures->shaderInt16 = VK_TRUE;
+	pFeatures->shaderResourceResidency = VK_FALSE;
+	pFeatures->shaderResourceMinLod = VK_TRUE;
+	pFeatures->sparseBinding = VK_FALSE;
+	pFeatures->sparseResidencyBuffer = VK_FALSE;
+	pFeatures->sparseResidencyImage2D = VK_FALSE;
+	pFeatures->sparseResidencyImage3D = VK_FALSE;
+	pFeatures->sparseResidency2Samples = VK_FALSE;
+	pFeatures->sparseResidency4Samples = VK_FALSE;
+	pFeatures->sparseResidency8Samples = VK_FALSE;
+	pFeatures->sparseResidency16Samples = VK_FALSE;
+	pFeatures->sparseResidencyAliased = VK_FALSE;
+	pFeatures->variableMultisampleRate = VK_FALSE;
+	pFeatures->inheritedQueries = VK_FALSE;
 }
 
 }

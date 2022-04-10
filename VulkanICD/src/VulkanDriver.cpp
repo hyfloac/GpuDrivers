@@ -24,6 +24,15 @@ namespace vk {
 uint32_t g_VulkanLoaderVersion = 0;
 }
 
+#if DRIVER_DUMMY_PUCK_FUNCTION
+// Dummy function used to trick the application into believing all functions exist.
+// This let's see every function the Application intends to use.
+static VKAPI_ATTR VkResult VKAPI_CALL DriverVkPuckFunction() noexcept
+{
+	return VK_SUCCESS;
+}
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -123,6 +132,8 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstance
 			STR_SWITCH(funcName,
 			{
 				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
+				STRING_CASE("vkGetPhysicalDeviceFeatures2", vk::DriverVkGetPhysicalDeviceFeatures2);
+				STRING_CASE("vkGetPhysicalDeviceFormatProperties2", vk::DriverVkGetPhysicalDeviceFormatProperties2);
 			}, { });
 		}
 
@@ -134,6 +145,8 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstance
 				STRING_CASE("vkDestroyInstance", vk::DriverVkDestroyInstance);
 				STRING_CASE("vkEnumeratePhysicalDevices", vk::DriverVkEnumeratePhysicalDevices);
 				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
+				STRING_CASE("vkGetPhysicalDeviceFeatures", vk::DriverVkGetPhysicalDeviceFeatures);
+				STRING_CASE("vkGetPhysicalDeviceFormatProperties", vk::DriverVkGetPhysicalDeviceFormatProperties);
 				STRING_CASE("vkCreateWin32SurfaceKHR", vk::DriverVkCreateWin32SurfaceKHR);
 			}, { });
 		}
@@ -143,7 +156,11 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstance
 	ConPrinter::Print(u"Failed to find function.\n");
 #endif
 
+#if DRIVER_DUMMY_PUCK_FUNCTION
+	return reinterpret_cast<PFN_vkVoidFunction>(DriverVkPuckFunction);
+#else
 	return nullptr;
+#endif
 }
 
 __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(const VkInstance instance, const char* const pName) noexcept
@@ -190,6 +207,7 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 			STR_SWITCH(funcName, 
 			{
 				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
+				STRING_CASE("vkGetPhysicalDeviceFeatures2", vk::DriverVkGetPhysicalDeviceFeatures2);
 			}, { });
 		}
 
@@ -199,15 +217,20 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 			STR_SWITCH(funcName,
 			{
 				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
+				STRING_CASE("vkGetPhysicalDeviceFeatures", vk::DriverVkGetPhysicalDeviceFeatures);
 			}, { });
 		}
 	}
 
 #ifdef _DEBUG
-	ConPrinter::Print(u"Failed to find function.\n");
+	ConPrinter::Print(u"Failed to find function {}.\n", pName);
 #endif
 
+#if DRIVER_DUMMY_PUCK_FUNCTION
+	return reinterpret_cast<PFN_vkVoidFunction>(DriverVkPuckFunction);
+#else
 	return nullptr;
+#endif
 }
 
 #ifdef __cplusplus
@@ -215,7 +238,7 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 #endif
 
 #ifdef _DEBUG
-static void TestThatFunctionDeclarationsMatch() noexcept
+[[maybe_unused]] static void TestThatFunctionDeclarationsMatch() noexcept
 {
 #define FUNC_DECL_TESTER(TYPEDEF, FUNC) { const TYPEDEF func = FUNC; (void) func; }
 

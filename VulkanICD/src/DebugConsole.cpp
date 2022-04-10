@@ -1,7 +1,7 @@
 #include <Windows.h>
 #include <Console.hpp>
 
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpReserved)
+BOOL WINAPI DllMain([[maybe_unused]] const HINSTANCE hInstance, [[maybe_unused]] const DWORD fdwReason, [[maybe_unused]] const LPVOID lpReserved)
 {
 	(void) hInstance;
 	(void) fdwReason;
