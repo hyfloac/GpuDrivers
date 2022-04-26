@@ -9,5 +9,5 @@
 #endif
 
 #ifndef DRIVER_DUMMY_PUCK_FUNCTION
-  #define DRIVER_DUMMY_PUCK_FUNCTION (0)
+  #define DRIVER_DUMMY_PUCK_FUNCTION (01)
 #endif

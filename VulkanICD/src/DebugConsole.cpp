@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include <Console.hpp>
 
+#include "GdiThunks.hpp"
+
 BOOL WINAPI DllMain([[maybe_unused]] const HINSTANCE hInstance, [[maybe_unused]] const DWORD fdwReason, [[maybe_unused]] const LPVOID lpReserved)
 {
 	(void) hInstance;
@@ -15,6 +17,7 @@ BOOL WINAPI DllMain([[maybe_unused]] const HINSTANCE hInstance, [[maybe_unused]]
 			Console::Create();
 			// Initialize the Console window to the correct settings.
 			Console::Init();
+			(void) InitKernelThunks();
 			break;
 		case DLL_PROCESS_DETACH:
 			// Reset the Console settings back to their original form.

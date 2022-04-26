@@ -25,20 +25,13 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumerateInstanceVersion(uint32_t* pApiVe
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) noexcept;
 VKAPI_ATTR void VKAPI_CALL DriverVkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) noexcept;
 
-#ifdef WIN32
-  #define DRIVER_VK_INSTANCE_ALIGNMENT (4)
-#else
-  #define DRIVER_VK_INSTANCE_ALIGNMENT (8)
-#endif
-
 #define DRIVER_VK_INSTANCE_TAG_FILTER (DRIVER_VK_INSTANCE_ALIGNMENT - 1)
 
 /**
  * The implementation version of VkInstance.
  *
- *   If this was allocated using a user allocator the LSB of the pointer
- * will be tagged 1, otherwise 0. Alignment should be either 8 or 4,
- * depending on if it is a 64 or 32 bit architecture respectively.
+ *   Alignment should be either 8 or 4, depending on if it is a 64 or 32
+ * bit architecture respectively.
  *
  *   The application name is stored as an additional null terminated string
  * beyond the structure. If the application name was not passed with will
@@ -46,7 +39,6 @@ VKAPI_ATTR void VKAPI_CALL DriverVkDestroyInstance(VkInstance instance, const Vk
  */
 class DriverVkInstance final
 {
-public:
     DEFAULT_DESTRUCT(DriverVkInstance);
     DEFAULT_CM_PU(DriverVkInstance);
 public:
@@ -54,15 +46,21 @@ public:
         : LoaderVTable{ 0 }
         , ApiVersion(0)
         , Flags(DriverVkInstanceFlags::None)
+        , ExtensionCount(0)
+        , ExtensionsSize(0)
+        , Extensions(nullptr)
     {
         // Store the magic value for the loader.
         set_loader_magic_value(this);
     }
 
-    DriverVkInstance(const uint32_t apiVersion, const bool isCustomAllocated) noexcept
-        : LoaderVTable { 0 }
+    DriverVkInstance(const uint32_t apiVersion, const bool isCustomAllocated, const uint32_t extensionCount, const size_t extensionsSize) noexcept
+        : LoaderVTable{ 0 }
         , ApiVersion(apiVersion)
         , Flags(DriverVkInstanceFlags::None)
+        , ExtensionCount(extensionCount)
+        , ExtensionsSize(extensionsSize)
+        , Extensions(nullptr)
     {
         // Store the magic value for the loader.
         set_loader_magic_value(this);
@@ -74,6 +72,9 @@ public:
         }
     }
 
+    /**
+     * Checks the flags to see if this was allocated with a user allocator.
+     */
     [[nodiscard]] bool IsCustomAllocated() const noexcept
     {
         return HasFlag(Flags, DriverVkInstanceFlags::IsCustomAllocated);
@@ -82,9 +83,12 @@ public:
     VK_LOADER_DATA LoaderVTable;
     uint32_t ApiVersion;
     DriverVkInstanceFlags Flags;
+    uint32_t ExtensionCount;
+    size_t ExtensionsSize;
+    const char* const* Extensions;
 public:
     /**
-     * Untags the pointer and reinterprets as a DriverVkInstance*.
+     * Reinterprets as a DriverVkInstance*.
      */
     [[nodiscard]] static DriverVkInstance* FromVkInstance(const VkInstance instance) noexcept
     {

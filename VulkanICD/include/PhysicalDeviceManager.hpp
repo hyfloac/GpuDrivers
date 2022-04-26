@@ -20,7 +20,7 @@ struct DriverVkPhysicalDevice final
 	DriverVkInstance* Instance;
 	GUID DeviceUuid;
 
-	[[nodiscard]] static DriverVkPhysicalDevice* FromVkPhysicalDevice(VkPhysicalDevice physicalDevice) noexcept
+	[[nodiscard]] static DriverVkPhysicalDevice* FromVkPhysicalDevice(const VkPhysicalDevice physicalDevice) noexcept
 	{
 		return reinterpret_cast<DriverVkPhysicalDevice*>(physicalDevice);
 	}

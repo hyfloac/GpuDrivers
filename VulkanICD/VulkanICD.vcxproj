@@ -262,7 +262,7 @@
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -352,8 +352,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\DebugConsole.cpp" />
+    <ClCompile Include="src\DeviceProcecureManager.cpp" />
     <ClCompile Include="src\ExtensionManager.cpp" />
+    <ClCompile Include="src\GdiThunks.cpp" />
     <ClCompile Include="src\InstanceManager.cpp" />
+    <ClCompile Include="src\LogicalDeviceManager.cpp" />
     <ClCompile Include="src\PhysicalDeviceManager.cpp" />
     <ClCompile Include="src\PhysicalDeviceManager.FormatProperties.cpp" />
     <ClCompile Include="src\VulkanDriver.cpp" />
@@ -361,11 +364,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ConfigMacros.hpp" />
+    <ClInclude Include="include\DeviceProcedureManager.hpp" />
+    <ClInclude Include="include\DriverAlignment.hpp" />
     <ClInclude Include="include\ExtensionManager.hpp" />
+    <ClInclude Include="include\GdiPhysicalDeviceIds.hpp" />
+    <ClInclude Include="include\GdiThunks.hpp" />
     <ClInclude Include="include\InstanceManager.hpp" />
+    <ClInclude Include="include\LogicalDeviceManager.hpp" />
     <ClInclude Include="include\PhysicalDeviceManager.hpp" />
     <ClInclude Include="include\VulkanDriver.hpp" />
     <ClInclude Include="include\VulkanSurface.hpp" />
+    <ClInclude Include="include\WindowsNtPolyfill.h" />
     <ClInclude Include="include\_Resharper.h" />
   </ItemGroup>
   <ItemGroup>

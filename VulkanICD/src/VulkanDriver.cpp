@@ -10,6 +10,8 @@
 #include "InstanceManager.hpp"
 #include "PhysicalDeviceManager.hpp"
 #include "VulkanSurface.hpp"
+#include "DeviceProcedureManager.hpp"
+#include "LogicalDeviceManager.hpp"
 #include "ConfigMacros.hpp"
 
 #include "_Resharper.h"
@@ -148,6 +150,10 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstance
 				STRING_CASE("vkGetPhysicalDeviceFeatures", vk::DriverVkGetPhysicalDeviceFeatures);
 				STRING_CASE("vkGetPhysicalDeviceFormatProperties", vk::DriverVkGetPhysicalDeviceFormatProperties);
 				STRING_CASE("vkCreateWin32SurfaceKHR", vk::DriverVkCreateWin32SurfaceKHR);
+				STRING_CASE("vkGetDeviceProcAddr", vk::DriverVkGetDeviceProcAddr);
+				STRING_CASE("vkCreateDevice", vk::DriverVkCreateDevice);
+				STRING_CASE("vkDestroyDevice", vk::DriverVkDestroyDevice);
+			    STRING_CASE("vkEnumerateDeviceExtensionProperties", vk::DriverVkEnumerateDeviceExtensionProperties);
 			}, { });
 		}
 	}
@@ -208,6 +214,7 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 			{
 				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
 				STRING_CASE("vkGetPhysicalDeviceFeatures2", vk::DriverVkGetPhysicalDeviceFeatures2);
+				STRING_CASE("vkGetPhysicalDeviceFormatProperties2", vk::DriverVkGetPhysicalDeviceFormatProperties2);
 			}, { });
 		}
 
@@ -218,6 +225,8 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 			{
 				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
 				STRING_CASE("vkGetPhysicalDeviceFeatures", vk::DriverVkGetPhysicalDeviceFeatures);
+				STRING_CASE("vkGetPhysicalDeviceFormatProperties", vk::DriverVkGetPhysicalDeviceFormatProperties);
+				STRING_CASE("vkEnumerateDeviceExtensionProperties", vk::DriverVkEnumerateDeviceExtensionProperties);
 			}, { });
 		}
 	}
@@ -241,7 +250,6 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 [[maybe_unused]] static void TestThatFunctionDeclarationsMatch() noexcept
 {
 #define FUNC_DECL_TESTER(TYPEDEF, FUNC) { const TYPEDEF func = FUNC; (void) func; }
-
 	FUNC_DECL_TESTER(PFN_vkCreateInstance, vk::DriverVkCreateInstance);
 	FUNC_DECL_TESTER(PFN_vkDestroyInstance, vk::DriverVkDestroyInstance);
 	FUNC_DECL_TESTER(PFN_vkEnumerateInstanceExtensionProperties, vk::DriverVkEnumerateInstanceExtensionProperties);
@@ -257,6 +265,10 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 	FUNC_DECL_TESTER(PFN_vkEnumeratePhysicalDevices, vk::DriverVkEnumeratePhysicalDevices);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceProperties, vk::DriverVkGetPhysicalDeviceProperties);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceProperties2, vk::DriverVkGetPhysicalDeviceProperties2);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFeatures, vk::DriverVkGetPhysicalDeviceFeatures);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFeatures2, vk::DriverVkGetPhysicalDeviceFeatures2);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFormatProperties, vk::DriverVkGetPhysicalDeviceFormatProperties);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFormatProperties2, vk::DriverVkGetPhysicalDeviceFormatProperties2);
 #undef FUNC_DECL_TESTER
 }
 #endif

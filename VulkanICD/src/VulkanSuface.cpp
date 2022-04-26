@@ -2,6 +2,7 @@
 #include <ConPrinter.hpp>
 
 #include "VulkanSurface.hpp"
+#include "ConfigMacros.hpp"
 
 namespace vk {
 
@@ -9,7 +10,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkCreateWin32SurfaceKHR(VkInstance instance
 {
 	UNUSED4(instance, pCreateInfo, pAllocator, pSurface);
 
-	OutputDebugStringA("vkCreateWin32SurfaceKHR\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print("vkCreateWin32SurfaceKHR\n");
+#endif
 	return VK_ERROR_UNKNOWN;
 }
 
@@ -17,14 +20,18 @@ VKAPI_ATTR void VKAPI_CALL DriverVkDestroySurfaceKHR(VkInstance instance, VkSurf
 {
 	UNUSED3(instance, surface, pAllocator);
 
-	OutputDebugStringA("vkDestroySurfaceKHR\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print("vkDestroySurfaceKHR\n");
+#endif
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, const uint32_t queueFamilyIndex, VkSurfaceKHR surface, VkBool32* const pSupported) noexcept
 {
 	UNUSED4(physicalDevice, queueFamilyIndex, surface, pSupported);
 
-	OutputDebugStringA("vkGetPhysicalDeviceSurfaceSupportKHR\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print("vkGetPhysicalDeviceSurfaceSupportKHR\n");
+#endif
 	return VK_ERROR_UNKNOWN;
 }
 
@@ -32,7 +39,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkGetPhysicalDeviceSurfaceCapabilitiesKHR(V
 {
 	UNUSED3(physicalDevice, surface, pSurfaceCapabilities);
 
-	OutputDebugStringA("vkGetPhysicalDeviceSurfaceCapabilitiesKHR\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print("vkGetPhysicalDeviceSurfaceCapabilitiesKHR\n");
+#endif
 	return VK_ERROR_UNKNOWN;
 }
 
@@ -40,7 +49,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkGetPhysicalDeviceSurfaceFormatsKHR(VkPhys
 {
 	UNUSED4(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
 
-	OutputDebugStringA("vkGetPhysicalDeviceSurfaceFormatsKHR\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print("vkGetPhysicalDeviceSurfaceFormatsKHR\n");
+#endif
 	return VK_ERROR_UNKNOWN;
 }
 
@@ -48,7 +59,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkGetPhysicalDeviceSurfacePresentModesKHR(V
 {
 	UNUSED4(physicalDevice, surface, pPresentModeCount, pPresentModes);
 
-	OutputDebugStringA("vkGetPhysicalDeviceSurfacePresentModesKHR\n");
+#if DRIVER_DEBUG_LOG
+	ConPrinter::Print("vkGetPhysicalDeviceSurfacePresentModesKHR\n");
+#endif
 	return VK_ERROR_UNKNOWN;
 }
 
