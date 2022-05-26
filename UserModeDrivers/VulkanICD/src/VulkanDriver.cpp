@@ -1,4 +1,4 @@
-// See https://vulkan.lunarg.com/doc/view/1.3.204.1/mac/LoaderDriverInterface.html
+// See https://vulkan.lunarg.com/doc/view/1.3.211.0/windows/LoaderDriverInterface.html
 #define VK_NO_PROTOTYPES
 #include <vulkan/vk_icd.h>
 #include <cstring>

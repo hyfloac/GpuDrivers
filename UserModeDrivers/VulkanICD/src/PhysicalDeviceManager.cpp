@@ -15,8 +15,11 @@
 
 namespace vk {
 
-static VkResult CheckGDIAdapters(ULONG adapterCount, D3DKMT_ADAPTERINFO* buffer, uint32_t* pPhysicalDeviceCount) noexcept;
+static VkResult GetGDIAdapters(ULONG adapterCount, D3DKMT_ADAPTERINFO* adapters) noexcept;
+static VkResult CheckGDIAdapters(ULONG adapterCount, const D3DKMT_ADAPTERINFO* buffer, uint32_t* pPhysicalDeviceCount) noexcept;
 static VkResult CheckGDIAdapter(const D3DKMT_ADAPTERINFO* adapterInfo) noexcept;
+static VkResult StoreGDIAdapters(ULONG adapterCount, const D3DKMT_ADAPTERINFO* adapters, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices, VkInstance instance) noexcept;
+static VkResult GetAdapterGUID(const D3DKMT_ADAPTERINFO* adapterInfo, GUID* pAdapterGuid) noexcept;
 
 static void FillVkPhysicalDeviceLimits(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits* pLimits) noexcept;
 static void FillVkPhysicalDeviceDepthStencilResolveProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceDepthStencilResolveProperties* pProperties) noexcept;
@@ -26,15 +29,18 @@ static void FillVkPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhys
 
 VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumeratePhysicalDevices(const VkInstance instance, uint32_t* const pPhysicalDeviceCount, VkPhysicalDevice* const pPhysicalDevices) noexcept
 {
-    UNUSED(instance);
-
+#if DRIVER_DEBUG_LOG
     ConPrinter::Print(u"Enumerating {} Physical Devices info.\n", *pPhysicalDeviceCount);
+#endif
 
     if(!pPhysicalDevices)
     {
         // If D3DKMTEnumAdapters2 is supported we'll use that, otherwise we can only query up to 16 devices with D3DKMTEnumAdapters.
-        if(GDIEnumAdapters2)
+        // D3DKMTEnumAdapters2 is always returning 32 for me (at least when on RDP), whereas D3DKMTEnumAdapters correctly returns 3. Until I can figure out exactly what is wrong I'll just use the lessor function.
+        if(GDIEnumAdapters2 && false)
+        // ReSharper disable once CppUnreachableCode
         {
+            // ReSharper disable once CppInitializedValueIsAlwaysRewritten
             D3DKMT_ENUMADAPTERS2 enumAdaptersArgs {};
             enumAdaptersArgs.NumAdapters = 0;
             // We're only querying how many devices there are.
@@ -59,7 +65,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumeratePhysicalDevices(const VkInstance
             // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
             if(enumAdaptersRet != static_cast<NTSTATUS>(STATUS_BUFFER_TOO_SMALL) && enumAdaptersRet != static_cast<NTSTATUS>(STATUS_SUCCESS))
             {
-                ConPrinter::Print("\u001B[91mERROR: D3DKMTEnumAdapters2 returned unknown error 0x{X} while querying how many adapters there are.\u001B[0m\n", enumAdaptersRet);
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters2 returned unknown error 0x{X} while querying how many adapters there are.\u001B[0m\n", enumAdaptersRet);
                 return VK_ERROR_UNKNOWN;
             }
 
@@ -67,7 +73,23 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumeratePhysicalDevices(const VkInstance
             {
                 D3DKMT_ADAPTERINFO adapters[16];
 
-                CheckGDIAdapters(enumAdaptersArgs.NumAdapters, adapters, pPhysicalDeviceCount);
+                // Get all of the system adapters.
+                const VkResult getAdaptersResult = GetGDIAdapters(enumAdaptersArgs.NumAdapters, adapters);
+                
+                if(getAdaptersResult != VK_SUCCESS)
+                {
+                    // Propagate any errors.
+                    return getAdaptersResult;
+                }
+
+                // Check how many adapters are ours.
+                const VkResult checkAdaptersResult = CheckGDIAdapters(enumAdaptersArgs.NumAdapters, adapters, pPhysicalDeviceCount);
+
+                if(checkAdaptersResult != VK_SUCCESS)
+                {
+                    // Propagate any errors.
+                    return checkAdaptersResult;
+                }
             }
             else
             {
@@ -79,18 +101,36 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumeratePhysicalDevices(const VkInstance
                     return VK_ERROR_OUT_OF_DEVICE_MEMORY;
                 }
 
-                CheckGDIAdapters(enumAdaptersArgs.NumAdapters, adapters, pPhysicalDeviceCount);
+                // Get all of the system adapters.
+                const VkResult getAdaptersResult = GetGDIAdapters(enumAdaptersArgs.NumAdapters, adapters);
 
+                if(getAdaptersResult != VK_SUCCESS)
+                {
+                    // Delete the adapter array if the was an error.
+                    delete[] adapters;
+                    // Propagate any errors.
+                    return getAdaptersResult;
+                }
+
+                // Check how many adapters are ours.
+                const VkResult checkAdaptersResult = CheckGDIAdapters(enumAdaptersArgs.NumAdapters, adapters, pPhysicalDeviceCount);
+
+                // The adapter array is no longer needed.
                 delete[] adapters;
+
+                if(checkAdaptersResult != VK_SUCCESS)
+                {
+                    // Propagate any errors.
+                    return checkAdaptersResult;
+                }
             }
         }
         else
         {
             D3DKMT_ENUMADAPTERS enumAdaptersArgs {};
-            // We're only querying how many devices there are.
             enumAdaptersArgs.NumAdapters = 0;
 
-            // Get the number of adapters in the system.
+            // Get all of the system adapters.
             const NTSTATUS enumAdaptersRet = GDIEnumAdapters(&enumAdaptersArgs);
 
             // If GDI returns no memory, inform the application we're out of host memory.
@@ -102,44 +142,159 @@ VKAPI_ATTR VkResult VKAPI_CALL DriverVkEnumeratePhysicalDevices(const VkInstance
             // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
             if(enumAdaptersRet == static_cast<NTSTATUS>(STATUS_INVALID_PARAMETER))
             {
-                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters returned STATUS_INVALID_PARAMETER while querying how many adapters there are.\u001B[0m\n");
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters returned STATUS_INVALID_PARAMETER while querying adapters.\u001B[0m\n");
                 return VK_ERROR_UNKNOWN;
             }
 
             // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
             if(enumAdaptersRet != static_cast<NTSTATUS>(STATUS_BUFFER_TOO_SMALL) && enumAdaptersRet != static_cast<NTSTATUS>(STATUS_SUCCESS))
             {
-                ConPrinter::Print("\u001B[91mERROR: D3DKMTEnumAdapters returned unknown error 0x{X} while querying how many adapters there are.\u001B[0m\n", enumAdaptersRet);
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters returned unknown error 0x{X} while querying adapters.\u001B[0m\n", enumAdaptersRet);
                 return VK_ERROR_UNKNOWN;
             }
 
-            CheckGDIAdapters(enumAdaptersArgs.NumAdapters, enumAdaptersArgs.Adapters, pPhysicalDeviceCount);
+            // Check how many adapters are ours.
+            const VkResult checkAdaptersResult = CheckGDIAdapters(enumAdaptersArgs.NumAdapters, enumAdaptersArgs.Adapters, pPhysicalDeviceCount);
+
+            if(checkAdaptersResult != VK_SUCCESS)
+            {
+                // Propagate any errors.
+                return checkAdaptersResult;
+            }
         }
 
         return VK_SUCCESS;
     }
-
-    // Is the application requesting all of the devices.
-    if(*pPhysicalDeviceCount < 1)
-    {
-        return VK_INCOMPLETE;
-    }
     else
     {
-        // Create a new DriverPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
-        DriverVkPhysicalDevice* physicalDevice = new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice;
+        // If D3DKMTEnumAdapters2 is supported we'll use that, otherwise we can only query up to 16 devices with D3DKMTEnumAdapters.
+        // D3DKMTEnumAdapters2 is always returning 32 for me (at least when on RDP), whereas D3DKMTEnumAdapters correctly returns 3. Until I can figure out exactly what is wrong I'll just use the lessor function.
+        if(GDIEnumAdapters2 && false)
+        // ReSharper disable once CppUnreachableCode
+        {
+            // ReSharper disable once CppInitializedValueIsAlwaysRewritten
+            D3DKMT_ENUMADAPTERS2 enumAdaptersArgs {};
+            enumAdaptersArgs.NumAdapters = 0;
+            // We're only querying how many devices there are.
+            enumAdaptersArgs.pAdapters = nullptr;
 
-        // Store the magic value for the loader.
-        set_loader_magic_value(physicalDevice);
+            // Get the number of adapters in the system.
+            const NTSTATUS enumAdaptersRet = GDIEnumAdapters2(&enumAdaptersArgs);
 
-        // Save the instance that owns this PhysicalDevice.
-        physicalDevice->Instance = DriverVkInstance::FromVkInstance(instance);
+            // If GDI returns no memory, inform the application we're out of host memory.
+            if(enumAdaptersRet == static_cast<NTSTATUS>(STATUS_NO_MEMORY))
+            {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
 
-        // Set the UUID to null as we don't actually have any physical devices at this point in time in our dev-cycle.
-        (void) ::std::memset(&physicalDevice->DeviceUuid, 0, sizeof(physicalDevice->DeviceUuid));
+            // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
+            if(enumAdaptersRet == static_cast<NTSTATUS>(STATUS_INVALID_PARAMETER))
+            {
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters2 returned STATUS_INVALID_PARAMETER while querying how many adapters there are.\u001B[0m\n");
+                return VK_ERROR_UNKNOWN;
+            }
 
-        // Store the GPU into the first device slot.
-        pPhysicalDevices[0] = reinterpret_cast<VkPhysicalDevice>(physicalDevice);
+            // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
+            if(enumAdaptersRet != static_cast<NTSTATUS>(STATUS_BUFFER_TOO_SMALL) && enumAdaptersRet != static_cast<NTSTATUS>(STATUS_SUCCESS))
+            {
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters2 returned unknown error 0x{X} while querying how many adapters there are.\u001B[0m\n", enumAdaptersRet);
+                return VK_ERROR_UNKNOWN;
+            }
+
+            if(enumAdaptersArgs.NumAdapters <= 16)
+            {
+                D3DKMT_ADAPTERINFO adapters[16];
+
+                // Get all of the system adapters.
+                const VkResult getAdaptersResult = GetGDIAdapters(enumAdaptersArgs.NumAdapters, adapters);
+
+                if(getAdaptersResult != VK_SUCCESS)
+                {
+                    // Propagate any errors.
+                    return getAdaptersResult;
+                }
+
+                // Store our vulkan adapters.
+                const VkResult storeAdaptersResult = StoreGDIAdapters(enumAdaptersArgs.NumAdapters, adapters, pPhysicalDeviceCount, pPhysicalDevices, instance);
+
+                if(storeAdaptersResult != VK_SUCCESS)
+                {
+                    // Propagate any errors.
+                    return storeAdaptersResult;
+                }
+            }
+            else
+            {
+                D3DKMT_ADAPTERINFO* const adapters = new(::std::nothrow) D3DKMT_ADAPTERINFO[enumAdaptersArgs.NumAdapters];
+
+                // If new[] returns null, inform the application we're out of host memory.
+                if(!adapters)
+                {
+                    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+                }
+
+                // Get all of the system adapters.
+                const VkResult getAdaptersResult = GetGDIAdapters(enumAdaptersArgs.NumAdapters, adapters);
+
+                if(getAdaptersResult != VK_SUCCESS)
+                {
+                    // Delete the adapter array if the was an error.
+                    delete[] adapters;
+                    // Propagate any errors.
+                    return getAdaptersResult;
+                }
+
+                // Store our vulkan adapters.
+                const VkResult storeAdaptersResult = StoreGDIAdapters(enumAdaptersArgs.NumAdapters, adapters, pPhysicalDeviceCount, pPhysicalDevices, instance);
+
+                // The adapter array is no longer needed.
+                delete[] adapters;
+
+                if(storeAdaptersResult != VK_SUCCESS)
+                {
+                    // Propagate any errors.
+                    return storeAdaptersResult;
+                }
+            }
+        }
+        else
+        {
+            D3DKMT_ENUMADAPTERS enumAdaptersArgs {};
+            enumAdaptersArgs.NumAdapters = 0;
+
+            // Get all of the system adapters.
+            const NTSTATUS enumAdaptersRet = GDIEnumAdapters(&enumAdaptersArgs);
+
+            // If GDI returns no memory, inform the application we're out of host memory.
+            if(enumAdaptersRet == static_cast<NTSTATUS>(STATUS_NO_MEMORY))
+            {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+
+            // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
+            if(enumAdaptersRet == static_cast<NTSTATUS>(STATUS_INVALID_PARAMETER))
+            {
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters returned STATUS_INVALID_PARAMETER while querying adapters.\u001B[0m\n");
+                return VK_ERROR_UNKNOWN;
+            }
+
+            // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
+            if(enumAdaptersRet != static_cast<NTSTATUS>(STATUS_BUFFER_TOO_SMALL) && enumAdaptersRet != static_cast<NTSTATUS>(STATUS_SUCCESS))
+            {
+                ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters returned unknown error 0x{X} while querying adapters.\u001B[0m\n", enumAdaptersRet);
+                return VK_ERROR_UNKNOWN;
+            }
+
+            // Store our vulkan adapters.
+            const VkResult storeAdaptersResult = StoreGDIAdapters(enumAdaptersArgs.NumAdapters, enumAdaptersArgs.Adapters, pPhysicalDeviceCount, pPhysicalDevices, instance);
+
+            if(storeAdaptersResult != VK_SUCCESS)
+            {
+                // Propagate any errors.
+                return storeAdaptersResult;
+            }
+        }
+
         return VK_SUCCESS;
     }
 }
@@ -206,8 +361,9 @@ VKAPI_ATTR void VKAPI_CALL DriverVkGetPhysicalDeviceFeatures2(const VkPhysicalDe
     FillVkPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
 }
 
-static VkResult CheckGDIAdapters(const ULONG adapterCount, D3DKMT_ADAPTERINFO* const adapters, uint32_t* const pPhysicalDeviceCount) noexcept
+static VkResult GetGDIAdapters(const ULONG adapterCount, D3DKMT_ADAPTERINFO* const adapters) noexcept
 {
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
     D3DKMT_ENUMADAPTERS2 enumAdaptersArgs {};
     enumAdaptersArgs.NumAdapters = adapterCount;
     enumAdaptersArgs.pAdapters = adapters;
@@ -231,15 +387,24 @@ static VkResult CheckGDIAdapters(const ULONG adapterCount, D3DKMT_ADAPTERINFO* c
     // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
     if(enumAdaptersRet != static_cast<NTSTATUS>(STATUS_SUCCESS) && enumAdaptersRet != static_cast<NTSTATUS>(STATUS_BUFFER_TOO_SMALL))
     {
-        ConPrinter::Print("\u001B[91mERROR: D3DKMTEnumAdapters2 returned unknown error 0x{X} while querying adapters.\u001B[0m\n", enumAdaptersRet);
+        ConPrinter::Print(u"\u001B[91mERROR: D3DKMTEnumAdapters2 returned unknown error 0x{X} while querying adapters.\u001B[0m\n", enumAdaptersRet);
         return VK_ERROR_UNKNOWN;
     }
 
+    return VK_SUCCESS;
+}
+
+static VkResult CheckGDIAdapters(const ULONG adapterCount, const D3DKMT_ADAPTERINFO* const adapters, uint32_t* const pPhysicalDeviceCount) noexcept
+{
     u32 ourAdapterCount = 0;
 
-    for(uSys i = 0; i < enumAdaptersArgs.NumAdapters; ++i)
+#if DRIVER_DUMMY_DEVICE
+    ++ourAdapterCount;
+#endif
+
+    for(uSys i = 0; i < adapterCount; ++i)
     {
-        const VkResult checkAdapterResult = CheckGDIAdapter(&enumAdaptersArgs.pAdapters[i]);
+        const VkResult checkAdapterResult = CheckGDIAdapter(&adapters[i]);
 
         // Propagate Out of Memory and Unknown errors.
         if(checkAdapterResult == VK_ERROR_OUT_OF_HOST_MEMORY || checkAdapterResult == VK_ERROR_UNKNOWN)
@@ -254,7 +419,7 @@ static VkResult CheckGDIAdapters(const ULONG adapterCount, D3DKMT_ADAPTERINFO* c
         }
 
         D3DKMT_CLOSEADAPTER closeAdapterArgs {};
-        closeAdapterArgs.hAdapter = enumAdaptersArgs.pAdapters[i].hAdapter;
+        closeAdapterArgs.hAdapter = adapters[i].hAdapter;
 
         const NTSTATUS closeAdapterRet = GDICloseAdapter(&closeAdapterArgs);
 
@@ -268,7 +433,7 @@ static VkResult CheckGDIAdapters(const ULONG adapterCount, D3DKMT_ADAPTERINFO* c
         // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
         if(closeAdapterRet != static_cast<NTSTATUS>(STATUS_SUCCESS))
         {
-            ConPrinter::Print("\u001B[91mERROR: D3DKMTCloseAdapter returned unknown error 0x{X} while querying adapters.\u001B[0m\n", enumAdaptersRet);
+            ConPrinter::Print(u"\u001B[91mERROR: D3DKMTCloseAdapter returned unknown error 0x{X} while querying adapters.\u001B[0m\n", closeAdapterRet);
             return VK_ERROR_UNKNOWN;
         }
     }
@@ -282,6 +447,7 @@ static VkResult CheckGDIAdapter(const D3DKMT_ADAPTERINFO* const adapterInfo) noe
 {
     PhysicalDeviceIds physicalDeviceIds {};
 
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
     D3DKMT_QUERYADAPTERINFO queryArgs {};
     queryArgs.hAdapter = adapterInfo->hAdapter;
 
@@ -339,17 +505,101 @@ static VkResult CheckGDIAdapter(const D3DKMT_ADAPTERINFO* const adapterInfo) noe
     return VK_SUCCESS;
 }
 
-static VkResult GetAdapterGUID(const D3DKMT_ADAPTERINFO* const adapterInfo) noexcept
+static VkResult StoreGDIAdapters(const ULONG adapterCount, const D3DKMT_ADAPTERINFO* const adapters, uint32_t* const pPhysicalDeviceCount, VkPhysicalDevice* const pPhysicalDevices, const VkInstance instance) noexcept
 {
-    GUID adapterGuid;
+    const u32 maxAdapters = *pPhysicalDeviceCount;
 
+    u32 ourAdapterCount = 0;
+
+#if DRIVER_DUMMY_DEVICE
+    {
+        // Create a new DriverPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
+        DriverVkPhysicalDevice* physicalDevice = new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice(DriverVkInstance::FromVkInstance(instance), DUMMY_ADAPTER_GUID);
+
+        // Store the GPU into the first device slot.
+        pPhysicalDevices[ourAdapterCount] = reinterpret_cast<VkPhysicalDevice>(physicalDevice);
+
+        // Increment the adapter count.
+        ++ourAdapterCount;
+    }
+#endif
+
+    for(uSys i = 0; i < adapterCount; ++i)
+    {
+        const VkResult checkAdapterResult = CheckGDIAdapter(&adapters[i]);
+
+        // Propagate Out of Memory and Unknown errors.
+        if(checkAdapterResult == VK_ERROR_OUT_OF_HOST_MEMORY || checkAdapterResult == VK_ERROR_UNKNOWN)
+        {
+            return checkAdapterResult;
+        }
+
+        // If the adapter was ours, increment the count and store it in the device list.
+        if(checkAdapterResult == VK_SUCCESS)
+        {
+            // If we've already filled the pPhysicalDevicesBuffer return continue counting our adapters, but don't store them.
+            if(ourAdapterCount == maxAdapters)
+            {
+                ++ourAdapterCount;
+                continue;
+            }
+
+            GUID adapterGuid;
+
+            // Get the adapter GUID.
+            GetAdapterGUID(&adapters[i], &adapterGuid);
+
+            // Create a new DriverPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
+            DriverVkPhysicalDevice* physicalDevice = new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice(DriverVkInstance::FromVkInstance(instance), ::std::move(adapterGuid));
+            
+            // Store the GPU into the current device slot.
+            pPhysicalDevices[ourAdapterCount] = reinterpret_cast<VkPhysicalDevice>(physicalDevice);
+
+            // Increment the adapter count.
+            ++ourAdapterCount;
+        }
+
+        D3DKMT_CLOSEADAPTER closeAdapterArgs {};
+        closeAdapterArgs.hAdapter = adapters[i].hAdapter;
+
+        const NTSTATUS closeAdapterRet = GDICloseAdapter(&closeAdapterArgs);
+
+        // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
+        if(closeAdapterRet == static_cast<NTSTATUS>(STATUS_INVALID_PARAMETER))
+        {
+            ConPrinter::Print(u"\u001B[91mERROR: D3DKMTCloseAdapter returned STATUS_INVALID_PARAMETER while querying adapters.\u001B[0m\n");
+            return VK_ERROR_UNKNOWN;
+        }
+
+        // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
+        if(closeAdapterRet != static_cast<NTSTATUS>(STATUS_SUCCESS))
+        {
+            ConPrinter::Print(u"\u001B[91mERROR: D3DKMTCloseAdapter returned unknown error 0x{X} while querying adapters.\u001B[0m\n", closeAdapterRet);
+            return VK_ERROR_UNKNOWN;
+        }
+    }
+
+    *pPhysicalDeviceCount = ourAdapterCount;
+
+    // If there were more adapters than could be stored return VK_INCOMPLETE.
+    if(ourAdapterCount > maxAdapters)
+    {
+        return VK_INCOMPLETE;
+    }
+
+    return VK_SUCCESS;
+}
+
+static VkResult GetAdapterGUID(const D3DKMT_ADAPTERINFO* const adapterInfo, GUID* const pAdapterGuid) noexcept
+{
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
     D3DKMT_QUERYADAPTERINFO queryArgs {};
     queryArgs.hAdapter = adapterInfo->hAdapter;
 
     // Query the adapter GUID.
     queryArgs.Type = KMTQAITYPE_ADAPTERGUID;
-    queryArgs.pPrivateDriverData = &adapterGuid;
-    queryArgs.PrivateDriverDataSize = sizeof(adapterGuid);
+    queryArgs.pPrivateDriverData = pAdapterGuid;
+    queryArgs.PrivateDriverDataSize = sizeof(*pAdapterGuid);
 
     const NTSTATUS queryStatus = GDIQueryAdapterInfo(&queryArgs);
 
@@ -368,13 +618,13 @@ static VkResult GetAdapterGUID(const D3DKMT_ADAPTERINFO* const adapterInfo) noex
     // This should never happen, if it does inform the application that an unknown error occurred and log the incident.
     if(queryStatus == static_cast<NTSTATUS>(STATUS_INVALID_PARAMETER))
     {
-        ConPrinter::Print(u"D3DQueryAdapterInfo returned STATUS_INVALID_PARAMETER while querying an adapter GUID.\n");
+        ConPrinter::Print(u"\u001B[91mD3DQueryAdapterInfo returned STATUS_INVALID_PARAMETER while querying an adapter GUID\u001B[0m.\n");
         return VK_ERROR_UNKNOWN;
     }
 
     if(queryStatus != static_cast<NTSTATUS>(STATUS_SUCCESS))
     {
-        ConPrinter::Print(u"D3DQueryAdapterInfo returned unknown status code 0x{X} while querying an adapter GUID.\n", queryStatus);
+        ConPrinter::Print(u"\u001B[91mD3DQueryAdapterInfo returned unknown status code 0x{X} while querying an adapter GUID.\u001B[0m\n", queryStatus);
         return VK_ERROR_UNKNOWN;
     }
 
