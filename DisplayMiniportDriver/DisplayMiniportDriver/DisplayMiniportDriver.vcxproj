@@ -310,12 +310,18 @@
   <ItemGroup>
     <ClCompile Include="src\AddDevice.c" />
     <ClCompile Include="src\Driver.c" />
+    <ClCompile Include="src\FilterInstanceQueryTeardown.c" />
+    <ClCompile Include="src\FilterInstanceSetup.c" />
+    <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\MemoryAllocator.c" />
     <ClCompile Include="src\RemoveDevice.c" />
     <ClCompile Include="src\StartDevice.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\AddDevice.h" />
+    <ClInclude Include="include\FilterInstanceQueryTeardown.h" />
+    <ClInclude Include="include\FilterInstanceSetup.h" />
+    <ClInclude Include="include\FilterUnload.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
     <ClInclude Include="include\RemoveDevice.h" />
     <ClInclude Include="include\StartDevice.h" />

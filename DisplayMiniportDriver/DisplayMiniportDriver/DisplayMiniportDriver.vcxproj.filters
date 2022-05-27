@@ -39,6 +39,15 @@
     <ClCompile Include="src\StartDevice.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\FilterUnload.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FilterInstanceQueryTeardown.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FilterInstanceSetup.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MemoryAllocator.h">
@@ -51,6 +60,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\StartDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\FilterUnload.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\FilterInstanceQueryTeardown.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\FilterInstanceSetup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
