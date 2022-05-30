@@ -6,6 +6,8 @@
 
 NTSTATUS HyFilterUnload(const FLT_FILTER_UNLOAD_FLAGS Flags)
 {
+    PAGED_CODE();
+
     // The filter can be unloaded.
     return STATUS_SUCCESS;
 }

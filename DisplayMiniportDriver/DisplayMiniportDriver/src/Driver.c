@@ -7,16 +7,13 @@ extern "C" {
 #include <dispmprt.h>
 #include <fltKernel.h>
 
-#include "FilterUnload.h"
-#include "FilterInstanceSetup.h"
-#include "FilterInstanceQueryTeardown.h"
+#include "DeviceComms.h"
 
 #include "AddDevice.h"
 #include "RemoveDevice.h"
 #include "StartDevice.h"
 
 DRIVER_INITIALIZE DriverEntry;
-PFLT_FILTER FilterHandle;
 
 _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {    
@@ -37,53 +34,12 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     }
 
     {
-        // Allocate (on the stack) and zero out the Filter Registration data.
-        FLT_REGISTRATION filterRegistrationData;
-        (void) RtlZeroMemory(&filterRegistrationData, sizeof(filterRegistrationData));
-
-        // Set the Filter Registration Structure size and version.
-        filterRegistrationData.Size = (USHORT) sizeof(filterRegistrationData);
-        // Always use the latest version from WDK when compiling.
-        filterRegistrationData.Version = FLT_REGISTRATION_VERSION;
-
-        // We don't need any of the supported flags.
-        filterRegistrationData.Flags = 0;
-
-        // For now we're not using contexts or registrations, not until I figure out if they're needed and what for.
-        filterRegistrationData.ContextRegistration = NULL;
-        filterRegistrationData.OperationRegistration = NULL;
-
-        // Set the unload callback, currently this always succeeds.
-        filterRegistrationData.FilterUnloadCallback = HyFilterUnload;
-        // We'll only let manual connections, namely from our emulated device.
-        filterRegistrationData.InstanceSetupCallback = HyFilterInstanceSetup;
-        // Set the query teardown callback, currently this always succeeds.
-        filterRegistrationData.InstanceQueryTeardownCallback = HyFilterInstanceQueryTeardown;
-        // We currently don't care when an instance is being torn down.
-        filterRegistrationData.InstanceTeardownStartCallback = NULL;
-        filterRegistrationData.InstanceTeardownCompleteCallback = NULL;
-        // We currently don't care what the generated file name is.
-        filterRegistrationData.GenerateFileNameCallback = NULL;
-        filterRegistrationData.NormalizeNameComponentCallback = NULL;
-        filterRegistrationData.NormalizeContextCleanupCallback = NULL;
-        // We currently don't use transactions.
-        filterRegistrationData.TransactionNotificationCallback = NULL;
-        // We still don't care about file name generation.
-        filterRegistrationData.NormalizeNameComponentExCallback = NULL;
-        // We don't care about section notifications.
-        filterRegistrationData.SectionNotificationCallback = NULL;
-
-        PFLT_FILTER FilterHandle;
-        const NTSTATUS filterRegistrationStatus = FltRegisterFilter(DriverObject, &filterRegistrationData, &FilterHandle);
-
-        // Propagate errors.
-        if(!NT_SUCCESS(filterRegistrationStatus))
+        // Initialize the emulation comms if necessary.
+        const NTSTATUS deviceCommsStatus = InitDeviceComms(DriverObject);
+        if(!NT_SUCCESS(deviceCommsStatus))
         {
-            return filterRegistrationStatus;
+            return deviceCommsStatus;
         }
-
-        // Start accepting filter requests.
-        FltStartFiltering(FilterHandle);
     }
 
 

@@ -6,6 +6,8 @@
 
 NTSTATUS HyFilterInstanceQueryTeardown(PCFLT_RELATED_OBJECTS FltObjects, FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags)
 {
+    PAGED_CODE();
+
     // The user application is allowed to manually detach.
     return STATUS_SUCCESS;
 }

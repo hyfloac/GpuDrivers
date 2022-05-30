@@ -309,9 +309,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AddDevice.c" />
+    <ClCompile Include="src\DeviceComms.c" />
     <ClCompile Include="src\Driver.c" />
+    <ClCompile Include="src\FilterConnectNotify.c" />
+    <ClCompile Include="src\FilterDeviceManager.c" />
+    <ClCompile Include="src\FilterDisconnectNotify.c" />
     <ClCompile Include="src\FilterInstanceQueryTeardown.c" />
     <ClCompile Include="src\FilterInstanceSetup.c" />
+    <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\MemoryAllocator.c" />
     <ClCompile Include="src\RemoveDevice.c" />
@@ -319,8 +324,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\AddDevice.h" />
+    <ClInclude Include="include\DeviceComms.h" />
+    <ClInclude Include="include\FilterConnectNotify.h" />
+    <ClInclude Include="include\FilterDeviceManager.h" />
+    <ClInclude Include="include\FilterDisconnectNotify.h" />
     <ClInclude Include="include\FilterInstanceQueryTeardown.h" />
     <ClInclude Include="include\FilterInstanceSetup.h" />
+    <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
     <ClInclude Include="include\RemoveDevice.h" />

@@ -10,6 +10,8 @@ static POOL_FLAGS HyConvertPoolTypeToFlags(const POOL_TYPE PoolType, BOOLEAN Zer
 
 void* HyAllocate(const POOL_TYPE PoolType, const SIZE_T NumberOfBytes, const ULONG Tag)
 {
+    PAGED_CODE();
+
 #if USE_LEGACY_ALLOCATOR
     return ExAllocatePoolWithTag(PoolType, NumberOfBytes, Tag);
 #else
@@ -19,6 +21,8 @@ void* HyAllocate(const POOL_TYPE PoolType, const SIZE_T NumberOfBytes, const ULO
 
 void* HyAllocateZeroed(const POOL_TYPE PoolType, const SIZE_T NumberOfBytes, const ULONG Tag)
 {
+    PAGED_CODE();
+
 #if USE_LEGACY_ALLOCATOR
     // Create the allocation.
     void* const allocation = ExAllocatePoolWithTag(PoolType, NumberOfBytes, Tag);
@@ -34,6 +38,8 @@ void* HyAllocateZeroed(const POOL_TYPE PoolType, const SIZE_T NumberOfBytes, con
 
 void HyDeallocate(const PVOID P, const ULONG Tag)
 {
+    PAGED_CODE();
+
 #if USE_LEGACY_ALLOCATOR
     ExFreePoolWithTag(P, Tag);
 #else
@@ -43,6 +49,8 @@ void HyDeallocate(const PVOID P, const ULONG Tag)
 
 static POOL_FLAGS HyConvertPoolTypeToFlags(const POOL_TYPE PoolType, BOOLEAN ZeroInit)
 {
+    PAGED_CODE();
+
     POOL_FLAGS ret = 0;
     if((PoolType & NonPagedPoolExecute) == NonPagedPoolExecute)
     {

@@ -49,6 +49,16 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
     // Copy and save the DXGK interface functions.
     deviceContext->DxgkInterface = *DxgkInterface;
 
+    DXGK_DEVICE_INFO deviceInfo;
+    const NTSTATUS getDeviceInfoStatus = DxgkInterface->DxgkCbGetDeviceInformation(DxgkInterface->DeviceHandle, &deviceInfo);
+
+    if(!NT_SUCCESS(getDeviceInfoStatus))
+    {
+        return getDeviceInfoStatus;
+    }
+
+
+
     // We'll specify that we have one VidPN source.
     *NumberOfVideoPresentSurfaces = 1;
     // We don't have any child devices. https://docs.microsoft.com/en-us/windows-hardware/drivers/display/child-devices-of-the-display-adapter
