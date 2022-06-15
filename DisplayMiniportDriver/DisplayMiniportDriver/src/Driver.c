@@ -5,14 +5,31 @@ extern "C" {
     
 #include <ntddk.h>
 #include <dispmprt.h>
-#include <fltKernel.h>
 
 #include "DeviceComms.h"
 
 #include "AddDevice.h"
+#include "QueryAdapterInfo.h"
 #include "RemoveDevice.h"
 #include "StartDevice.h"
+#include "StopDevice.h"
+#include "SetPowerState.h"
+#include "SetVidPnSourceVisibility.h"
+#include "StopDeviceAndReleasePostDisplayOwnership.h"
 
+#pragma code_seg(push)
+#pragma code_seg("PAGE")
+
+NTSTATUS DdiNoOpNTSTATUS()  // NOLINT(clang-diagnostic-strict-prototypes)
+{
+    return STATUS_SUCCESS;
+}
+
+void DdiNoOpVoid()  // NOLINT(clang-diagnostic-strict-prototypes)
+{ }
+#pragma code_seg(pop)
+
+#pragma code_seg("INIT")
 DRIVER_INITIALIZE DriverEntry;
 
 _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
@@ -42,8 +59,6 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
         }
     }
 
-
-
     // Allocate (on the stack) and zero out the list pointers required for Display Miniport Driver.
     DRIVER_INITIALIZATION_DATA driverInitializationData;
     (void) RtlZeroMemory(&driverInitializationData, sizeof(driverInitializationData));
@@ -53,8 +68,19 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
 
     driverInitializationData.DxgkDdiAddDevice = HyAddDevice;
     driverInitializationData.DxgkDdiStartDevice = HyStartDevice;
-    driverInitializationData.DxgkDdiStopDevice = NULL;
+    driverInitializationData.DxgkDdiStopDevice = HyStopDevice;
     driverInitializationData.DxgkDdiRemoveDevice = HyRemoveDevice;
+    driverInitializationData.DxgkDdiDispatchIoRequest = DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiInterruptRoutine = NULL;
+    driverInitializationData.DxgkDdiDpcRoutine = NULL;
+
+    driverInitializationData.DxgkDdiSetPowerState = HySetPowerState;
+
+    driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
+
+    driverInitializationData.DxgkDdiSetVidPnSourceVisibility = HySetVidPnSourceVisibility;
+
+    driverInitializationData.DxgkDdiStopDeviceAndReleasePostDisplayOwnership = HyStopDeviceAndReleasePostDisplayOwnership;
 
     // Initialize DXGK and return the result back to the kernel.
     return DxgkInitialize(DriverObject, RegistryPath, &driverInitializationData);

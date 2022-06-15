@@ -5,6 +5,8 @@
 #include "RemoveDevice.h"
 #include "MemoryAllocator.h"
 
+#pragma code_seg("PAGE")
+
 NTSTATUS HyRemoveDevice(IN_CONST_PVOID MiniportDeviceContext)
 {
     PAGED_CODE();

@@ -4,6 +4,8 @@
 
 #include "FilterUnload.h"
 
+#pragma code_seg("PAGE")
+
 NTSTATUS HyFilterUnload(const FLT_FILTER_UNLOAD_FLAGS Flags)
 {
     PAGED_CODE();

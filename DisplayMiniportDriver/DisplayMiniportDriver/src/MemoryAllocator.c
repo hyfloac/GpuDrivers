@@ -6,6 +6,8 @@
   #define USE_LEGACY_ALLOCATOR (0)
 #endif
 
+#pragma code_seg("PAGE")
+
 static POOL_FLAGS HyConvertPoolTypeToFlags(const POOL_TYPE PoolType, BOOLEAN ZeroInit);
 
 void* HyAllocate(const POOL_TYPE PoolType, const SIZE_T NumberOfBytes, const ULONG Tag)

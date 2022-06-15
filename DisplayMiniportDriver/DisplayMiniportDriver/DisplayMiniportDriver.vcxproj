@@ -319,11 +319,18 @@
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\MemoryAllocator.c" />
+    <ClCompile Include="src\QueryAdapterInfo.c" />
     <ClCompile Include="src\RemoveDevice.c" />
+    <ClCompile Include="src\SetPowerState.c" />
+    <ClCompile Include="src\SetVidPnSourceVisibility.c" />
     <ClCompile Include="src\StartDevice.c" />
+    <ClCompile Include="src\StopDevice.c" />
+    <ClCompile Include="src\StopDeviceAndReleasePostDisplayOwnership.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\AddDevice.h" />
+    <ClInclude Include="include\comms\MessageType.h" />
+    <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\DeviceComms.h" />
     <ClInclude Include="include\FilterConnectNotify.h" />
     <ClInclude Include="include\FilterDeviceManager.h" />
@@ -333,8 +340,13 @@
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
+    <ClInclude Include="include\QueryAdapterInfo.h" />
     <ClInclude Include="include\RemoveDevice.h" />
+    <ClInclude Include="include\SetPowerState.h" />
+    <ClInclude Include="include\SetVidPnSourceVisibility.h" />
     <ClInclude Include="include\StartDevice.h" />
+    <ClInclude Include="include\StopDevice.h" />
+    <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

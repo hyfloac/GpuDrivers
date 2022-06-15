@@ -5,6 +5,8 @@
 #include "FilterConnectNotify.h"
 #include "FilterDeviceManager.h"
 
+#pragma code_seg("PAGE")
+
 NTSTATUS HyFilterConnectNotify(PFLT_PORT ClientPort, PVOID ServerPortCookie, PVOID ConnectionContext, ULONG SizeOfContext, PVOID* ConnectionPortCookie)
 {
     PAGED_CODE();

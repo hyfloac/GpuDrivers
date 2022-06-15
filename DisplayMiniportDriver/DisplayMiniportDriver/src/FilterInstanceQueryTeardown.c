@@ -4,6 +4,8 @@
 
 #include "FilterInstanceQueryTeardown.h"
 
+#pragma code_seg("PAGE")
+
 NTSTATUS HyFilterInstanceQueryTeardown(PCFLT_RELATED_OBJECTS FltObjects, FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags)
 {
     PAGED_CODE();

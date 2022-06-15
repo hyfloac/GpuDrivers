@@ -5,7 +5,11 @@
 #include "FilterDisconnectNotify.h"
 #include "FilterDeviceManager.h"
 
+#pragma code_seg("PAGE")
+
 void HyFilterDisconnectNotify(PVOID ConnectionPortCookie)
 {
+    PAGED_CODE();
+
     HyUnregisterFilterClient(ConnectionPortCookie);
 }

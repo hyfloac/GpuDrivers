@@ -9,6 +9,8 @@ extern "C" {
 #include "AddDevice.h"
 #include "MemoryAllocator.h"
 
+#pragma code_seg("PAGE")
+
 NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID MiniportDeviceContext)
 {
     PAGED_CODE();
@@ -38,6 +40,8 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
 
     // Store the adapter handle.
     deviceContext->PhysicalDeviceObject = PhysicalDeviceObject;
+    deviceContext->MonitorPowerState = PowerDeviceD0;
+    deviceContext->AdapterPowerState = PowerDeviceD0;
 
     // Return our device context to the driver.
     *MiniportDeviceContext = deviceContext;

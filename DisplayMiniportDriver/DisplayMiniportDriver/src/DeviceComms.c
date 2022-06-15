@@ -20,6 +20,8 @@ PFLT_FILTER FilterHandle;
 
 NTSTATUS InitDeviceComms(IN PDRIVER_OBJECT DriverObject)
 {
+    PAGED_CODE();
+
 #if HY_USE_EMULATION
     // Init the filter port linked list.
     HyInitFilterDevices();

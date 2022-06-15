@@ -4,6 +4,8 @@
 
 #include "FilterInstanceSetup.h"
 
+#pragma code_seg("PAGE")
+
 NTSTATUS HyFilterInstanceSetup(const PCFLT_RELATED_OBJECTS FltObjects, const FLT_INSTANCE_SETUP_FLAGS Flags, const DEVICE_TYPE VolumeDeviceType, const FLT_FILESYSTEM_TYPE VolumeFilesystemType)
 {
     PAGED_CODE();
