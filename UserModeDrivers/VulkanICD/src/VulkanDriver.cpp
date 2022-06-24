@@ -12,6 +12,7 @@
 #include "VulkanSurface.hpp"
 #include "DeviceProcedureManager.hpp"
 #include "LogicalDeviceManager.hpp"
+#include "QueueManager.hpp"
 #include "ConfigMacros.hpp"
 
 #include "_Resharper.h"
@@ -136,6 +137,8 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstance
 				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
 				STRING_CASE("vkGetPhysicalDeviceFeatures2", vk::DriverVkGetPhysicalDeviceFeatures2);
 				STRING_CASE("vkGetPhysicalDeviceFormatProperties2", vk::DriverVkGetPhysicalDeviceFormatProperties2);
+				STRING_CASE("vkGetPhysicalDeviceQueueFamilyProperties2", vk::DriverVkGetPhysicalDeviceQueueFamilyProperties2);
+				STRING_CASE("vkEnumeratePhysicalDeviceGroups", vk::DriverVkEnumeratePhysicalDeviceGroups);
 			}, { });
 		}
 
@@ -149,6 +152,7 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstance
 				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
 				STRING_CASE("vkGetPhysicalDeviceFeatures", vk::DriverVkGetPhysicalDeviceFeatures);
 				STRING_CASE("vkGetPhysicalDeviceFormatProperties", vk::DriverVkGetPhysicalDeviceFormatProperties);
+				STRING_CASE("vkGetPhysicalDeviceQueueFamilyProperties", vk::DriverVkGetPhysicalDeviceQueueFamilyProperties);
 				STRING_CASE("vkCreateWin32SurfaceKHR", vk::DriverVkCreateWin32SurfaceKHR);
 				STRING_CASE("vkGetDeviceProcAddr", vk::DriverVkGetDeviceProcAddr);
 				STRING_CASE("vkCreateDevice", vk::DriverVkCreateDevice);
@@ -215,10 +219,11 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 				STRING_CASE("vkGetPhysicalDeviceProperties2", vk::DriverVkGetPhysicalDeviceProperties2);
 				STRING_CASE("vkGetPhysicalDeviceFeatures2", vk::DriverVkGetPhysicalDeviceFeatures2);
 				STRING_CASE("vkGetPhysicalDeviceFormatProperties2", vk::DriverVkGetPhysicalDeviceFormatProperties2);
+				STRING_CASE("vkGetPhysicalDeviceQueueFamilyProperties2", vk::DriverVkGetPhysicalDeviceQueueFamilyProperties2);
 			}, { });
 		}
 
-		// Get a function from Vulkan 1.1.
+		// Get a function from Vulkan 1.0.
 		if(apiVersion >= VK_API_VERSION_1_0)
 		{
 			STR_SWITCH(funcName,
@@ -226,6 +231,7 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 				STRING_CASE("vkGetPhysicalDeviceProperties", vk::DriverVkGetPhysicalDeviceProperties);
 				STRING_CASE("vkGetPhysicalDeviceFeatures", vk::DriverVkGetPhysicalDeviceFeatures);
 				STRING_CASE("vkGetPhysicalDeviceFormatProperties", vk::DriverVkGetPhysicalDeviceFormatProperties);
+				STRING_CASE("vkGetPhysicalDeviceQueueFamilyProperties", vk::DriverVkGetPhysicalDeviceQueueFamilyProperties);
 				STRING_CASE("vkEnumerateDeviceExtensionProperties", vk::DriverVkEnumerateDeviceExtensionProperties);
 			}, { });
 		}
@@ -263,12 +269,15 @@ __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysical
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceSurfacePresentModesKHR, vk::DriverVkGetPhysicalDeviceSurfacePresentModesKHR);
 
 	FUNC_DECL_TESTER(PFN_vkEnumeratePhysicalDevices, vk::DriverVkEnumeratePhysicalDevices);
+	FUNC_DECL_TESTER(PFN_vkEnumeratePhysicalDeviceGroups, vk::DriverVkEnumeratePhysicalDeviceGroups);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceProperties, vk::DriverVkGetPhysicalDeviceProperties);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceProperties2, vk::DriverVkGetPhysicalDeviceProperties2);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFeatures, vk::DriverVkGetPhysicalDeviceFeatures);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFeatures2, vk::DriverVkGetPhysicalDeviceFeatures2);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFormatProperties, vk::DriverVkGetPhysicalDeviceFormatProperties);
 	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceFormatProperties2, vk::DriverVkGetPhysicalDeviceFormatProperties2);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceQueueFamilyProperties, vk::DriverVkGetPhysicalDeviceQueueFamilyProperties);
+	FUNC_DECL_TESTER(PFN_vkGetPhysicalDeviceQueueFamilyProperties2, vk::DriverVkGetPhysicalDeviceQueueFamilyProperties2);
 #undef FUNC_DECL_TESTER
 }
 #endif

@@ -359,6 +359,8 @@
     <ClCompile Include="src\LogicalDeviceManager.cpp" />
     <ClCompile Include="src\PhysicalDeviceManager.cpp" />
     <ClCompile Include="src\PhysicalDeviceManager.FormatProperties.cpp" />
+    <ClCompile Include="src\PhysicalDeviceManager.Groups.cpp" />
+    <ClCompile Include="src\QueueManager.cpp" />
     <ClCompile Include="src\VulkanDriver.cpp" />
     <ClCompile Include="src\VulkanSuface.cpp" />
   </ItemGroup>
@@ -372,9 +374,10 @@
     <ClInclude Include="include\InstanceManager.hpp" />
     <ClInclude Include="include\LogicalDeviceManager.hpp" />
     <ClInclude Include="include\PhysicalDeviceManager.hpp" />
+    <ClInclude Include="include\QueueManager.hpp" />
     <ClInclude Include="include\VulkanDriver.hpp" />
     <ClInclude Include="include\VulkanSurface.hpp" />
-    <ClInclude Include="include\WindowsNtPolyfill.h" />
+    <ClInclude Include="include\WindowsNtPolyfill.hpp" />
     <ClInclude Include="include\_Resharper.h" />
   </ItemGroup>
   <ItemGroup>

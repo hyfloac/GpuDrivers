@@ -10,7 +10,6 @@
 
 namespace vk {
 
-
 static void FillVkFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties* pFormatProperties) noexcept;
 static void FillVkFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties2* pFormatProperties) noexcept;
 static void FillVkFormatProperties3(VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties3* pFormatProperties) noexcept;

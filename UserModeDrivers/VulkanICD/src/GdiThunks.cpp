@@ -24,6 +24,7 @@ PFND3DKMT_PRESENT GDIPresent = nullptr;
 PFND3DKMT_RENDER GDIRender = nullptr;
 PFND3DKMT_OPENADAPTERFROMHDC GDIOpenAdapterFromHdc = nullptr;
 PFND3DKMT_OPENADAPTERFROMDEVICENAME GDIOpenAdapterFromDeviceName = nullptr;
+PFND3DKMT_OPENADAPTERFROMLUID GDIOpenAdapterFromLuid = nullptr;
 PFND3DKMT_CLOSEADAPTER GDICloseAdapter = nullptr;
 PFND3DKMT_GETSHAREDPRIMARYHANDLE GDIGetSharedPrimaryHandle = nullptr;
 PFND3DKMT_ESCAPE GDIEscape = nullptr;
@@ -98,6 +99,7 @@ bool InitKernelThunks() noexcept
     GDIRender = reinterpret_cast<PFND3DKMT_RENDER>(GetProcAddress(gdi32, "D3DKMTRender"));
     GDIOpenAdapterFromHdc = reinterpret_cast<PFND3DKMT_OPENADAPTERFROMHDC>(GetProcAddress(gdi32, "D3DKMTOpenAdapterFromHdc"));
     GDIOpenAdapterFromDeviceName = reinterpret_cast<PFND3DKMT_OPENADAPTERFROMDEVICENAME>(GetProcAddress(gdi32, "D3DKMTOpenAdapterFromDeviceName"));
+    GDIOpenAdapterFromLuid = reinterpret_cast<PFND3DKMT_OPENADAPTERFROMLUID>(GetProcAddress(gdi32, "D3DKMTOpenAdapterFromLuid"));
     GDICloseAdapter = reinterpret_cast<PFND3DKMT_CLOSEADAPTER>(GetProcAddress(gdi32, "D3DKMTCloseAdapter"));
     GDIGetSharedPrimaryHandle = reinterpret_cast<PFND3DKMT_GETSHAREDPRIMARYHANDLE>(GetProcAddress(gdi32, "D3DKMTGetSharedPrimaryHandle"));
     GDIEscape = reinterpret_cast<PFND3DKMT_ESCAPE>(GetProcAddress(gdi32, "D3DKMTEscape"));
@@ -157,6 +159,7 @@ bool InitKernelThunks() noexcept
        !GDIRender ||
        !GDIOpenAdapterFromHdc ||
        !GDIOpenAdapterFromDeviceName ||
+       !GDIOpenAdapterFromLuid ||
        !GDICloseAdapter ||
        !GDIGetSharedPrimaryHandle ||
        !GDIEscape ||

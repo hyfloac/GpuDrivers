@@ -1,24 +1,26 @@
 #include <ConPrinter.hpp>
 
+#include "WindowsNtPolyfill.hpp"
 #include "LogicalDeviceManager.hpp"
 #include "ConfigMacros.hpp"
 #include "InstanceManager.hpp"
 #include "DriverAlignment.hpp"
+#include "GdiThunks.hpp"
 
 namespace vk {
 
 VkResult DriverVkCreateDevice(const VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* const pCreateInfo, const VkAllocationCallbacks* const pAllocator, VkDevice* const pDevice) noexcept
 {
+	UNUSED(pCreateInfo);
+
 #if DRIVER_DEBUG_LOG
 	ConPrinter::Print("Application is creating VkDevice.\n");
 #endif
-
 
 	// A block of memory to create our driver logical device from.
 	void* placement;
 	// Whether pAllocator was successfully used, this may be false if pAllocator returns null.
 	bool isCustomAllocated = false;
-
 
 	// pAllocator is not necessarily non-null. If it is not, we'll use the user supplied allocator.
 	if(pAllocator)
@@ -63,8 +65,62 @@ VkResult DriverVkCreateDevice(const VkPhysicalDevice physicalDevice, const VkDev
 		}
 	}
 
+	// Cache our version of physical device.
+	DriverVkPhysicalDevice* const driverPhysicalDevice = DriverVkPhysicalDevice::FromVkPhysicalDevice(physicalDevice);
+
+	/// Attempt to acquire an adapter handle from the LUID of the physical device.
+	D3DKMT_OPENADAPTERFROMLUID openAdapterArgs {};
+	(void) ::std::memcpy(&openAdapterArgs.AdapterLuid, &driverPhysicalDevice->DeviceLuid, sizeof(LUID));
+	
+	const NTSTATUS openAdapterStatus = GDIOpenAdapterFromLuid(&openAdapterArgs);
+
+	// If we fail to open the adapter, report that the device has been lost.
+	if(!NT_SUCCESS(openAdapterStatus))
+	{
+#if DRIVER_DEBUG_LOG
+		ConPrinter::Print("Failed to open adapter from device LUID.\n");
+#endif
+
+		return VK_ERROR_DEVICE_LOST;
+	}
+
+	D3DKMT_CREATEDEVICE createDeviceArgs {};
+	createDeviceArgs.hAdapter = openAdapterArgs.hAdapter;
+	createDeviceArgs.Flags.LegacyMode = false;
+	createDeviceArgs.Flags.RequestVSync = false;
+	createDeviceArgs.Flags.DisableGpuTimeout = false;
+	createDeviceArgs.Flags.Reserved = 0;
+	
+	const NTSTATUS createDeviceStatus = GDICreateDevice(&createDeviceArgs);
+
+    {
+        D3DKMT_CLOSEADAPTER closeAdapterArgs {};
+		closeAdapterArgs.hAdapter = openAdapterArgs.hAdapter;
+
+	    const NTSTATUS closeAdapterStatus = GDICloseAdapter(&closeAdapterArgs);
+
+		// If the adapter fails to close, log a warning.
+		// Execution will continue regardless of whether the adapter is successfully closed.
+#if DRIVER_DEBUG_LOG
+		if(!NT_SUCCESS(closeAdapterStatus))
+		{
+			ConPrinter::Print("For some reason we failed to close the adapter.\n");
+		}
+#endif
+    }
+
+	// If we fail to create the virtual device, report that initialization failed.
+	if(!NT_SUCCESS(createDeviceStatus))
+	{
+#if DRIVER_DEBUG_LOG
+		ConPrinter::Print("Failed to create virtual device.\n");
+#endif
+
+		return VK_ERROR_INITIALIZATION_FAILED;
+	}
+
 	// Create and initialize our internal version of VkInstance;
-	DriverVkLogicalDevice* const driverLogicalDevice = new(placement) DriverVkLogicalDevice(DriverVkPhysicalDevice::FromVkPhysicalDevice(physicalDevice), isCustomAllocated);
+	DriverVkLogicalDevice* const driverLogicalDevice = new(placement) DriverVkLogicalDevice(driverPhysicalDevice, isCustomAllocated, createDeviceArgs);
 
 	*pDevice = reinterpret_cast<VkDevice>(driverLogicalDevice);
 

@@ -3,9 +3,13 @@
 #include <vulkan/vk_icd.h>
 #include <Objects.hpp>
 #include <EnumBitFields.hpp>
+#include <ConPrinter.hpp>
 
+#include "WindowsNtPolyfill.hpp"
 #include "PhysicalDeviceManager.hpp"
 #include "InstanceManager.hpp"
+#include "ConfigMacros.hpp"
+#include "GdiThunks.hpp"
 
 #include "_Resharper.h"
 
@@ -29,22 +33,31 @@ VKAPI_ATTR void VKAPI_CALL DriverVkDestroyDevice(VkDevice device, const VkAlloca
 
 class DriverVkLogicalDevice final
 {
-    DEFAULT_DESTRUCT(DriverVkLogicalDevice);
-    DEFAULT_CM_PU(DriverVkLogicalDevice);
+    DELETE_CM(DriverVkLogicalDevice);
 public:
     DriverVkLogicalDevice() noexcept
         : LoaderVTable{ 0 }
         , PhysicalDevice(nullptr)
         , Flags(DriverVkLogicalDeviceFlags::None)
+        , DeviceHandle(-1)
+        , CommandBuffer(nullptr)
+        , CommandBufferSize(0)
+        , AllocationList(nullptr)
+        , AllocationListSize(0)
     {
         // Store the magic value for the loader.
         set_loader_magic_value(this);
     }
 
-    DriverVkLogicalDevice(DriverVkPhysicalDevice* const physicalDevice, const bool isCustomAllocated) noexcept
+    DriverVkLogicalDevice(DriverVkPhysicalDevice* const physicalDevice, const bool isCustomAllocated, const D3DKMT_CREATEDEVICE& createDeviceArgs) noexcept
         : LoaderVTable{ 0 }
         , PhysicalDevice(physicalDevice)
         , Flags(DriverVkLogicalDeviceFlags::None)
+        , DeviceHandle(createDeviceArgs.hDevice)
+        , CommandBuffer(createDeviceArgs.pCommandBuffer)
+        , CommandBufferSize(createDeviceArgs.CommandBufferSize)
+        , AllocationList(createDeviceArgs.pAllocationList)
+        , AllocationListSize(createDeviceArgs.AllocationListSize)
     {
         // Store the magic value for the loader.
         set_loader_magic_value(this);
@@ -54,6 +67,23 @@ public:
         {
             Flags = DriverVkLogicalDeviceFlags::IsCustomAllocated;
         }
+    }
+
+    ~DriverVkLogicalDevice() noexcept
+    {
+        // Destroy the GDI device handle.
+        D3DKMT_DESTROYDEVICE destroyDeviceArgs {};
+        destroyDeviceArgs.hDevice = DeviceHandle;
+
+        const NTSTATUS destroyDeviceStatus = GDIDestroyDevice(&destroyDeviceArgs);
+
+        // If device destruction fails we'll create a debug message.
+#if DRIVER_DEBUG_LOG
+        if(!NT_SUCCESS(destroyDeviceStatus))
+        {
+            ConPrinter::Print("For some reason we failed to destroy the logical device.\n");
+        }
+#endif
     }
 
     /**
@@ -86,6 +116,13 @@ public:
     VK_LOADER_DATA LoaderVTable;
     DriverVkPhysicalDevice* PhysicalDevice;
     DriverVkLogicalDeviceFlags Flags;
+    D3DKMT_HANDLE DeviceHandle;
+    VOID* CommandBuffer;
+    UINT CommandBufferSize;
+    D3DDDI_ALLOCATIONLIST* AllocationList;
+    UINT AllocationListSize;
 };
+
+static_assert(offsetof(DriverVkLogicalDevice, LoaderVTable) == 0, "VK_LOADER_DATA was not at offset 0 for DriverVkLogicalDevice.");
 
 }

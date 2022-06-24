@@ -3,8 +3,12 @@
 #include <vulkan/vk_icd.h>
 #include <Objects.hpp>
 #include <EnumBitFields.hpp>
+#include <unordered_map>
 
+#include "DriverAlignment.hpp"
 #include "_Resharper.h"
+#include "PhysicalDeviceManager.hpp"
+#include "WindowsNtPolyfill.hpp"
 
 namespace vk {
 
@@ -39,8 +43,7 @@ VKAPI_ATTR void VKAPI_CALL DriverVkDestroyInstance(VkInstance instance, const Vk
  */
 class DriverVkInstance final
 {
-    DEFAULT_DESTRUCT(DriverVkInstance);
-    DEFAULT_CM_PU(DriverVkInstance);
+    DELETE_CM(DriverVkInstance);
 public:
     DriverVkInstance() noexcept
         : LoaderVTable{ 0 }
@@ -72,6 +75,17 @@ public:
         }
     }
 
+    ~DriverVkInstance() noexcept
+    {
+        for(auto it : PhysicalDevices)
+        {
+            // Invoke the destructor
+            DriverVkPhysicalDevice::FromVkPhysicalDevice(it.second)->~DriverVkPhysicalDevice();
+            // Free using the aligned delete operator.
+            ::operator delete(it.second, DriverVkAlignment, ::std::nothrow);
+        }
+    }
+
     /**
      * Checks the flags to see if this was allocated with a user allocator.
      */
@@ -86,6 +100,7 @@ public:
     uint32_t ExtensionCount;
     size_t ExtensionsSize;
     const char* const* Extensions;
+    ::std::unordered_map<LUID, VkPhysicalDevice> PhysicalDevices;
 public:
     /**
      * Reinterprets as a DriverVkInstance*.

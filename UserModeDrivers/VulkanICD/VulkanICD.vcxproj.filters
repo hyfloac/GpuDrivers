@@ -45,6 +45,12 @@
     <ClCompile Include="src\GdiThunks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\PhysicalDeviceManager.Groups.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\QueueManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\InstanceManager.hpp">
@@ -80,10 +86,13 @@
     <ClInclude Include="include\GdiThunks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\WindowsNtPolyfill.h">
+    <ClInclude Include="include\WindowsNtPolyfill.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\GdiPhysicalDeviceIds.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\QueueManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

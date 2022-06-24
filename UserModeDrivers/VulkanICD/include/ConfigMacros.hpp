@@ -26,3 +26,8 @@ static inline constexpr GUID DUMMY_ADAPTER_GUID {
     0x4d17,
     { 0xa7, 0x4a, 0xe1, 0xe6, 0x2d, 0x78, 0x34, 0x48 }
 };
+
+static inline constexpr LUID DUMMY_ADAPTER_LUID {
+    0x3855de62,
+    0x13304d17
+};

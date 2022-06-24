@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GdiThunks.hpp"
 #include <Windows.h>
 #include <d3dkmthk.h>
 
@@ -21,6 +22,7 @@ extern PFND3DKMT_PRESENT GDIPresent;
 extern PFND3DKMT_RENDER GDIRender;
 extern PFND3DKMT_OPENADAPTERFROMHDC GDIOpenAdapterFromHdc;
 extern PFND3DKMT_OPENADAPTERFROMDEVICENAME GDIOpenAdapterFromDeviceName;
+extern PFND3DKMT_OPENADAPTERFROMLUID GDIOpenAdapterFromLuid;
 extern PFND3DKMT_CLOSEADAPTER GDICloseAdapter;
 extern PFND3DKMT_GETSHAREDPRIMARYHANDLE GDIGetSharedPrimaryHandle;
 extern PFND3DKMT_ESCAPE GDIEscape;

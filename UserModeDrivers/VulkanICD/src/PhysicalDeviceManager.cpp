@@ -5,7 +5,7 @@
 #include <ConPrinter.hpp>
 #include <DynArray.hpp>
 
-#include "WindowsNtPolyfill.h"
+#include "WindowsNtPolyfill.hpp"
 #include "PhysicalDeviceManager.hpp"
 #include "InstanceManager.hpp"
 #include "ConfigMacros.hpp"
@@ -24,6 +24,8 @@ static VkResult GetAdapterGUID(const D3DKMT_ADAPTERINFO* adapterInfo, GUID* pAda
 static void FillVkPhysicalDeviceLimits(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits* pLimits) noexcept;
 static void FillVkPhysicalDeviceDepthStencilResolveProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceDepthStencilResolveProperties* pProperties) noexcept;
 static void FillVkPhysicalDeviceDescriptorIndexingProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceDescriptorIndexingProperties* pProperties) noexcept;
+
+static void FillVkPhysicalDeviceVulkan11Properties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceVulkan11Properties* pProperties) noexcept;
 
 static void FillVkPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) noexcept;
 
@@ -344,6 +346,8 @@ VKAPI_ATTR void VKAPI_CALL DriverVkGetPhysicalDeviceProperties2(const VkPhysical
         {
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES: FillVkPhysicalDeviceDepthStencilResolveProperties(physicalDevice, reinterpret_cast<VkPhysicalDeviceDepthStencilResolveProperties*>(pNext)); break;
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES: FillVkPhysicalDeviceDescriptorIndexingProperties(physicalDevice, reinterpret_cast<VkPhysicalDeviceDescriptorIndexingProperties*>(pNext)); break;
+
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES: FillVkPhysicalDeviceVulkan11Properties(physicalDevice, reinterpret_cast<VkPhysicalDeviceVulkan11Properties*>(pNext)); break;
             default: break;
         }
 
@@ -511,13 +515,25 @@ static VkResult StoreGDIAdapters(const ULONG adapterCount, const D3DKMT_ADAPTERI
 
     u32 ourAdapterCount = 0;
 
+    DriverVkInstance* driverInstance = DriverVkInstance::FromVkInstance(instance);
+
 #if DRIVER_DUMMY_DEVICE
     {
-        // Create a new DriverPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
-        DriverVkPhysicalDevice* physicalDevice = new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice(DriverVkInstance::FromVkInstance(instance), DUMMY_ADAPTER_GUID);
+        VkPhysicalDevice physicalDevice = nullptr;
+
+        if(driverInstance->PhysicalDevices.find(DUMMY_ADAPTER_LUID) != driverInstance->PhysicalDevices.end())
+        {
+            // Create a new DriverVkPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
+            physicalDevice = reinterpret_cast<VkPhysicalDevice>(new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice(driverInstance, DUMMY_ADAPTER_GUID, DUMMY_ADAPTER_LUID));
+        }
+        else
+        {
+            // Load the DriverVkPhysicalDevice from the cache.
+            physicalDevice = driverInstance->PhysicalDevices[DUMMY_ADAPTER_LUID];
+        }
 
         // Store the GPU into the first device slot.
-        pPhysicalDevices[ourAdapterCount] = reinterpret_cast<VkPhysicalDevice>(physicalDevice);
+        pPhysicalDevices[ourAdapterCount] = physicalDevice;
 
         // Increment the adapter count.
         ++ourAdapterCount;
@@ -549,11 +565,21 @@ static VkResult StoreGDIAdapters(const ULONG adapterCount, const D3DKMT_ADAPTERI
             // Get the adapter GUID.
             GetAdapterGUID(&adapters[i], &adapterGuid);
 
-            // Create a new DriverPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
-            DriverVkPhysicalDevice* physicalDevice = new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice(DriverVkInstance::FromVkInstance(instance), ::std::move(adapterGuid));
-            
+            VkPhysicalDevice physicalDevice = nullptr;
+
+            if(driverInstance->PhysicalDevices.find(adapters[i].AdapterLuid) != driverInstance->PhysicalDevices.end())
+            {
+                // Create a new DriverVkPhysicalDevice aligned to the system word size (not what x86 NASM considers WORD, the max size of the standard register set).
+                physicalDevice = reinterpret_cast<VkPhysicalDevice>(new(DriverVkAlignment, ::std::nothrow) DriverVkPhysicalDevice(driverInstance, DUMMY_ADAPTER_GUID, adapters[i].AdapterLuid));
+            }
+            else
+            {
+                // Load the DriverVkPhysicalDevice from the cache.
+                physicalDevice = driverInstance->PhysicalDevices[DUMMY_ADAPTER_LUID];
+            }
+
             // Store the GPU into the current device slot.
-            pPhysicalDevices[ourAdapterCount] = reinterpret_cast<VkPhysicalDevice>(physicalDevice);
+            pPhysicalDevices[ourAdapterCount] = physicalDevice;
 
             // Increment the adapter count.
             ++ourAdapterCount;
@@ -667,6 +693,22 @@ static void FillVkPhysicalDeviceDescriptorIndexingProperties(const VkPhysicalDev
     UNUSED(physicalDevice);
     UNUSED(pProperties);
     
+}
+
+static void FillVkPhysicalDeviceVulkan11Properties(const VkPhysicalDevice physicalDevice, VkPhysicalDeviceVulkan11Properties* const pProperties) noexcept
+{
+    UNUSED(physicalDevice);
+    UNUSED(pProperties);
+
+    const DriverVkPhysicalDevice* driverPhysicalDevice = DriverVkPhysicalDevice::FromVkPhysicalDevice(physicalDevice);
+
+    static_assert(VK_UUID_SIZE == sizeof(GUID), "Vulkan UUID size did not match that of a GUID.");
+    static_assert(VK_LUID_SIZE == sizeof(LUID), "Vulkan LUID size did not match that of a LUID.");
+
+    ::std::memcpy(pProperties->deviceUUID, &driverPhysicalDevice->DeviceGuid, VK_UUID_SIZE);
+    ::std::memset(pProperties->driverUUID, 0, VK_UUID_SIZE);
+    ::std::memcpy(pProperties->deviceLUID, &driverPhysicalDevice->DeviceLuid, VK_LUID_SIZE);
+
 }
 
 static void FillVkPhysicalDeviceFeatures(const VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* const pFeatures) noexcept
