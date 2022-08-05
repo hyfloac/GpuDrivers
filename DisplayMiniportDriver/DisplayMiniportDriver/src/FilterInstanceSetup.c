@@ -1,5 +1,5 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/fltkernel/nc-fltkernel-pflt_instance_setup_callback
-#include <ntddk.h>
+// #include <ntddk.h>
 #include <fltKernel.h>
 
 #include "FilterInstanceSetup.h"
@@ -8,6 +8,10 @@
 
 NTSTATUS HyFilterInstanceSetup(const PCFLT_RELATED_OBJECTS FltObjects, const FLT_INSTANCE_SETUP_FLAGS Flags, const DEVICE_TYPE VolumeDeviceType, const FLT_FILESYSTEM_TYPE VolumeFilesystemType)
 {
+    (void) FltObjects;
+    (void) VolumeDeviceType;
+    (void) VolumeFilesystemType;
+
     PAGED_CODE();
 
     // We're only going to accept manual connections.

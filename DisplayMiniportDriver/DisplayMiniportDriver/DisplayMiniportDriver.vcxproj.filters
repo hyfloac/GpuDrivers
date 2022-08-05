@@ -78,6 +78,9 @@
     <ClCompile Include="src\SetVidPnSourceVisibility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Logging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MemoryAllocator.h">
@@ -135,6 +138,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\SetVidPnSourceVisibility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

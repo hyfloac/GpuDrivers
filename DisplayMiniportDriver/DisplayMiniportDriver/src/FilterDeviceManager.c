@@ -1,7 +1,11 @@
-#include <ntddk.h>
+// #include <ntddk.h>
 #include <fltKernel.h>
 
 #include "FilterDeviceManager.h"
+
+#pragma warning(push)
+#pragma warning(disable:4200) /* nonstandard extension used : zero-sized array in struct/union */
+#pragma warning(disable:4201) // anonymous unions warning
 
 typedef struct FilterPortStorage
 {
@@ -11,6 +15,8 @@ typedef struct FilterPortStorage
         struct FilterPortStorage* Next;
     };
 } FilterPortStorage;
+
+#pragma warning(pop)
 
 static FilterPortStorage FilterPorts[HY_FILTER_PORT_COUNT] = { 0 };
 static FilterPortStorage* Head = &FilterPorts[0];

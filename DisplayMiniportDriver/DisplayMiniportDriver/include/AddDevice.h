@@ -3,6 +3,10 @@
 #include <ntddk.h>
 #include <dispmprt.h>
 
+#pragma warning(push)
+#pragma warning(disable:4200) /* nonstandard extension used : zero-sized array in struct/union */
+#pragma warning(disable:4201) // anonymous unions warning
+
 typedef struct
 {
     PDEVICE_OBJECT PhysicalDeviceObject;
@@ -16,13 +20,17 @@ typedef struct
         struct
         {
             UINT IsStarted : 1;
-            UINT Reserved : 31;
+            UINT IsEmulated : 1;
+            UINT Reserved : 30;
         };
         UINT Value;
     } Flags;
 
-    DXGK_DISPLAY_INFORMATION PostDisplayInfo;
+    ULONG PCIBusNumber;
+    PCI_SLOT_NUMBER PCISlotNumber;
+    PCI_COMMON_CONFIG PCIConfig;
 
+    DXGK_DISPLAY_INFORMATION PostDisplayInfo;
 
     // Current monitor power state
     DEVICE_POWER_STATE MonitorPowerState;
@@ -30,5 +38,7 @@ typedef struct
     // Current adapter power state
     DEVICE_POWER_STATE AdapterPowerState;
 } HyMiniportDeviceContext;
+
+#pragma warning(pop)
 
 NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID MiniportDeviceContext);

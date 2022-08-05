@@ -29,6 +29,10 @@ NTSTATUS HySetVidPnSourceVisibility(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     // Get our context structure.
     HyMiniportDeviceContext* const deviceContext = hAdapter;
 
+    (void) StartVidPnSourceId;
+    (void) MaxVidPnSourceId;
+    (void) deviceContext;
+
     // TODO: Blackout the screens.
 
     return STATUS_SUCCESS;

@@ -188,7 +188,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;fltmgr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -218,7 +218,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;fltmgr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -246,7 +246,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;fltmgr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -276,7 +276,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(KernelBufferOverflowLib);ntoskrnl.lib;displib.lib;hal.lib;wmilib.lib;wdm.lib;fltmgr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib</AdditionalDependencies>
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -318,6 +318,7 @@
     <ClCompile Include="src\FilterInstanceSetup.c" />
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
+    <ClCompile Include="src\Logging.c" />
     <ClCompile Include="src\MemoryAllocator.c" />
     <ClCompile Include="src\QueryAdapterInfo.c" />
     <ClCompile Include="src\RemoveDevice.c" />
@@ -339,6 +340,7 @@
     <ClInclude Include="include\FilterInstanceSetup.h" />
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
+    <ClInclude Include="include\Logging.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
     <ClInclude Include="include\QueryAdapterInfo.h" />
     <ClInclude Include="include\RemoveDevice.h" />

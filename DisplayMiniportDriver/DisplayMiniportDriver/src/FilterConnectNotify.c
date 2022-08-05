@@ -1,5 +1,5 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/fltkernel/nf-fltkernel-fltcreatecommunicationport
-#include <ntddk.h>
+// #include <ntddk.h>
 #include <fltKernel.h>
 
 #include "FilterConnectNotify.h"
@@ -9,6 +9,10 @@
 
 NTSTATUS HyFilterConnectNotify(PFLT_PORT ClientPort, PVOID ServerPortCookie, PVOID ConnectionContext, ULONG SizeOfContext, PVOID* ConnectionPortCookie)
 {
+    (void) ServerPortCookie;
+    (void) ConnectionContext;
+    (void) SizeOfContext;
+
     PAGED_CODE();
 
     // Store the ClientPort and return the cookie.

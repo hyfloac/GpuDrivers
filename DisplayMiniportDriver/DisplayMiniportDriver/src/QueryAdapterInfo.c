@@ -2,12 +2,14 @@
 #include <ntddk.h>
 #include <dispmprt.h>
 
+#include "AddDevice.h"
 #include "QueryAdapterInfo.h"
 
 #pragma code_seg("PAGE")
 
 static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo);
 static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo);
+static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo);
 
 NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo)
 {
@@ -31,14 +33,17 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
     {
         case DXGKQAITYPE_UMDRIVERPRIVATE: return FillUmDriverPrivate(hAdapter, pQueryAdapterInfo);
         case DXGKQAITYPE_DRIVERCAPS: return FillDriverCaps(hAdapter, pQueryAdapterInfo);
+        case DXGKQAITYPE_QUERYSEGMENT: return FillQuerySegment(hAdapter, pQueryAdapterInfo);
         default: return STATUS_NOT_IMPLEMENTED;
     }
 
-    return STATUS_SUCCESS;
+    // return STATUS_SUCCESS;
 }
 
 static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo)
 {
+    (void) hAdapter;
+
     PAGED_CODE();
 
     // Validate that the input data is not null.
@@ -99,6 +104,8 @@ static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
 
 static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo)
 {
+    (void) hAdapter;
+
     PAGED_CODE();
 
     if(!pQueryAdapterInfo->pOutputData)
@@ -123,6 +130,91 @@ static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERY
     driverCaps->MemoryManagementCaps.IoMmuSupported = TRUE;
 
     driverCaps->SupportNonVGA = TRUE;
+
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo)
+{
+    (void) hAdapter;
+
+    PAGED_CODE();
+
+    // Validate that the input data is not null.
+    if(!pQueryAdapterInfo->pInputData)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    // Validate that the output data is not null.
+    if(!pQueryAdapterInfo->pOutputData)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if(pQueryAdapterInfo->InputDataSize != sizeof(DXGK_QUERYSEGMENTIN))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if(pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_QUERYSEGMENTOUT))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    HyMiniportDeviceContext* const deviceContext = hAdapter;
+    DXGK_QUERYSEGMENTOUT* const querySegment = pQueryAdapterInfo->pOutputData;
+
+    if(querySegment->pSegmentDescriptor)
+    {
+        if(deviceContext->Flags.IsDiscrete)
+        {
+            // Need to query the adapter for its memory information.
+        }
+        else
+        {
+            if(querySegment->NbSegment > 1)
+            {
+                querySegment->NbSegment = 1;
+            }
+
+            querySegment->pSegmentDescriptor[0].BaseAddress.QuadPart = 0;
+            querySegment->pSegmentDescriptor[0].CpuTranslatedAddress.QuadPart = 0;
+            querySegment->pSegmentDescriptor[0].Size = 0;
+
+            querySegment->pSegmentDescriptor[0].Flags.Value = 0;
+
+            querySegment->pSegmentDescriptor[0].Flags.Aperture = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.Agp = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.CpuVisible = TRUE;
+            querySegment->pSegmentDescriptor[0].Flags.CacheCoherent = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.PitchAlignment = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.PopulatedFromSystemMemory = TRUE;
+
+            querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.ReservedSysMem = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.SupportsCpuHostAperture = FALSE;
+            querySegment->pSegmentDescriptor[0].Flags.SupportsCachedCpuHostAperture = FALSE;
+        }
+    }
+    else
+    {
+        if(deviceContext->Flags.IsDiscrete)
+        {
+            // Need to query the adapter for its memory information.
+            querySegment->NbSegment = 1;
+        }
+        else
+        {
+            querySegment->NbSegment = 1;
+        }
+    }
+
+    // The paging buffer segment being 0 forces to use write-combined memory. This seems to be what we want when emulating as we presumably don't have an aperture.
+    querySegment->PagingBufferSegmentId = 0;
+    // We shouldn't need a paging buffer as all memory is already local to the system, hopefully this is a valid value.
+    querySegment->PagingBufferSize = 0;
+    querySegment->PagingBufferPrivateDataSize = 0;
 
     return STATUS_SUCCESS;
 }

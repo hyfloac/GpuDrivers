@@ -33,7 +33,7 @@ void DdiNoOpVoid()  // NOLINT(clang-diagnostic-strict-prototypes)
 DRIVER_INITIALIZE DriverEntry;
 
 _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
-{    
+{
     PAGED_CODE();
 
     // If DriverObject is null inform the kernel that the first parameter was invalid.
@@ -70,7 +70,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     driverInitializationData.DxgkDdiStartDevice = HyStartDevice;
     driverInitializationData.DxgkDdiStopDevice = HyStopDevice;
     driverInitializationData.DxgkDdiRemoveDevice = HyRemoveDevice;
-    driverInitializationData.DxgkDdiDispatchIoRequest = DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDispatchIoRequest = (PDXGKDDI_DISPATCH_IO_REQUEST) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiInterruptRoutine = NULL;
     driverInitializationData.DxgkDdiDpcRoutine = NULL;
 

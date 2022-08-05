@@ -10,6 +10,8 @@
 
 NTSTATUS HySetPowerState(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG DeviceUid, IN_DEVICE_POWER_STATE DevicePowerState, IN_POWER_ACTION ActionType)
 {
+    (void) ActionType;
+
     PAGED_CODE();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.

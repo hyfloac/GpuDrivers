@@ -1,4 +1,4 @@
-#include <ntddk.h>
+//#include <ntddk.h>
 #include <fltKernel.h>
 #include <ntstrsafe.h>
 
