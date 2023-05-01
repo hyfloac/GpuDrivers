@@ -322,6 +322,7 @@
     <ClCompile Include="src\MemoryAllocator.c" />
     <ClCompile Include="src\QueryAdapterInfo.c" />
     <ClCompile Include="src\RemoveDevice.c" />
+    <ClCompile Include="src\ResetDevice.c" />
     <ClCompile Include="src\SetPowerState.c" />
     <ClCompile Include="src\SetVidPnSourceVisibility.c" />
     <ClCompile Include="src\StartDevice.c" />
@@ -344,6 +345,7 @@
     <ClInclude Include="include\MemoryAllocator.h" />
     <ClInclude Include="include\QueryAdapterInfo.h" />
     <ClInclude Include="include\RemoveDevice.h" />
+    <ClInclude Include="include\ResetDevice.h" />
     <ClInclude Include="include\SetPowerState.h" />
     <ClInclude Include="include\SetVidPnSourceVisibility.h" />
     <ClInclude Include="include\StartDevice.h" />

@@ -14,6 +14,7 @@ extern "C" {
 #include "StartDevice.h"
 #include "StopDevice.h"
 #include "SetPowerState.h"
+#include "ResetDevice.h"
 #include "SetVidPnSourceVisibility.h"
 #include "StopDeviceAndReleasePostDisplayOwnership.h"
 
@@ -25,12 +26,12 @@ NTSTATUS DdiNoOpNTSTATUS()  // NOLINT(clang-diagnostic-strict-prototypes)
     return STATUS_SUCCESS;
 }
 
-void DdiNoOpVoid()  // NOLINT(clang-diagnostic-strict-prototypes)
+void DdiNoOpVoid(void)  // NOLINT(clang-diagnostic-strict-prototypes)
 { }
 #pragma code_seg(pop)
 
-#pragma code_seg("INIT")
 DRIVER_INITIALIZE DriverEntry;
+#pragma alloc_text(INIT, DriverEntry)
 
 _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
@@ -64,7 +65,8 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     (void) RtlZeroMemory(&driverInitializationData, sizeof(driverInitializationData));
 
     // Set the version to whatever is currently in the header we're compiling with.
-    driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
+    // driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
+    driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_VISTA;
 
     driverInitializationData.DxgkDdiAddDevice = HyAddDevice;
     driverInitializationData.DxgkDdiStartDevice = HyStartDevice;
@@ -73,12 +75,63 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     driverInitializationData.DxgkDdiDispatchIoRequest = (PDXGKDDI_DISPATCH_IO_REQUEST) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiInterruptRoutine = NULL;
     driverInitializationData.DxgkDdiDpcRoutine = NULL;
-
+    driverInitializationData.DxgkDdiQueryChildRelations = (PDXGKDDI_QUERY_CHILD_RELATIONS) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiQueryChildStatus = (PDXGKDDI_QUERY_CHILD_STATUS) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiQueryDeviceDescriptor = (PDXGKDDI_QUERY_DEVICE_DESCRIPTOR) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiSetPowerState = HySetPowerState;
-
+    driverInitializationData.DxgkDdiNotifyAcpiEvent = (PDXGKDDI_NOTIFY_ACPI_EVENT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiResetDevice = HyResetDevice;
+    driverInitializationData.DxgkDdiUnload = DdiNoOpVoid;
+    driverInitializationData.DxgkDdiQueryInterface = (PDXGKDDI_QUERY_INTERFACE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiControlEtwLogging = (PDXGKDDI_CONTROL_ETW_LOGGING) DdiNoOpVoid;
     driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
+    driverInitializationData.DxgkDdiCreateDevice = (PDXGKDDI_CREATEDEVICE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCreateAllocation = (PDXGKDDI_CREATEALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDestroyAllocation = (PDXGKDDI_DESTROYALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDescribeAllocation = (PDXGKDDI_DESCRIBEALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiGetStandardAllocationDriverData = (PDXGKDDI_GETSTANDARDALLOCATIONDRIVERDATA) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiAcquireSwizzlingRange = (PDXGKDDI_ACQUIRESWIZZLINGRANGE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiReleaseSwizzlingRange = (PDXGKDDI_RELEASESWIZZLINGRANGE) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiPatch = (PDXGKDDI_PATCH) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSubmitCommand = (PDXGKDDI_SUBMITCOMMAND) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiPreemptCommand = (PDXGKDDI_PREEMPTCOMMAND) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiBuildPagingBuffer = (PDXGKDDI_BUILDPAGINGBUFFER) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetPalette = (PDXGKDDI_SETPALETTE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetPointerPosition = (PDXGKDDI_SETPOINTERPOSITION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetPointerShape = (PDXGKDDI_SETPOINTERSHAPE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiResetFromTimeout = (PDXGKDDI_RESETFROMTIMEOUT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiRestartFromTimeout = (PDXGKDDI_RESTARTFROMTIMEOUT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiEscape = (PDXGKDDI_ESCAPE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCollectDbgInfo = (PDXGKDDI_COLLECTDBGINFO) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiQueryCurrentFence = (PDXGKDDI_QUERYCURRENTFENCE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiIsSupportedVidPn = (PDXGKDDI_ISSUPPORTEDVIDPN) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiRecommendFunctionalVidPn = (PDXGKDDI_RECOMMENDFUNCTIONALVIDPN) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiEnumVidPnCofuncModality = (PDXGKDDI_ENUMVIDPNCOFUNCMODALITY) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetVidPnSourceAddress = (PDXGKDDI_SETVIDPNSOURCEADDRESS) DdiNoOpNTSTATUS;
 
     driverInitializationData.DxgkDdiSetVidPnSourceVisibility = HySetVidPnSourceVisibility;
+
+    driverInitializationData.DxgkDdiCommitVidPn = (PDXGKDDI_COMMITVIDPN) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiRecommendVidPnTopology = (PDXGKDDI_RECOMMENDVIDPNTOPOLOGY) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiGetScanLine = (PDXGKDDI_GETSCANLINE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiStopCapture = (PDXGKDDI_STOPCAPTURE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCreateOverlay = (PDXGKDDI_CREATEOVERLAY) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiDestroyDevice = (PDXGKDDI_DESTROYDEVICE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiOpenAllocation = (PDXGKDDI_OPENALLOCATIONINFO) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCloseAllocation = (PDXGKDDI_CLOSEALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiRender = (PDXGKDDI_RENDER) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiPresent = (PDXGKDDI_PRESENT) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiUpdateOverlay = (PDXGKDDI_UPDATEOVERLAY) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiFlipOverlay = (PDXGKDDI_FLIPOVERLAY) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDestroyOverlay = (PDXGKDDI_DESTROYOVERLAY) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiCreateContext = (PDXGKDDI_CREATECONTEXT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDestroyContext = (PDXGKDDI_DESTROYCONTEXT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiLinkDevice = (PDXGKDDI_LINK_DEVICE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetDisplayPrivateDriverFormat = (PDXGKDDI_SETDISPLAYPRIVATEDRIVERFORMAT) DdiNoOpNTSTATUS;
 
     driverInitializationData.DxgkDdiStopDeviceAndReleasePostDisplayOwnership = HyStopDeviceAndReleasePostDisplayOwnership;
 

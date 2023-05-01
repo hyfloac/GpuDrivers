@@ -32,6 +32,9 @@ typedef struct
 
     DXGK_DISPLAY_INFORMATION PostDisplayInfo;
 
+    void* ConfigRegistersPointer;
+    void* VRamPointer;
+
     // Current monitor power state
     DEVICE_POWER_STATE MonitorPowerState;
 
@@ -40,5 +43,10 @@ typedef struct
 } HyMiniportDeviceContext;
 
 #pragma warning(pop)
+
+inline volatile UINT* HyGetDeviceConfigRegister(const HyMiniportDeviceContext* const deviceContext, const UINT registerAddress)
+{
+    return (UINT*) &((BYTE*) deviceContext->ConfigRegistersPointer)[registerAddress];
+}
 
 NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID MiniportDeviceContext);

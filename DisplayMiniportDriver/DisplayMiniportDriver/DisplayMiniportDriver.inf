@@ -33,7 +33,7 @@ ExcludeFromSelect=*
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, Root\DisplayMiniportDriver ; TODO: edit hw-id
+%DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, PCI\VEN_FFFD&DEV_0001 ; TODO: edit hw-id
 
 [DisplayMiniportDriver_Device.NT]
 CopyFiles=Drivers_Dir
@@ -74,7 +74,7 @@ KmdfLibraryVersion = $KMDFVERSION$
 
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ManufacturerName="Grafika Strahlen LLC" ;TODO: Replace with your manufacturer name
 DiskName = "DisplayMiniportDriver Installation Disk"
 DisplayMiniportDriver.DeviceDesc = "DisplayMiniportDriver Device"
 DisplayMiniportDriver.SVCDESC = "DisplayMiniportDriver Service"

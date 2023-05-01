@@ -167,7 +167,7 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
 
     if(querySegment->pSegmentDescriptor)
     {
-        if(deviceContext->Flags.IsDiscrete)
+        if(!deviceContext->Flags.IsEmulated)
         {
             // Need to query the adapter for its memory information.
         }
@@ -199,7 +199,7 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
     }
     else
     {
-        if(deviceContext->Flags.IsDiscrete)
+        if(!deviceContext->Flags.IsEmulated)
         {
             // Need to query the adapter for its memory information.
             querySegment->NbSegment = 1;
