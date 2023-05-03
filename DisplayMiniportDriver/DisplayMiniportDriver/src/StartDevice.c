@@ -69,7 +69,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
 
         if(!NT_SUCCESS(getDeviceInfoStatus))
         {
-            LOG_ERROR("HyStartDevice: Failed to get device info.");
+            LOG_ERROR("HyStartDevice: Failed to get device info.\n");
             return getDeviceInfoStatus;
         }
     }
@@ -80,10 +80,12 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
 
         if(!NT_SUCCESS(checkDeviceStatus))
         {
-            LOG_ERROR("HyStartDevice: Failed to check device.");
+            LOG_ERROR("HyStartDevice: Failed to check device.\n");
             return checkDeviceStatus;
         }
     }
+
+    LOG_DEBUG("HyStartDevice: Check device passed.\n");
 
     if(0)
     {
@@ -131,13 +133,15 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
         // Keep iterating until success if the failure is caused by too small of a buffer.
         do
         {
+            LOG_DEBUG("HyStartDevice: Attempting to get the DevicePropertyEnumeratorName.\n");
             // Get the length of the enumerator string.
             ULONG bufferLength;
             const NTSTATUS getEnumeratorLengthStatus = IoGetDeviceProperty(deviceContext->PhysicalDeviceObject, DevicePropertyEnumeratorName, 0, NULL, &bufferLength);
 
             // If we fail propagate errors, unless it is a positional argument error.
-            if(!NT_SUCCESS(getEnumeratorLengthStatus))
+            if(!NT_SUCCESS(getEnumeratorLengthStatus) && getEnumeratorLengthStatus != STATUS_BUFFER_TOO_SMALL)
             {
+                LOG_ERROR("HyStartDevice: Failed to get the length of DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorLengthStatus);
                 HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
                 if(getEnumeratorLengthStatus == STATUS_INVALID_PARAMETER_2)
@@ -148,20 +152,24 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
                 return getEnumeratorLengthStatus;
             }
 
+            LOG_DEBUG("HyStartDevice: Buffer length: %u\n", bufferLength);
+
             // If the length is sufficiently small we'll just use static allocation.
             if(bufferLength <= 16)
             {
+                LOG_DEBUG("HyStartDevice: Using static buffer\n");
                 enumerator = staticEnumeratorBuffer;
             }
             else
             {
+                LOG_DEBUG("HyStartDevice: Allocating buffer.\n");
                 // Allocate the buffer for the enumerator name.
                 enumerator = HyAllocate(NonPagedPoolNx, bufferLength * sizeof(wchar_t), POOL_TAG_DEVICE_CONTEXT);
 
                 // If the allocation fails report that we're out of memory.
                 if(!enumerator)
                 {
-                    LOG_ERROR("Failed to allocate PCI Device String Buffer.\n");
+                    LOG_ERROR("HyStartDevice: Failed to allocate PCI Device String Buffer.\n");
                     HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
                     return STATUS_NO_MEMORY;
@@ -180,8 +188,15 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
             // If we failed for a reason other than the buffer being too small, propagate errors, unless it is a positional argument error.
             if(getEnumeratorStatus != STATUS_BUFFER_TOO_SMALL)
             {
+                LOG_ERROR("HyStartDevice: Failed to get DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorStatus);
                 HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
-                HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+
+                // Only free if it was dynamically allocated.
+                if(enumerator != staticEnumeratorBuffer)
+                {
+                    // Free the buffer containing the enumerator name.
+                    HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+                }
 
                 if(getEnumeratorStatus == STATUS_INVALID_PARAMETER_2)
                 {
@@ -191,7 +206,12 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
                 return getEnumeratorStatus;
             }
 
-            HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+            // Only free if it was dynamically allocated.
+            if(enumerator != staticEnumeratorBuffer)
+            {
+                // Free the buffer containing the enumerator name.
+                HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+            }
         } while(getEnumeratorStatus == STATUS_BUFFER_TOO_SMALL);
 
         // The enumerator name for PCI devices, as opposed to Root Enumerated Devices.
@@ -208,6 +228,8 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
             deviceContext->Flags.IsEmulated = TRUE;
         }
 
+        LOG_DEBUG("HyStartDevice: Device Name: %ls\n", enumerator);
+
         // Only free if it was dynamically allocated.
         if(enumerator != staticEnumeratorBuffer)
         {
@@ -217,32 +239,48 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
     }
 
     {
+        LOG_DEBUG("HyStartDevice: Setting up BARs.\n");
+
         CM_FULL_RESOURCE_DESCRIPTOR* list = deviceContext->DeviceInfo.TranslatedResourceList->List;
+        LOG_DEBUG("HyStartDevice: CM_FULL_RESOURCE_DESCRIPTOR: 0x%p.\n", list);
 
         for(UINT i = 0; i < deviceContext->DeviceInfo.TranslatedResourceList->Count; ++i)
         {
+            LOG_DEBUG("HyStartDevice: Resource List: %u.\n", i);
             for(UINT j = 0; j < list->PartialResourceList.Count; ++j)
             {
+                LOG_DEBUG("HyStartDevice: Partial Resource List: %u.\n", j);
                 const CM_PARTIAL_RESOURCE_DESCRIPTOR* const desc = &list->PartialResourceList.PartialDescriptors[j];
 
+                LOG_DEBUG("HyStartDevice: Partial Resource List Desc: 0x%p, Type: %d, Flags: 0x%04X.\n", desc, desc->Type, desc->Flags);
                 switch(desc->Type)
                 {
                     case CmResourceTypeMemory:
-                        if(desc->Flags & CM_RESOURCE_PORT_MEMORY && desc->Flags & CM_RESOURCE_MEMORY_READ_WRITE)
+                        LOG_DEBUG("HyStartDevice: Handling CmResourceTypeMemory.\n");
+                        if((desc->Flags & CM_RESOURCE_PORT_MEMORY) == CM_RESOURCE_PORT_MEMORY && 
+                           (desc->Flags & CM_RESOURCE_MEMORY_READ_WRITE) == CM_RESOURCE_MEMORY_READ_WRITE
+                        )
                         {
                             if(!(desc->Flags & CM_RESOURCE_MEMORY_PREFETCHABLE))
                             {
+                                LOG_DEBUG("HyStartDevice: Mapping BAR0.\n");
                                 // This should be BAR0
                                 DxgkInterface->DxgkCbMapMemory(DxgkInterface->DeviceHandle, desc->u.Memory.Start, desc->u.Memory.Length, FALSE, FALSE, MmNonCached, &deviceContext->ConfigRegistersPointer);
                             }
                             else
                             {
+                                LOG_DEBUG("HyStartDevice: Mapping BAR1.\n");
                                 // This should be BAR1
                                 DxgkInterface->DxgkCbMapMemory(DxgkInterface->DeviceHandle, desc->u.Memory.Start, desc->u.Memory.Length, FALSE, FALSE, MmCached, &deviceContext->VRamPointer);
                             }
                         }
+                        else
+                        {
+                            LOG_ERROR("HyStartDevice: CmResourceTypeMemory must be of type CM_RESOURCE_PORT_MEMORY & CM_RESOURCE_MEMORY_READ_WRITE.\n");
+                        }
                         break;
                     case CmResourceTypeMemoryLarge:
+                        LOG_ERROR("HyStartDevice: Cannot handle CmResourceTypeMemoryLarge.\n");
                         break;
                     default:
                         break;

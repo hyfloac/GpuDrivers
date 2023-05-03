@@ -5,6 +5,6 @@
 #endif 
 
 #ifndef HY_VENDOR_ID
-  #define HY_VENDOR_ID (0xFFFE)
+  #define HY_VENDOR_ID (0xFFFD)
 #endif
 

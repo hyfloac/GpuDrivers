@@ -79,7 +79,7 @@ static NTSTATUS GetAdapterInfo(HyMiniportDeviceContext* const miniportDeviceCont
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    LOG_DEBUG("GetAdapterInfo: PDO: 0x%p, Type: %d, Device Type: 0x%08X\n", miniportDeviceContext->PhysicalDeviceObject, miniportDeviceContext->PhysicalDeviceObject->Type, miniportDeviceContext->PhysicalDeviceObject->DeviceType);
+    LOG_DEBUG("GetAdapterInfo: PDO: 0x%p, Type: %d, Device Type: %s [0x%08X]\n", miniportDeviceContext->PhysicalDeviceObject, miniportDeviceContext->PhysicalDeviceObject->Type, GetFileDeviceString(miniportDeviceContext->PhysicalDeviceObject->DeviceType), miniportDeviceContext->PhysicalDeviceObject->DeviceType);
 
     // This needs to be in non-paged memory. https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/obtaining-device-configuration-information-at-irql---dispatch-level
     PBUS_INTERFACE_STANDARD pciInterface = HY_ALLOC_ZERO(BUS_INTERFACE_STANDARD, NonPagedPoolNx, POOL_TAG_DEVICE_CONTEXT);
@@ -193,7 +193,7 @@ static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERF
     // Get the highest object in the PDO stack.
     PDEVICE_OBJECT targetObject = IoGetAttachedDeviceReference(physicalDeviceObject);
 
-    LOG_DEBUG("GetPCIInterface: Highest object on PDO Stack: 0x%p, Type: %d, Device Type: 0x%08X\n", targetObject, targetObject->Type, targetObject->DeviceType);
+    LOG_DEBUG("GetPCIInterface: Highest object on PDO Stack: 0x%p, Type: %d, Device Type: %s [0x%08X]\n", targetObject, targetObject->Type, GetFileDeviceString(targetObject->DeviceType), targetObject->DeviceType);
 
     // Initialize the PnP IRP request and status block.
     IO_STATUS_BLOCK ioStatusBlock;

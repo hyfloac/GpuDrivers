@@ -10,6 +10,8 @@ static void __declspec(noinline) HyGetCallAddress(void** address)
 
 void HyLog(const char* level, size_t levelLength, ULONG filterLevel, const void* address, const char* fmt, va_list args);
 
+const char* GetFileDeviceString(DEVICE_TYPE deviceType);
+
 #define DECL_LOG(NAME, FILTER_LEVEL) \
     inline void HyLog##NAME(const void* address, const char* fmt, ...) \
     {                                                                  \
