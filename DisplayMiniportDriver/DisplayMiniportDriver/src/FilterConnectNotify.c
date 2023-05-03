@@ -4,6 +4,7 @@
 
 #include "FilterConnectNotify.h"
 #include "FilterDeviceManager.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -14,6 +15,8 @@ NTSTATUS HyFilterConnectNotify(PFLT_PORT ClientPort, PVOID ServerPortCookie, PVO
     (void) SizeOfContext;
 
     PAGED_CODE();
+
+    LOG_DEBUG("HyFilterConnectNotify\n");
 
     // Store the ClientPort and return the cookie.
     const NTSTATUS registerClientStatus = HyRegisterFilterClient(ClientPort, ConnectionPortCookie);

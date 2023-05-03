@@ -4,6 +4,7 @@
 
 #include "AddDevice.h"
 #include "QueryAdapterInfo.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -15,10 +16,13 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyQueryAdapterInfo\n");
+
     // If MiniportDeviceContext (hAdapter) is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
+        LOG_ERROR("Invalid Parameter to HyQueryAdapterInfo: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -26,6 +30,7 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
     // This should probably never happen.
     if(!pQueryAdapterInfo)
     {
+        LOG_ERROR("Invalid Parameter to HyQueryAdapterInfo: pQueryAdapterInfo\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
@@ -49,24 +54,28 @@ static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     // Validate that the input data is not null.
     if(!pQueryAdapterInfo->pInputData)
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->pInputData\n");
         return STATUS_INVALID_PARAMETER;
     }
 
     // Validate that the output data is not null.
     if(!pQueryAdapterInfo->pOutputData)
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->pOutputData\n");
         return STATUS_INVALID_PARAMETER;
     }
 
     // Validate that the input data size matches our internal data type.
     if(pQueryAdapterInfo->InputDataSize != sizeof(HyPrivateDriverData))
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->InputDataSize != sizeof(HyPrivateDriverData) [%z]\n", sizeof(HyPrivateDriverData));
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
     // Validate that the output data size matches our internal data type.
     if(pQueryAdapterInfo->OutputDataSize != sizeof(HyPrivateDriverData))
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->OutputDataSize != sizeof(HyPrivateDriverData) [%z]\n", sizeof(HyPrivateDriverData));
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
@@ -76,18 +85,21 @@ static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     // Validate that the input data Magic value matches our Magic value.
     if(inputDriverData->Magic != HY_PRIVATE_DRIVER_DATA_MAGIC)
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Magic != HY_PRIVATE_DRIVER_DATA_MAGIC [0x%08X]\n", HY_PRIVATE_DRIVER_DATA_MAGIC);
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
     // Validate that the internally stored size matches our internal data type.
     if(inputDriverData->Size != sizeof(HyPrivateDriverData))
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Size != sizeof(HyPrivateDriverData) [%z]\n", sizeof(HyPrivateDriverData));
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
     // Validate that the Miniport Display Driver and the User Mode Driver are using the same version of the private data.
     if(inputDriverData->Version != HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION)
     {
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Version != HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION [0x%08X]\n", HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION);
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
@@ -110,11 +122,13 @@ static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERY
 
     if(!pQueryAdapterInfo->pOutputData)
     {
+        LOG_ERROR("Invalid Parameter to FillDriverCaps: pQueryAdapterInfo->pOutputData\n");
         return STATUS_INVALID_PARAMETER;
     }
 
     if(pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_DRIVERCAPS))
     {
+        LOG_ERROR("Invalid Parameter to FillDriverCaps: pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_DRIVERCAPS) [%z]\n", sizeof(DXGK_DRIVERCAPS));
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -143,22 +157,26 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
     // Validate that the input data is not null.
     if(!pQueryAdapterInfo->pInputData)
     {
+        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->pInputData\n");
         return STATUS_INVALID_PARAMETER;
     }
 
     // Validate that the output data is not null.
     if(!pQueryAdapterInfo->pOutputData)
     {
+        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->pOutputData\n");
         return STATUS_INVALID_PARAMETER;
     }
 
     if(pQueryAdapterInfo->InputDataSize != sizeof(DXGK_QUERYSEGMENTIN))
     {
+        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->InputDataSize != sizeof(DXGK_QUERYSEGMENTIN) [%z]\n", sizeof(DXGK_QUERYSEGMENTIN));
         return STATUS_INVALID_PARAMETER;
     }
 
     if(pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_QUERYSEGMENTOUT))
     {
+        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_QUERYSEGMENTOUT) [%z]\n", sizeof(DXGK_QUERYSEGMENTOUT));
         return STATUS_INVALID_PARAMETER;
     }
 

@@ -19,11 +19,13 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyAddDevice\n");
+
     // If PhysicalDeviceObject is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!PhysicalDeviceObject)
     {
-        LOG_ERROR("Invalid Parameter to DdiAddDevice: PhysicalDeviceObject\n");
+        LOG_ERROR("Invalid Parameter to HyAddDevice: PhysicalDeviceObject\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -31,7 +33,7 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to DdiAddDevice: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter to HyAddDevice: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
@@ -41,7 +43,7 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
     // If allocation failed inform the kernel.
     if(!deviceContext)
     {
-        LOG_ERROR("Failed to allcoate MiniportDeviceContext\n");
+        LOG_ERROR("Failed to allocate MiniportDeviceContext\n");
         return STATUS_NO_MEMORY;
     }
 
@@ -77,8 +79,16 @@ static NTSTATUS GetAdapterInfo(HyMiniportDeviceContext* const miniportDeviceCont
         return STATUS_INVALID_PARAMETER_1;
     }
 
+    LOG_DEBUG("GetAdapterInfo: PDO: 0x%p, Type: %d, Device Type: 0x%08X\n", miniportDeviceContext->PhysicalDeviceObject, miniportDeviceContext->PhysicalDeviceObject->Type, miniportDeviceContext->PhysicalDeviceObject->DeviceType);
+
     // This needs to be in non-paged memory. https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/obtaining-device-configuration-information-at-irql---dispatch-level
     PBUS_INTERFACE_STANDARD pciInterface = HY_ALLOC_ZERO(BUS_INTERFACE_STANDARD, NonPagedPoolNx, POOL_TAG_DEVICE_CONTEXT);
+
+    if(!pciInterface)
+    {
+        LOG_ERROR("Failed to allocate BUS_INTERFACE_STANDARD\n");
+        return STATUS_NO_MEMORY;
+    }
 
     {
         // Get the PCI Interface.
@@ -127,6 +137,8 @@ static NTSTATUS GetAdapterInfo(HyMiniportDeviceContext* const miniportDeviceCont
         {
             miniportDeviceContext->PCISlotNumber.u.bits.DeviceNumber = (address >> 16) & 0xFFFF;
             miniportDeviceContext->PCISlotNumber.u.bits.FunctionNumber = address & 0xFFFF;
+
+            LOG_DEBUG("Adapter: Device: 0x%04X Function: 0x%04X\n", miniportDeviceContext->PCISlotNumber.u.bits.DeviceNumber, miniportDeviceContext->PCISlotNumber.u.bits.FunctionNumber);
         }
     }
 
@@ -180,6 +192,8 @@ static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERF
 
     // Get the highest object in the PDO stack.
     PDEVICE_OBJECT targetObject = IoGetAttachedDeviceReference(physicalDeviceObject);
+
+    LOG_DEBUG("GetPCIInterface: Highest object on PDO Stack: 0x%p, Type: %d, Device Type: 0x%08X\n", targetObject, targetObject->Type, targetObject->DeviceType);
 
     // Initialize the PnP IRP request and status block.
     IO_STATUS_BLOCK ioStatusBlock;

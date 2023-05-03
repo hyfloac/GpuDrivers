@@ -1,9 +1,12 @@
 #include "ResetDevice.h"
+#include "Logging.h"
 
 #define REGISTER_RESET 0x000C
 
 void HyResetDevice(IN_CONST_PVOID MiniportDeviceContext)
 {
+    LOG_DEBUG("HyResetDevice\n");
+
     // Get our context structure.
     HyMiniportDeviceContext* const deviceContext = MiniportDeviceContext;
 

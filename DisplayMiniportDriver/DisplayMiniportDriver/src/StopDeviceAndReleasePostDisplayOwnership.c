@@ -6,6 +6,7 @@
 #include "StopDevice.h"
 #include "SetPowerState.h"
 #include "StopDeviceAndReleasePostDisplayOwnership.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -13,10 +14,13 @@ NTSTATUS HyStopDeviceAndReleasePostDisplayOwnership(IN_CONST_PVOID MiniportDevic
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyStopDeviceAndReleasePostDisplayOwnership\n");
+
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
+        LOG_ERROR("Invalid Parameter to HyStopDeviceAndReleasePostDisplayOwnership: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 

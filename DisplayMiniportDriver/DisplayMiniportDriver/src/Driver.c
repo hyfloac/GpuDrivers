@@ -5,10 +5,12 @@ extern "C" {
     
 #include <ntddk.h>
 #include <dispmprt.h>
+#include <process.h>
 
 #include "DeviceComms.h"
 
 #include "AddDevice.h"
+#include "Logging.h"
 #include "QueryAdapterInfo.h"
 #include "RemoveDevice.h"
 #include "StartDevice.h"
@@ -17,30 +19,43 @@ extern "C" {
 #include "ResetDevice.h"
 #include "SetVidPnSourceVisibility.h"
 #include "StopDeviceAndReleasePostDisplayOwnership.h"
+#include "QueryInterface.h"
 
 #pragma code_seg(push)
 #pragma code_seg("PAGE")
 
 NTSTATUS DdiNoOpNTSTATUS()  // NOLINT(clang-diagnostic-strict-prototypes)
 {
+    LOG_DEBUG("DdiNoOpNTSTATUS\n");
     return STATUS_SUCCESS;
 }
 
 void DdiNoOpVoid(void)  // NOLINT(clang-diagnostic-strict-prototypes)
-{ }
+{
+    LOG_DEBUG("DdiNoOpVoid\n");
+}
+
+BOOLEAN DdiNoOpBool(void)  // NOLINT(clang-diagnostic-strict-prototypes)
+{
+    LOG_DEBUG("DdiNoOpBool\n");
+    return TRUE;
+}
 #pragma code_seg(pop)
 
+#pragma code_seg("INIT")
 DRIVER_INITIALIZE DriverEntry;
-#pragma alloc_text(INIT, DriverEntry)
 
-_Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
+_Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
     PAGED_CODE();
+
+    LOG_DEBUG("DriverEntryReal\n");
 
     // If DriverObject is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!ARGUMENT_PRESENT(DriverObject))
     {
+        LOG_ERROR("Invalid Parameter to DriverEntry: DriverObject\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -48,6 +63,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     // This should probably never happen.
     if(!ARGUMENT_PRESENT(RegistryPath))
     {
+        LOG_ERROR("Invalid Parameter to DriverEntry: RegistryPath\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
@@ -64,7 +80,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     DRIVER_INITIALIZATION_DATA driverInitializationData;
     (void) RtlZeroMemory(&driverInitializationData, sizeof(driverInitializationData));
 
-    // Set the version to whatever is currently in the header we're compiling with.
+    // // Set the version to whatever is currently in the header we're compiling with.
     // driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
     driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_VISTA;
 
@@ -73,8 +89,8 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     driverInitializationData.DxgkDdiStopDevice = HyStopDevice;
     driverInitializationData.DxgkDdiRemoveDevice = HyRemoveDevice;
     driverInitializationData.DxgkDdiDispatchIoRequest = (PDXGKDDI_DISPATCH_IO_REQUEST) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiInterruptRoutine = NULL;
-    driverInitializationData.DxgkDdiDpcRoutine = NULL;
+    driverInitializationData.DxgkDdiInterruptRoutine = (PDXGKDDI_INTERRUPT_ROUTINE) DdiNoOpBool;
+    driverInitializationData.DxgkDdiDpcRoutine = (PDXGKDDI_DPC_ROUTINE) DdiNoOpVoid;
     driverInitializationData.DxgkDdiQueryChildRelations = (PDXGKDDI_QUERY_CHILD_RELATIONS) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiQueryChildStatus = (PDXGKDDI_QUERY_CHILD_STATUS) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiQueryDeviceDescriptor = (PDXGKDDI_QUERY_DEVICE_DESCRIPTOR) DdiNoOpNTSTATUS;
@@ -82,7 +98,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     driverInitializationData.DxgkDdiNotifyAcpiEvent = (PDXGKDDI_NOTIFY_ACPI_EVENT) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiResetDevice = HyResetDevice;
     driverInitializationData.DxgkDdiUnload = DdiNoOpVoid;
-    driverInitializationData.DxgkDdiQueryInterface = (PDXGKDDI_QUERY_INTERFACE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiQueryInterface = HyQueryInterface;
     driverInitializationData.DxgkDdiControlEtwLogging = (PDXGKDDI_CONTROL_ETW_LOGGING) DdiNoOpVoid;
     driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
     driverInitializationData.DxgkDdiCreateDevice = (PDXGKDDI_CREATEDEVICE) DdiNoOpNTSTATUS;
@@ -138,6 +154,14 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
     // Initialize DXGK and return the result back to the kernel.
     return DxgkInitialize(DriverObject, RegistryPath, &driverInitializationData);
 }
+
+_Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
+{
+    __security_init_cookie();
+    return DriverEntryReal(DriverObject, RegistryPath);
+}
+
+#pragma code_seg()
 
 #ifdef __cplusplus
 } /* extern "C" */

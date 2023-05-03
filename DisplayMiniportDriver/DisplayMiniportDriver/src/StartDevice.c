@@ -2,6 +2,7 @@
 #include "StartDevice.h"
 #include "AddDevice.h"
 #include "Config.h"
+#include "Logging.h"
 #include "MemoryAllocator.h"
 
 #pragma code_seg("PAGE")
@@ -12,38 +13,45 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyStartDevice\n");
+
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
+        LOG_ERROR("Invalid Parameter to HyStartDevice: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    // If DxgkStartInfo is null inform the kernel that the first parameter was invalid.
+    // If DxgkStartInfo is null inform the kernel that the second parameter was invalid.
     // This should probably never happen.
     if(!DxgkStartInfo)
     {
+        LOG_ERROR("Invalid Parameter to HyStartDevice: DxgkStartInfo\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
-    // If DxgkInterface is null inform the kernel that the first parameter was invalid.
+    // If DxgkInterface is null inform the kernel that the third parameter was invalid.
     // This should probably never happen.
     if(!DxgkInterface)
     {
+        LOG_ERROR("Invalid Parameter to HyStartDevice: DxgkInterface\n");
         return STATUS_INVALID_PARAMETER_3;
     }
 
-    // If NumberOfVideoPresentSurfaces is null inform the kernel that the first parameter was invalid.
+    // If NumberOfVideoPresentSurfaces is null inform the kernel that the fourth parameter was invalid.
     // This should probably never happen.
     if(!NumberOfVideoPresentSurfaces)
     {
+        LOG_ERROR("Invalid Parameter to HyStartDevice: NumberOfVideoPresentSurfaces\n");
         return STATUS_INVALID_PARAMETER_4;
     }
 
-    // If NumberOfChildren is null inform the kernel that the first parameter was invalid.
+    // If NumberOfChildren is null inform the kernel that the fifth parameter was invalid.
     // This should probably never happen.
     if(!NumberOfChildren)
     {
+        LOG_ERROR("Invalid Parameter to HyStartDevice: NumberOfChildren\n");
         return STATUS_INVALID_PARAMETER_5;
     }
 
@@ -61,6 +69,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
 
         if(!NT_SUCCESS(getDeviceInfoStatus))
         {
+            LOG_ERROR("HyStartDevice: Failed to get device info.");
             return getDeviceInfoStatus;
         }
     }
@@ -71,6 +80,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
 
         if(!NT_SUCCESS(checkDeviceStatus))
         {
+            LOG_ERROR("HyStartDevice: Failed to check device.");
             return checkDeviceStatus;
         }
     }
@@ -151,6 +161,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
                 // If the allocation fails report that we're out of memory.
                 if(!enumerator)
                 {
+                    LOG_ERROR("Failed to allocate PCI Device String Buffer.\n");
                     HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
                     return STATUS_NO_MEMORY;

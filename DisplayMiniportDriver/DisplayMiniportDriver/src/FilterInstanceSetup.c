@@ -3,6 +3,7 @@
 #include <fltKernel.h>
 
 #include "FilterInstanceSetup.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -13,6 +14,8 @@ NTSTATUS HyFilterInstanceSetup(const PCFLT_RELATED_OBJECTS FltObjects, const FLT
     (void) VolumeFilesystemType;
 
     PAGED_CODE();
+
+    LOG_DEBUG("HyFilterInstanceSetup\n");
 
     // We're only going to accept manual connections.
     if((Flags & FLTFL_INSTANCE_SETUP_MANUAL_ATTACHMENT) == 0)

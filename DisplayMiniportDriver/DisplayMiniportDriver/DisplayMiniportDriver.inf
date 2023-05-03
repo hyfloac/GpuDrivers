@@ -12,15 +12,13 @@ DriverVer= ; TODO: set DriverVer in stampinf property pages
 PnpLockdown=1
 
 [DestinationDirs]
-DefaultDestDir = 12
-DisplayMiniportDriver_Device_CoInstaller_CopyFiles = 11
+DefaultDestDir = 13
 
 [SourceDisksNames]
 1 = %DiskName%,,,""
 
 [SourceDisksFiles]
 DisplayMiniportDriver.sys  = 1,,
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
 
 ;*****************************************
 ; Install Section
@@ -51,30 +49,16 @@ DisplayName    = %DisplayMiniportDriver.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START
 ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %12%\DisplayMiniportDriver.sys
+ServiceBinary  = %13%\DisplayMiniportDriver.sys
+LoadOrderGroup = Video
 
 ;
 ;--- DisplayMiniportDriver_Device Coinstaller installation ------
 ;
 
-[DisplayMiniportDriver_Device.NT.CoInstallers]
-AddReg=DisplayMiniportDriver_Device_CoInstaller_AddReg
-CopyFiles=DisplayMiniportDriver_Device_CoInstaller_CopyFiles
-
-[DisplayMiniportDriver_Device_CoInstaller_AddReg]
-HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
-
-[DisplayMiniportDriver_Device_CoInstaller_CopyFiles]
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
-
-[DisplayMiniportDriver_Device.NT.Wdf]
-KmdfService =  DisplayMiniportDriver, DisplayMiniportDriver_wdfsect
-[DisplayMiniportDriver_wdfsect]
-KmdfLibraryVersion = $KMDFVERSION$
-
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="Grafika Strahlen LLC" ;TODO: Replace with your manufacturer name
-DiskName = "DisplayMiniportDriver Installation Disk"
-DisplayMiniportDriver.DeviceDesc = "DisplayMiniportDriver Device"
-DisplayMiniportDriver.SVCDESC = "DisplayMiniportDriver Service"
+ManufacturerName="Grafika Strahlen LLC"
+DiskName = "SoftGpu Installation Disk"
+DisplayMiniportDriver.DeviceDesc = "SoftGpu"
+DisplayMiniportDriver.SVCDESC = "SoftGpu MiniPort Service"

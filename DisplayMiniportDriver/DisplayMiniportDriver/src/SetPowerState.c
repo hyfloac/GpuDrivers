@@ -4,6 +4,7 @@
 
 #include "AddDevice.h"
 #include "SetPowerState.h"
+#include "Logging.h"
 #include "SetVidPnSourceVisibility.h"
 
 #pragma code_seg("PAGE")
@@ -14,10 +15,13 @@ NTSTATUS HySetPowerState(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG DeviceUi
 
     PAGED_CODE();
 
+    LOG_DEBUG("HySetPowerState\n");
+
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
+        LOG_ERROR("Invalid Parameter to HySetPowerState: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 

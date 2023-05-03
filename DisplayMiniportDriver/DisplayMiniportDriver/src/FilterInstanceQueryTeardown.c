@@ -3,6 +3,7 @@
 #include <fltKernel.h>
 
 #include "FilterInstanceQueryTeardown.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -12,6 +13,8 @@ NTSTATUS HyFilterInstanceQueryTeardown(PCFLT_RELATED_OBJECTS FltObjects, FLT_INS
     (void) Flags;
 
     PAGED_CODE();
+
+    LOG_DEBUG("HyFilterInstanceQueryTeardown\n");
 
     // The user application is allowed to manually detach.
     return STATUS_SUCCESS;

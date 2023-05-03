@@ -84,6 +84,9 @@
     <ClCompile Include="src\ResetDevice.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\QueryInterface.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MemoryAllocator.h">
@@ -147,6 +150,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ResetDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\QueryInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

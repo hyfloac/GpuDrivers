@@ -4,6 +4,7 @@
 
 #include "FilterMessageNotify.h"
 #include "FilterDeviceManager.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -16,6 +17,8 @@ NTSTATUS HyFilterMessageNotify(PVOID PortCookie, PVOID InputBuffer, ULONG InputB
     (void) ReturnOutputBufferLength;
 
     PAGED_CODE();
+
+    LOG_DEBUG("HyFilterMessageNotify\n");
 
     PFLT_PORT port;
     const NTSTATUS getFilterClientStatus = HyGetFilterClient(PortCookie, &port);

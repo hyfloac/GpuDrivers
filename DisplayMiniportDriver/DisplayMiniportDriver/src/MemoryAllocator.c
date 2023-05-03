@@ -3,12 +3,14 @@
 #include "MemoryAllocator.h"
 
 #ifndef USE_LEGACY_ALLOCATOR
-  #define USE_LEGACY_ALLOCATOR (0)
+  #define USE_LEGACY_ALLOCATOR (1)
 #endif
 
 #pragma code_seg("PAGE")
 
+#if !USE_LEGACY_ALLOCATOR
 static POOL_FLAGS HyConvertPoolTypeToFlags(const POOL_TYPE PoolType, BOOLEAN ZeroInit);
+#endif
 
 void* HyAllocate(const POOL_TYPE PoolType, const SIZE_T NumberOfBytes, const ULONG Tag)
 {
@@ -49,6 +51,7 @@ void HyDeallocate(const PVOID P, const ULONG Tag)
 #endif
 }
 
+#if !USE_LEGACY_ALLOCATOR
 static POOL_FLAGS HyConvertPoolTypeToFlags(const POOL_TYPE PoolType, BOOLEAN ZeroInit)
 {
     PAGED_CODE();
@@ -89,3 +92,4 @@ static POOL_FLAGS HyConvertPoolTypeToFlags(const POOL_TYPE PoolType, BOOLEAN Zer
 
     return ret;
 }
+#endif

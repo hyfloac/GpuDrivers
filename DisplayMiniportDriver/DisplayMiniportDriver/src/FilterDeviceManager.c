@@ -2,6 +2,7 @@
 #include <fltKernel.h>
 
 #include "FilterDeviceManager.h"
+#include "Logging.h"
 
 #pragma warning(push)
 #pragma warning(disable:4200) /* nonstandard extension used : zero-sized array in struct/union */
@@ -25,6 +26,8 @@ NTSTATUS HyInitFilterDevices(void)
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyInitFilterDevices\n");
+
     for(int i = 0; i < HY_FILTER_PORT_COUNT - 1; ++i)
     {
         FilterPorts[i].Next = &FilterPorts[i + 1];
@@ -36,6 +39,8 @@ NTSTATUS HyInitFilterDevices(void)
 NTSTATUS HyRegisterFilterClient(PFLT_PORT ClientPort, PVOID* ConnectionPortCookie)
 {
     PAGED_CODE();
+
+    LOG_DEBUG("HyRegisterFilterClient\n");
 
     // Ensure that we can return the handle.
     if(!ConnectionPortCookie)
@@ -66,6 +71,8 @@ NTSTATUS HyGetFilterClient(PVOID ConnectionPortCookie, PFLT_PORT* ClientPort)
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyGetFilterClient\n");
+
     // Ensure we have a valid pointer to a port.
     if(!ConnectionPortCookie)
     {
@@ -89,6 +96,8 @@ NTSTATUS HyGetFilterClient(PVOID ConnectionPortCookie, PFLT_PORT* ClientPort)
 NTSTATUS HyUnregisterFilterClient(PVOID ConnectionPortCookie)
 {
     PAGED_CODE();
+
+    LOG_DEBUG("HyUnregisterFilterClient\n");
 
     // Ensure we have a valid pointer to a port.
     if(!ConnectionPortCookie)

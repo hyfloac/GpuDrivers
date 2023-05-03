@@ -11,16 +11,21 @@
 #include "FilterConnectNotify.h"
 #include "FilterDisconnectNotify.h"
 #include "FilterMessageNotify.h"
+#include "Logging.h"
 
 #ifndef HY_USE_EMULATION
-  #define HY_USE_EMULATION (1)
+  #define HY_USE_EMULATION (0)
 #endif
 
 PFLT_FILTER FilterHandle;
 
 NTSTATUS InitDeviceComms(IN PDRIVER_OBJECT DriverObject)
 {
+    (void) DriverObject;
+
     PAGED_CODE();
+
+    LOG_DEBUG("InitDeviceComms\n");
 
 #if HY_USE_EMULATION
     // Init the filter port linked list.
@@ -114,6 +119,7 @@ NTSTATUS InitDeviceComms(IN PDRIVER_OBJECT DriverObject)
     // Start accepting filter requests.
     FltStartFiltering(FilterHandle);
 #else
+    LOG_DEBUG("Device comms are not used for a real device.\n");
 #endif
 
     return STATUS_SUCCESS;

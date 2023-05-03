@@ -4,6 +4,7 @@
 
 #include "AddDevice.h"
 #include "StopDevice.h"
+#include "Logging.h"
 
 #pragma code_seg("PAGE")
 
@@ -11,10 +12,13 @@ NTSTATUS HyStopDevice(IN_CONST_PVOID MiniportDeviceContext)
 {
     PAGED_CODE();
 
+    LOG_DEBUG("HyStopDevice\n");
+
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
+        LOG_ERROR("Invalid Parameter to HyStopDevice: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
