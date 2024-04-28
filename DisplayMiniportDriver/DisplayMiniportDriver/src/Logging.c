@@ -94,7 +94,7 @@ void HyLog(const char* const level, const size_t levelLength, const ULONG filter
         }
     }
     
-    DbgPrintEx(DPFLTR_DEFAULT_ID, filterLevel, "%s", logBuffer);
+    DbgPrintEx(DPFLTR_IHVVIDEO_ID, filterLevel, "%s", logBuffer);
 }
 
 const char* GetFileDeviceString(const DEVICE_TYPE deviceType)

@@ -1,4 +1,8 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_queryadapterinfo
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ntddk.h>
 #include <dispmprt.h>
 
@@ -15,6 +19,7 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
 NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo)
 {
     PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
 
     LOG_DEBUG("HyQueryAdapterInfo\n");
 
@@ -34,6 +39,8 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
         return STATUS_INVALID_PARAMETER_2;
     }
 
+    LOG_DEBUG("Querying Type %u, Input Size: %u, Output Size %u\n", pQueryAdapterInfo->Type, pQueryAdapterInfo->InputDataSize, pQueryAdapterInfo->OutputDataSize);
+
     switch(pQueryAdapterInfo->Type)
     {
         case DXGKQAITYPE_UMDRIVERPRIVATE: return FillUmDriverPrivate(hAdapter, pQueryAdapterInfo);
@@ -41,15 +48,15 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
         case DXGKQAITYPE_QUERYSEGMENT: return FillQuerySegment(hAdapter, pQueryAdapterInfo);
         default: return STATUS_NOT_IMPLEMENTED;
     }
-
-    // return STATUS_SUCCESS;
 }
 
 static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo)
 {
     (void) hAdapter;
 
-    PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG("Querying Driver Private Data");
 
     // Validate that the input data is not null.
     if(!pQueryAdapterInfo->pInputData)
@@ -68,14 +75,14 @@ static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     // Validate that the input data size matches our internal data type.
     if(pQueryAdapterInfo->InputDataSize != sizeof(HyPrivateDriverData))
     {
-        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->InputDataSize != sizeof(HyPrivateDriverData) [%z]\n", sizeof(HyPrivateDriverData));
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->InputDataSize [%zu] != sizeof(HyPrivateDriverData) [%zu]\n", pQueryAdapterInfo->InputDataSize, sizeof(HyPrivateDriverData));
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
     // Validate that the output data size matches our internal data type.
     if(pQueryAdapterInfo->OutputDataSize != sizeof(HyPrivateDriverData))
     {
-        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->OutputDataSize != sizeof(HyPrivateDriverData) [%z]\n", sizeof(HyPrivateDriverData));
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: pQueryAdapterInfo->OutputDataSize [%zu] != sizeof(HyPrivateDriverData) [%zu]\n", sizeof(HyPrivateDriverData));
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
@@ -92,7 +99,7 @@ static NTSTATUS FillUmDriverPrivate(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     // Validate that the internally stored size matches our internal data type.
     if(inputDriverData->Size != sizeof(HyPrivateDriverData))
     {
-        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Size != sizeof(HyPrivateDriverData) [%z]\n", sizeof(HyPrivateDriverData));
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Size != sizeof(HyPrivateDriverData) [%zu]\n", pQueryAdapterInfo->OutputDataSize, sizeof(HyPrivateDriverData));
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
@@ -118,7 +125,9 @@ static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERY
 {
     (void) hAdapter;
 
-    PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG("Querying Driver Capabilities\n");
 
     if(!pQueryAdapterInfo->pOutputData)
     {
@@ -128,7 +137,7 @@ static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERY
 
     if(pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_DRIVERCAPS))
     {
-        LOG_ERROR("Invalid Parameter to FillDriverCaps: pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_DRIVERCAPS) [%z]\n", sizeof(DXGK_DRIVERCAPS));
+        LOG_ERROR("Invalid Parameter to FillDriverCaps: pQueryAdapterInfo->OutputDataSize [%zu] != sizeof(DXGK_DRIVERCAPS) [%zu]\n", pQueryAdapterInfo->OutputDataSize, sizeof(DXGK_DRIVERCAPS));
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -141,7 +150,7 @@ static NTSTATUS FillDriverCaps(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERY
     driverCaps->PointerCaps.MaskedColor = FALSE;
     driverCaps->PointerCaps.Reserved = 0;
 
-    driverCaps->MemoryManagementCaps.IoMmuSupported = TRUE;
+    // driverCaps->MemoryManagementCaps.IoMmuSupported = TRUE;
 
     driverCaps->SupportNonVGA = TRUE;
 
@@ -152,7 +161,9 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
 {
     (void) hAdapter;
 
-    PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG("Querying Segments\n");
 
     // Validate that the input data is not null.
     if(!pQueryAdapterInfo->pInputData)
@@ -170,17 +181,17 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
 
     if(pQueryAdapterInfo->InputDataSize != sizeof(DXGK_QUERYSEGMENTIN))
     {
-        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->InputDataSize != sizeof(DXGK_QUERYSEGMENTIN) [%z]\n", sizeof(DXGK_QUERYSEGMENTIN));
+        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->InputDataSize [%zu] != sizeof(DXGK_QUERYSEGMENTIN) [%zu]\n", pQueryAdapterInfo->InputDataSize, sizeof(DXGK_QUERYSEGMENTIN));
         return STATUS_INVALID_PARAMETER;
     }
 
     if(pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_QUERYSEGMENTOUT))
     {
-        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->OutputDataSize != sizeof(DXGK_QUERYSEGMENTOUT) [%z]\n", sizeof(DXGK_QUERYSEGMENTOUT));
+        LOG_ERROR("Invalid Parameter to FillQuerySegment: pQueryAdapterInfo->OutputDataSize [%zu] != sizeof(DXGK_QUERYSEGMENTOUT) [%zu]\n", pQueryAdapterInfo->OutputDataSize, sizeof(DXGK_QUERYSEGMENTOUT));
         return STATUS_INVALID_PARAMETER;
     }
 
-    HyMiniportDeviceContext* const deviceContext = hAdapter;
+    const HyMiniportDeviceContext* const deviceContext = hAdapter;
     DXGK_QUERYSEGMENTOUT* const querySegment = pQueryAdapterInfo->pOutputData;
 
     if(querySegment->pSegmentDescriptor)
@@ -209,10 +220,10 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
             querySegment->pSegmentDescriptor[0].Flags.PitchAlignment = FALSE;
             querySegment->pSegmentDescriptor[0].Flags.PopulatedFromSystemMemory = TRUE;
 
-            querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.ReservedSysMem = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.SupportsCpuHostAperture = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.SupportsCachedCpuHostAperture = FALSE;
+            // querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = FALSE;
+            // querySegment->pSegmentDescriptor[0].Flags.ReservedSysMem = FALSE;
+            // querySegment->pSegmentDescriptor[0].Flags.SupportsCpuHostAperture = FALSE;
+            // querySegment->pSegmentDescriptor[0].Flags.SupportsCachedCpuHostAperture = FALSE;
         }
     }
     else
@@ -236,3 +247,7 @@ static NTSTATUS FillQuerySegment(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUE
 
     return STATUS_SUCCESS;
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif

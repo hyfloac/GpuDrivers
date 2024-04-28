@@ -1,4 +1,8 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_start_device
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "StartDevice.h"
 #include "AddDevice.h"
 #include "Config.h"
@@ -12,6 +16,7 @@ NTSTATUS CheckDevice(HyMiniportDeviceContext* MiniportDeviceContext);
 NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO DxgkStartInfo, IN_PDXGKRNL_INTERFACE DxgkInterface, OUT_PULONG NumberOfVideoPresentSurfaces, OUT_PULONG NumberOfChildren)
 {
     PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
 
     LOG_DEBUG("HyStartDevice\n");
 
@@ -142,7 +147,8 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
             if(!NT_SUCCESS(getEnumeratorLengthStatus) && getEnumeratorLengthStatus != STATUS_BUFFER_TOO_SMALL)
             {
                 LOG_ERROR("HyStartDevice: Failed to get the length of DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorLengthStatus);
-                HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+                // This seems to be causing a BugCheck (BSOD).
+                // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
                 if(getEnumeratorLengthStatus == STATUS_INVALID_PARAMETER_2)
                 {
@@ -170,7 +176,8 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
                 if(!enumerator)
                 {
                     LOG_ERROR("HyStartDevice: Failed to allocate PCI Device String Buffer.\n");
-                    HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+                    // This seems to be causing a BugCheck (BSOD).
+                    // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
                     return STATUS_NO_MEMORY;
                 }
@@ -189,7 +196,8 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
             if(getEnumeratorStatus != STATUS_BUFFER_TOO_SMALL)
             {
                 LOG_ERROR("HyStartDevice: Failed to get DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorStatus);
-                HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+                // This seems to be causing a BugCheck (BSOD).
+                // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
                 // Only free if it was dynamically allocated.
                 if(enumerator != staticEnumeratorBuffer)
@@ -228,7 +236,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
             deviceContext->Flags.IsEmulated = TRUE;
         }
 
-        LOG_DEBUG("HyStartDevice: Device Name: %ls\n", enumerator);
+        LOG_DEBUG("HyStartDevice: Device ID Prefix: %ls\n", enumerator);
 
         // Only free if it was dynamically allocated.
         if(enumerator != staticEnumeratorBuffer)
@@ -292,6 +300,11 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
         }
     }
 
+    volatile UINT* const displayEnable0 = HyGetDeviceConfigRegister(deviceContext, BASE_REGISTER_DI + SIZE_REGISTER_DI * 0 + OFFSET_REGISTER_DI_ENABLE);
+
+    // Enable Display
+    *displayEnable0 = 1;
+
     deviceContext->Flags.IsStarted = TRUE;
 
     // We'll specify that we have one VidPN source.
@@ -330,3 +343,7 @@ NTSTATUS CheckDevice(HyMiniportDeviceContext* const MiniportDeviceContext)
     }
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif

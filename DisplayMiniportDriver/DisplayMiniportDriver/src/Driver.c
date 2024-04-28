@@ -20,6 +20,18 @@ extern "C" {
 #include "SetVidPnSourceVisibility.h"
 #include "StopDeviceAndReleasePostDisplayOwnership.h"
 #include "QueryInterface.h"
+#include "DispatchIoRequest.h"
+#include "InterruptRoutine.h"
+#include "DpcRoutine.h"
+#include "QueryChildRelations.h"
+#include "QueryChildStatus.h"
+#include "QueryDeviceDescriptor.h"
+#include "NotifyAcpiEvent.h"
+#include "ControlEtwLogging.h"
+
+#ifndef BUILD_AS_KMDOD
+  #define BUILD_AS_KMDOD (1)
+#endif
 
 #pragma code_seg(push)
 #pragma code_seg("PAGE")
@@ -40,6 +52,14 @@ BOOLEAN DdiNoOpBool(void)  // NOLINT(clang-diagnostic-strict-prototypes)
     LOG_DEBUG("DdiNoOpBool\n");
     return TRUE;
 }
+
+static void HyUnload(void)
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG("HyUnload\n");
+}
+
 #pragma code_seg(pop)
 
 #pragma code_seg("INIT")
@@ -76,6 +96,68 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
         }
     }
 
+#if BUILD_AS_KMDOD
+    // Allocate (on the stack) and zero out the list pointers required for Display Miniport Display-Only Driver.
+    KMDDOD_INITIALIZATION_DATA driverInitializationData;
+    (void) RtlZeroMemory(&driverInitializationData, sizeof(driverInitializationData));
+
+    // // Set the version to whatever is currently in the header we're compiling with.
+    // driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
+    driverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_WIN8;
+
+    driverInitializationData.DxgkDdiAddDevice = HyAddDevice;
+    driverInitializationData.DxgkDdiStartDevice = HyStartDevice;
+    driverInitializationData.DxgkDdiStopDevice = HyStopDevice;
+    driverInitializationData.DxgkDdiRemoveDevice = HyRemoveDevice;
+    driverInitializationData.DxgkDdiDispatchIoRequest = HyDispatchIoRequest;
+    driverInitializationData.DxgkDdiInterruptRoutine = HyInterruptRoutine;
+    driverInitializationData.DxgkDdiDpcRoutine = HyDpcRoutine;
+    driverInitializationData.DxgkDdiQueryChildRelations = HyQueryChildRelations;
+    driverInitializationData.DxgkDdiQueryChildStatus = HyQueryChildStatus;
+    driverInitializationData.DxgkDdiQueryDeviceDescriptor = HyQueryDeviceDescriptor;
+    driverInitializationData.DxgkDdiSetPowerState = HySetPowerState;
+    driverInitializationData.DxgkDdiNotifyAcpiEvent = HyNotifyAcpiEvent;
+    driverInitializationData.DxgkDdiResetDevice = HyResetDevice;
+    driverInitializationData.DxgkDdiUnload = HyUnload;
+    driverInitializationData.DxgkDdiQueryInterface = HyQueryInterface;
+    driverInitializationData.DxgkDdiControlEtwLogging = HyControlEtwLogging;
+    driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
+
+    driverInitializationData.DxgkDdiSetPalette = (PDXGKDDI_SETPALETTE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetPointerPosition = (PDXGKDDI_SETPOINTERPOSITION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetPointerShape = (PDXGKDDI_SETPOINTERSHAPE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiEscape = (PDXGKDDI_ESCAPE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCollectDbgInfo = (PDXGKDDI_COLLECTDBGINFO) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiIsSupportedVidPn = (PDXGKDDI_ISSUPPORTEDVIDPN) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiRecommendFunctionalVidPn = (PDXGKDDI_RECOMMENDFUNCTIONALVIDPN) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiEnumVidPnCofuncModality = (PDXGKDDI_ENUMVIDPNCOFUNCMODALITY) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiSetVidPnSourceVisibility = HySetVidPnSourceVisibility;
+
+    driverInitializationData.DxgkDdiCommitVidPn = (PDXGKDDI_COMMITVIDPN) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = (PDXGKDDI_UPDATEACTIVEVIDPNPRESENTPATH) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiRecommendMonitorModes = (PDXGKDDI_RECOMMENDMONITORMODES) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiGetScanLine = (PDXGKDDI_GETSCANLINE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiQueryVidPnHWCapability = (PDXGKDDI_QUERYVIDPNHWCAPABILITY) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiPresentDisplayOnly = (PDXGKDDI_PRESENTDISPLAYONLY) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiStopDeviceAndReleasePostDisplayOwnership = HyStopDeviceAndReleasePostDisplayOwnership;
+
+    driverInitializationData.DxgkDdiGetChildContainerId = (PDXGKDDI_GET_CHILD_CONTAINER_ID) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiControlInterrupt = (PDXGKDDI_CONTROLINTERRUPT) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiSetPowerComponentFState = (PDXGKDDISETPOWERCOMPONENTFSTATE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiPowerRuntimeControlRequest = (PDXGKDDIPOWERRUNTIMECONTROLREQUEST) DdiNoOpNTSTATUS;
+
+    driverInitializationData.DxgkDdiNotifySurpriseRemoval = (PDXGKDDI_NOTIFY_SURPRISE_REMOVAL) DdiNoOpNTSTATUS;
+
+    // driverInitializationData.DxgkDdiPowerRuntimeSetDeviceHandle = (PDXGKDDI_POWERRUNTIMESETDEVICEHANDLE) DdiNoOpNTSTATUS;
+
+    // Initialize DXGK and return the result back to the kernel.
+    return DxgkInitializeDisplayOnlyDriver(DriverObject, RegistryPath, &driverInitializationData);
+#else
     // Allocate (on the stack) and zero out the list pointers required for Display Miniport Driver.
     DRIVER_INITIALIZATION_DATA driverInitializationData;
     (void) RtlZeroMemory(&driverInitializationData, sizeof(driverInitializationData));
@@ -88,18 +170,18 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiStartDevice = HyStartDevice;
     driverInitializationData.DxgkDdiStopDevice = HyStopDevice;
     driverInitializationData.DxgkDdiRemoveDevice = HyRemoveDevice;
-    driverInitializationData.DxgkDdiDispatchIoRequest = (PDXGKDDI_DISPATCH_IO_REQUEST) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiInterruptRoutine = (PDXGKDDI_INTERRUPT_ROUTINE) DdiNoOpBool;
-    driverInitializationData.DxgkDdiDpcRoutine = (PDXGKDDI_DPC_ROUTINE) DdiNoOpVoid;
-    driverInitializationData.DxgkDdiQueryChildRelations = (PDXGKDDI_QUERY_CHILD_RELATIONS) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiQueryChildStatus = (PDXGKDDI_QUERY_CHILD_STATUS) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiQueryDeviceDescriptor = (PDXGKDDI_QUERY_DEVICE_DESCRIPTOR) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDispatchIoRequest = HyDispatchIoRequest;
+    driverInitializationData.DxgkDdiInterruptRoutine = HyInterruptRoutine;
+    driverInitializationData.DxgkDdiDpcRoutine = HyDpcRoutine;
+    driverInitializationData.DxgkDdiQueryChildRelations = HyQueryChildRelations;
+    driverInitializationData.DxgkDdiQueryChildStatus = HyQueryChildStatus;
+    driverInitializationData.DxgkDdiQueryDeviceDescriptor = HyQueryDeviceDescriptor;
     driverInitializationData.DxgkDdiSetPowerState = HySetPowerState;
-    driverInitializationData.DxgkDdiNotifyAcpiEvent = (PDXGKDDI_NOTIFY_ACPI_EVENT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiNotifyAcpiEvent = HyNotifyAcpiEvent;
     driverInitializationData.DxgkDdiResetDevice = HyResetDevice;
-    driverInitializationData.DxgkDdiUnload = DdiNoOpVoid;
+    driverInitializationData.DxgkDdiUnload = HyUnload;
     driverInitializationData.DxgkDdiQueryInterface = HyQueryInterface;
-    driverInitializationData.DxgkDdiControlEtwLogging = (PDXGKDDI_CONTROL_ETW_LOGGING) DdiNoOpVoid;
+    driverInitializationData.DxgkDdiControlEtwLogging = HyControlEtwLogging;
     driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
     driverInitializationData.DxgkDdiCreateDevice = (PDXGKDDI_CREATEDEVICE) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiCreateAllocation = (PDXGKDDI_CREATEALLOCATION) DdiNoOpNTSTATUS;
@@ -153,6 +235,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
 
     // Initialize DXGK and return the result back to the kernel.
     return DxgkInitialize(DriverObject, RegistryPath, &driverInitializationData);
+#endif
 }
 
 _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)

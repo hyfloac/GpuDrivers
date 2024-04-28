@@ -2,8 +2,8 @@
 
 #include <wdm.h>
 
-#define POOL_TAG_DEVICE_CONTEXT ('CDyH')
-#define POOL_TAG_LOGGING        ('gLyH')
+#define POOL_TAG_DEVICE_CONTEXT ('CDSG')
+#define POOL_TAG_LOGGING        ('gLSG')
 
 void* HyAllocate(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);
 void* HyAllocateZeroed(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);

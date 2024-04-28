@@ -13,12 +13,13 @@ PnpLockdown=1
 
 [DestinationDirs]
 DefaultDestDir = 13
+Drivers_Dir = 13
 
 [SourceDisksNames]
 1 = %DiskName%,,,""
 
 [SourceDisksFiles]
-DisplayMiniportDriver.sys  = 1,,
+DisplayMiniportDriver.sys = 1,,
 
 ;*****************************************
 ; Install Section
@@ -28,10 +29,10 @@ DisplayMiniportDriver.sys  = 1,,
 ExcludeFromSelect=*
 
 [Manufacturer]
-%ManufacturerName%=Standard,NT$ARCH$
+%ManufacturerName%=GrafikaStrahlen,NT$ARCH$.10.0...16299
 
-[Standard.NT$ARCH$]
-%DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, PCI\VEN_FFFD&DEV_0001 ; TODO: edit hw-id
+[GrafikaStrahlen.NT$ARCH$.10.0...16299]
+%DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, PCI\VEN_FFFD&DEV_0001&CC_0300
 
 [DisplayMiniportDriver_Device.NT]
 CopyFiles=Drivers_Dir

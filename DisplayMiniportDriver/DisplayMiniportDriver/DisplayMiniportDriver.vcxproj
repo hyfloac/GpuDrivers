@@ -100,6 +100,7 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -108,6 +109,7 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -116,6 +118,7 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -124,6 +127,7 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -136,30 +140,38 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DriverSign>
@@ -177,11 +189,13 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableModules>false</EnableModules>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -208,11 +222,12 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableModules>false</EnableModules>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -237,11 +252,13 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableModules>false</EnableModules>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -268,11 +285,12 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableModules>false</EnableModules>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -285,21 +303,67 @@
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <ClCompile>
+      <CompileAsManaged>false</CompileAsManaged>
+      <SDLCheck>true</SDLCheck>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <EnableModules>false</EnableModules>
+      <CallingConvention>StdCall</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <ClCompile>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAsManaged>false</CompileAsManaged>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <EnableModules>false</EnableModules>
+      <CallingConvention>StdCall</CallingConvention>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <ClCompile>
+      <CompileAsManaged>false</CompileAsManaged>
+      <SDLCheck>true</SDLCheck>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <EnableModules>false</EnableModules>
+      <CallingConvention>StdCall</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
+    <ClCompile>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAsManaged>false</CompileAsManaged>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <EnableModules>false</EnableModules>
+      <CallingConvention>StdCall</CallingConvention>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="DisplayMiniportDriver.inf" />
@@ -309,7 +373,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AddDevice.c" />
+    <ClCompile Include="src\ControlEtwLogging.c" />
     <ClCompile Include="src\DeviceComms.c" />
+    <ClCompile Include="src\DispatchIoRequest.c" />
+    <ClCompile Include="src\DpcRoutine.c" />
     <ClCompile Include="src\Driver.c" />
     <ClCompile Include="src\FilterConnectNotify.c" />
     <ClCompile Include="src\FilterDeviceManager.c" />
@@ -318,9 +385,16 @@
     <ClCompile Include="src\FilterInstanceSetup.c" />
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
+    <ClCompile Include="src\Guids.c" />
+    <ClCompile Include="src\I2CInterface.c" />
+    <ClCompile Include="src\InterruptRoutine.c" />
     <ClCompile Include="src\Logging.c" />
     <ClCompile Include="src\MemoryAllocator.c" />
+    <ClCompile Include="src\NotifyAcpiEvent.c" />
     <ClCompile Include="src\QueryAdapterInfo.c" />
+    <ClCompile Include="src\QueryChildRelations.c" />
+    <ClCompile Include="src\QueryChildStatus.c" />
+    <ClCompile Include="src\QueryDeviceDescriptor.c" />
     <ClCompile Include="src\QueryInterface.c" />
     <ClCompile Include="src\RemoveDevice.c" />
     <ClCompile Include="src\ResetDevice.c" />
@@ -334,7 +408,10 @@
     <ClInclude Include="include\AddDevice.h" />
     <ClInclude Include="include\comms\MessageType.h" />
     <ClInclude Include="include\Config.h" />
+    <ClInclude Include="include\ControlEtwLogging.h" />
     <ClInclude Include="include\DeviceComms.h" />
+    <ClInclude Include="include\DispatchIoRequest.h" />
+    <ClInclude Include="include\DpcRoutine.h" />
     <ClInclude Include="include\FilterConnectNotify.h" />
     <ClInclude Include="include\FilterDeviceManager.h" />
     <ClInclude Include="include\FilterDisconnectNotify.h" />
@@ -342,9 +419,16 @@
     <ClInclude Include="include\FilterInstanceSetup.h" />
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
+    <ClInclude Include="include\I2CInterface.h" />
+    <ClInclude Include="include\InterruptRoutine.h" />
     <ClInclude Include="include\Logging.h" />
+    <ClInclude Include="include\RegisterMemCopy.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
+    <ClInclude Include="include\NotifyAcpiEvent.h" />
     <ClInclude Include="include\QueryAdapterInfo.h" />
+    <ClInclude Include="include\QueryChildRelations.h" />
+    <ClInclude Include="include\QueryChildStatus.h" />
+    <ClInclude Include="include\QueryDeviceDescriptor.h" />
     <ClInclude Include="include\QueryInterface.h" />
     <ClInclude Include="include\RemoveDevice.h" />
     <ClInclude Include="include\ResetDevice.h" />

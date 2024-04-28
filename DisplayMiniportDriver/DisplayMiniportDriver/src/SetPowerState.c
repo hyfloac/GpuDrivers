@@ -1,4 +1,8 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_set_power_state
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ntddk.h>
 #include <dispmprt.h>
 
@@ -14,6 +18,7 @@ NTSTATUS HySetPowerState(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG DeviceUi
     (void) ActionType;
 
     PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
 
     LOG_DEBUG("HySetPowerState\n");
 
@@ -50,3 +55,8 @@ NTSTATUS HySetPowerState(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG DeviceUi
 
     return STATUS_SUCCESS;;
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+

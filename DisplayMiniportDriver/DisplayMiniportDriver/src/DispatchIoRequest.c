@@ -1,0 +1,43 @@
+// See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_dispatch_io_request
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "DispatchIoRequest.h"
+#include "Logging.h"
+
+NTSTATUS HyDispatchIoRequest(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG VidPnSourceId, IN_PVIDEO_REQUEST_PACKET VideoRequestPacket)
+{
+    (void) MiniportDeviceContext;
+    (void) VidPnSourceId;
+    (void) VideoRequestPacket;
+        
+    PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG("HyDispatchIoRequest\n");
+
+    // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
+    // This should probably never happen.
+    if(!MiniportDeviceContext)
+    {
+        LOG_ERROR("Invalid Parameter to HyDispatchIoRequest: MiniportDeviceContext\n");
+        return STATUS_INVALID_PARAMETER_1;
+    }
+
+    // If VideoRequestPacket is null inform the kernel that the second parameter was invalid.
+    // This should probably never happen.
+    if(!VideoRequestPacket)
+    {
+        LOG_ERROR("Invalid Parameter to HyDispatchIoRequest: VideoRequestPacket\n");
+        return STATUS_INVALID_PARAMETER_2;
+    }
+
+    VideoRequestPacket->StatusBlock->Status = STATUS_NOT_SUPPORTED;
+
+    return STATUS_NOT_SUPPORTED;
+}
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif

@@ -18,6 +18,7 @@ static NTSTATUS GetAdapterInfo(HyMiniportDeviceContext* const miniportDeviceCont
 NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID MiniportDeviceContext)
 {
     PAGED_CODE();
+    CHECK_IRQL(PASSIVE_LEVEL);
 
     LOG_DEBUG("HyAddDevice\n");
 
@@ -58,6 +59,10 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
         const NTSTATUS getAdapterStatus = GetAdapterInfo(deviceContext);
         if(!NT_SUCCESS(getAdapterStatus))
         {
+            // Free the deviceContext on failure.
+            // 2024-04-26: This was causing a memory leak.
+            HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+
             return getAdapterStatus;
         }
     }
@@ -97,12 +102,16 @@ static NTSTATUS GetAdapterInfo(HyMiniportDeviceContext* const miniportDeviceCont
         // Propagate errors.
         if(!NT_SUCCESS(getPciInterfaceStatus))
         {
+            // Free the pciInterface on failure.
+            // 2024-04-26: This was causing a memory leak.
+            HY_FREE(pciInterface, POOL_TAG_DEVICE_CONTEXT);
+            
             // Redirect positional invalid parameter errors to a generic invalid parameter error.
             if(getPciInterfaceStatus == STATUS_INVALID_PARAMETER_1 || getPciInterfaceStatus == STATUS_INVALID_PARAMETER_2)
             {
                 return STATUS_INVALID_PARAMETER;
             }
-
+            
             return getPciInterfaceStatus;
         }
     }
@@ -165,6 +174,10 @@ static NTSTATUS GetAdapterInfo(HyMiniportDeviceContext* const miniportDeviceCont
         pciInterface->InterfaceDereference(pciInterface->Context);
     }
 
+    // Free the pciInterface after we've de-referenced it.
+    // 2024-04-26: This was causing a memory leak.
+    HY_FREE(pciInterface, POOL_TAG_DEVICE_CONTEXT);
+
     return retStatus;
 }
 
@@ -207,6 +220,8 @@ static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERF
     }
 
     // Required by verifier
+    // Initialize the status to error in case the bus driver does not 
+    // set it correctly.
     irp->IoStatus.Status = STATUS_NOT_SUPPORTED;
 
     // Get the stack location info for the request.
@@ -235,7 +250,8 @@ static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERF
     ObDereferenceObject(targetObject);
 
     // Check for and log errors.
-    if(!NT_SUCCESS(callDriverStatus) || !NT_SUCCESS(ioStatusBlock.Status))
+    // if(!NT_SUCCESS(callDriverStatus) || !NT_SUCCESS(ioStatusBlock.Status))
+    if(!NT_SUCCESS(callDriverStatus))
     {
         LOG_ERROR("Failed to query BUS_INTERFACE_STANDARD. 0x%08X 0x%08X\n", callDriverStatus, ioStatusBlock.Status);
         return STATUS_NOINTERFACE;

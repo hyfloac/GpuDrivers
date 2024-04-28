@@ -33,7 +33,22 @@ DECL_LOG(Error, DPFLTR_ERROR_LEVEL);
         HyLog##LEVEL(logFuncAddress, FMT , ## __VA_ARGS__); \
     }  while(0)
 
-#define LOG_DEBUG(FMT, ...) internal_LOG(Debug, FMT , ## __VA_ARGS__)
+#if DEBUG
+  #define LOG_DEBUG(FMT, ...) internal_LOG(Debug, FMT , ## __VA_ARGS__)
+#else
+  #define LOG_DEBUG(FMT, ...) do { } while(0)
+#endif
 #define LOG_INFO(FMT, ...) internal_LOG(Info, FMT , ## __VA_ARGS__)
 #define LOG_WARN(FMT, ...) internal_LOG(Warn, FMT , ## __VA_ARGS__)
 #define LOG_ERROR(FMT, ...) internal_LOG(Error, FMT , ## __VA_ARGS__)
+
+#if DEBUG
+  #define CHECK_IRQL(IRQL)                                                                                                \
+      if(KeGetCurrentIrql() > (IRQL))                                                                                     \
+      {                                                                                                                   \
+          LOG_DEBUG("IRQL %d did not match the required IRQL of %d for %s.\n", KeGetCurrentIrql(), (IRQL), __FUNCTION__); \
+          __debugbreak();                                                                                                 \
+      }
+#else
+  #define CHECK_IRQL(IRQL) do { } while(0)
+#endif

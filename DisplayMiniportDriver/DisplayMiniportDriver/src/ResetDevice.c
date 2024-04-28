@@ -1,21 +1,34 @@
+// See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_reset_device
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ResetDevice.h"
 #include "Logging.h"
-
-#define REGISTER_RESET 0x000C
 
 void HyResetDevice(IN_CONST_PVOID MiniportDeviceContext)
 {
     LOG_DEBUG("HyResetDevice\n");
 
+    // If MiniportDeviceContext is null inform log that the parameter was invalid.
+    // This should probably never happen.
+    if(!MiniportDeviceContext)
+    {
+        LOG_ERROR("Invalid Parameter to HyResetDevice: MiniportDeviceContext\n");
+        return;
+    }
+
     // Get our context structure.
-    HyMiniportDeviceContext* const deviceContext = MiniportDeviceContext;
+    const HyMiniportDeviceContext* const deviceContext = MiniportDeviceContext;
 
     const volatile UINT* const resetReg = HyGetDeviceConfigRegister(deviceContext, REGISTER_RESET);
 
-#pragma warning(push)
-#pragma warning(disable:4189) /* local variable is initialized but not referenced */
-
     // We don't actually care about the value, reading the register is enough to reset the device.
-    UINT resetValue = *resetReg;
-#pragma warning(pop)
+    const UINT resetValue = *resetReg;
+
+    (void) resetValue;
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
