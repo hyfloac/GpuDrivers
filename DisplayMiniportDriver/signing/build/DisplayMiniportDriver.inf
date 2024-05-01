@@ -8,7 +8,7 @@ Class=Display ; TODO: specify appropriate Class
 ClassGuid={4d36e968-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
 Provider=%ManufacturerName%
 CatalogFile=DisplayMiniportDriver.cat
-DriverVer= ; TODO: set DriverVer in stampinf property pages
+DriverVer = 04/30/2024,1.0.20.82
 PnpLockdown=1
 
 [DestinationDirs]
@@ -29,9 +29,9 @@ DisplayMiniportDriver.sys = 1,,
 ExcludeFromSelect=*
 
 [Manufacturer]
-%ManufacturerName%=GrafikaStrahlen,NT$ARCH$.10.0...16299
+%ManufacturerName%=GrafikaStrahlen,NTamd64.10.0...16299
 
-[GrafikaStrahlen.NT$ARCH$.10.0...16299]
+[GrafikaStrahlen.NTamd64.10.0...16299]
 %DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, PCI\VEN_FFFD&DEV_0001&CC_0300
 
 [DisplayMiniportDriver_Device.NT]

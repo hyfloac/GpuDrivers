@@ -1,12 +1,18 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdarg.h>
 #include <ntddk.h>
 
+#pragma warning(push)
+#pragma warning(disable: 4505)
 static void __declspec(noinline) HyGetCallAddress(void** address)
 {
     *address = _ReturnAddress();
 }
+#pragma warning(pop)
 
 void HyLog(const char* level, size_t levelLength, ULONG filterLevel, const void* address, const char* fmt, va_list args);
 
@@ -51,4 +57,8 @@ DECL_LOG(Error, DPFLTR_ERROR_LEVEL);
       }
 #else
   #define CHECK_IRQL(IRQL) do { } while(0)
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" */
 #endif

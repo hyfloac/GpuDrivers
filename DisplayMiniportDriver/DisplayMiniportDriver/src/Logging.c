@@ -8,7 +8,7 @@ static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, co
 {
     (void) memcpy(logBuffer + 1, level, levelLength);
 
-    size_t index = levelLength;
+    size_t index = levelLength + 1;
 
     logBuffer[0] = '[';
     logBuffer[index++] = ']';
@@ -48,6 +48,14 @@ static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, co
 
     // Ensure there is a null terminator just in case.
     logBuffer[bufferSize - 1] = '\0';
+    if(logBuffer[bufferSize - 3] != '\n')
+    {
+        logBuffer[bufferSize - 2] = '\n';
+    }
+    else
+    {
+        logBuffer[bufferSize - 2] = '\0';
+    }
 
     return STATUS_SUCCESS;
 }

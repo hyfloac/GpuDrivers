@@ -56,6 +56,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <Driver_SpectreMitigation>false</Driver_SpectreMitigation>
     <_NT_TARGET_VERSION>0x0603</_NT_TARGET_VERSION>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <TargetVersion>WindowsV6.3</TargetVersion>
@@ -80,6 +81,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <Driver_SpectreMitigation>false</Driver_SpectreMitigation>
     <_NT_TARGET_VERSION>0x0603</_NT_TARGET_VERSION>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <TargetVersion>WindowsV6.3</TargetVersion>
@@ -101,6 +103,7 @@
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
     <CharacterSet>MultiByte</CharacterSet>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -119,6 +122,7 @@
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
     <CharacterSet>MultiByte</CharacterSet>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -135,6 +139,14 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -203,6 +215,12 @@
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DriverSign>
@@ -235,6 +253,12 @@
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DriverSign>
@@ -266,6 +290,16 @@
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+      <SpecifyDriverVerDirectiveVersion>true</SpecifyDriverVerDirectiveVersion>
+      <VersionHeaderPath>
+      </VersionHeaderPath>
+      <SpecifyDriverVerDirectiveDate>true</SpecifyDriverVerDirectiveDate>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DriverSign>
@@ -298,6 +332,12 @@
       <EntryPointSymbol>DriverEntry</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <DriverSign>
@@ -314,6 +354,12 @@
       <CompileAs>Default</CompileAs>
       <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DriverSign>
@@ -331,6 +377,12 @@
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
     </ClCompile>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DriverSign>
@@ -347,6 +399,12 @@
       <CompileAs>Default</CompileAs>
       <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DriverSign>
@@ -364,6 +422,12 @@
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
     </ClCompile>
+    <Inf>
+      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("version.txt"))</TimeStamp>
+    </Inf>
+    <PreBuildEvent>
+      <Command>python UpdatePatchVersion.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="DisplayMiniportDriver.inf" />
@@ -372,12 +436,16 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\AddDevice.c" />
-    <ClCompile Include="src\ControlEtwLogging.c" />
-    <ClCompile Include="src\DeviceComms.c" />
-    <ClCompile Include="src\DispatchIoRequest.c" />
-    <ClCompile Include="src\DpcRoutine.c" />
-    <ClCompile Include="src\Driver.c" />
+    <ClCompile Include="src\AddDevice.cpp" />
+    <ClCompile Include="src\BlockTransfer.cpp" />
+    <ClCompile Include="src\CommitVidPn.cpp" />
+    <ClCompile Include="src\ControlEtwLogging.cpp" />
+    <ClCompile Include="src\DeviceComms.cpp" />
+    <ClCompile Include="src\DevThunks.cpp" />
+    <ClCompile Include="src\DispatchIoRequest.cpp" />
+    <ClCompile Include="src\DpcRoutine.cpp" />
+    <ClCompile Include="src\Driver.cpp" />
+    <ClCompile Include="src\EnumVidPnCofuncModality.cpp" />
     <ClCompile Include="src\FilterConnectNotify.c" />
     <ClCompile Include="src\FilterDeviceManager.c" />
     <ClCompile Include="src\FilterDisconnectNotify.c" />
@@ -386,32 +454,43 @@
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\Guids.c" />
+    <ClCompile Include="src\HyDevice.cpp" />
     <ClCompile Include="src\I2CInterface.c" />
-    <ClCompile Include="src\InterruptRoutine.c" />
+    <ClCompile Include="src\InterruptRoutine.cpp" />
+    <ClCompile Include="src\IsSupportedVidPn.cpp" />
     <ClCompile Include="src\Logging.c" />
     <ClCompile Include="src\MemoryAllocator.c" />
-    <ClCompile Include="src\NotifyAcpiEvent.c" />
-    <ClCompile Include="src\QueryAdapterInfo.c" />
-    <ClCompile Include="src\QueryChildRelations.c" />
-    <ClCompile Include="src\QueryChildStatus.c" />
-    <ClCompile Include="src\QueryDeviceDescriptor.c" />
-    <ClCompile Include="src\QueryInterface.c" />
-    <ClCompile Include="src\RemoveDevice.c" />
-    <ClCompile Include="src\ResetDevice.c" />
-    <ClCompile Include="src\SetPowerState.c" />
-    <ClCompile Include="src\SetVidPnSourceVisibility.c" />
-    <ClCompile Include="src\StartDevice.c" />
-    <ClCompile Include="src\StopDevice.c" />
-    <ClCompile Include="src\StopDeviceAndReleasePostDisplayOwnership.c" />
+    <ClCompile Include="src\NotifyAcpiEvent.cpp" />
+    <ClCompile Include="src\PresentDisplayOnly.cpp" />
+    <ClCompile Include="src\QueryAdapterInfo.cpp" />
+    <ClCompile Include="src\QueryChildRelations.cpp" />
+    <ClCompile Include="src\QueryChildStatus.cpp" />
+    <ClCompile Include="src\QueryDeviceDescriptor.cpp" />
+    <ClCompile Include="src\QueryInterface.cpp" />
+    <ClCompile Include="src\RecommendFunctionalVidPn.cpp" />
+    <ClCompile Include="src\RegisterMemCopy.c" />
+    <ClCompile Include="src\RemoveDevice.cpp" />
+    <ClCompile Include="src\ResetDevice.cpp" />
+    <ClCompile Include="src\SetPowerState.cpp" />
+    <ClCompile Include="src\SetVidPnSourceVisibility.cpp" />
+    <ClCompile Include="src\StartDevice.cpp" />
+    <ClCompile Include="src\StopDevice.cpp" />
+    <ClCompile Include="src\StopDeviceAndReleasePostDisplayOwnership.cpp" />
+    <ClCompile Include="src\UpdateActiveVidPnPresentPath.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\AddDevice.h" />
+    <ClInclude Include="include\AddDevice.hpp" />
+    <ClInclude Include="include\BlockTransfer.hpp" />
+    <ClInclude Include="include\CommitVidPn.hpp" />
+    <ClInclude Include="include\Common.h" />
     <ClInclude Include="include\comms\MessageType.h" />
     <ClInclude Include="include\Config.h" />
-    <ClInclude Include="include\ControlEtwLogging.h" />
-    <ClInclude Include="include\DeviceComms.h" />
-    <ClInclude Include="include\DispatchIoRequest.h" />
-    <ClInclude Include="include\DpcRoutine.h" />
+    <ClInclude Include="include\ControlEtwLogging.hpp" />
+    <ClInclude Include="include\DeviceComms.hpp" />
+    <ClInclude Include="include\DevThunks.hpp" />
+    <ClInclude Include="include\DispatchIoRequest.hpp" />
+    <ClInclude Include="include\DpcRoutine.hpp" />
+    <ClInclude Include="include\EnumVidPnCofuncModality.hpp" />
     <ClInclude Include="include\FilterConnectNotify.h" />
     <ClInclude Include="include\FilterDeviceManager.h" />
     <ClInclude Include="include\FilterDisconnectNotify.h" />
@@ -419,24 +498,30 @@
     <ClInclude Include="include\FilterInstanceSetup.h" />
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
+    <ClInclude Include="include\HyDevice.hpp" />
     <ClInclude Include="include\I2CInterface.h" />
-    <ClInclude Include="include\InterruptRoutine.h" />
+    <ClInclude Include="include\InterruptRoutine.hpp" />
+    <ClInclude Include="include\IsSupportedVidPn.hpp" />
     <ClInclude Include="include\Logging.h" />
+    <ClInclude Include="include\Objects.hpp" />
+    <ClInclude Include="include\PresentDisplayOnly.hpp" />
+    <ClInclude Include="include\RecommendFunctionalVidPn.hpp" />
     <ClInclude Include="include\RegisterMemCopy.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
-    <ClInclude Include="include\NotifyAcpiEvent.h" />
-    <ClInclude Include="include\QueryAdapterInfo.h" />
-    <ClInclude Include="include\QueryChildRelations.h" />
-    <ClInclude Include="include\QueryChildStatus.h" />
-    <ClInclude Include="include\QueryDeviceDescriptor.h" />
-    <ClInclude Include="include\QueryInterface.h" />
-    <ClInclude Include="include\RemoveDevice.h" />
-    <ClInclude Include="include\ResetDevice.h" />
-    <ClInclude Include="include\SetPowerState.h" />
-    <ClInclude Include="include\SetVidPnSourceVisibility.h" />
-    <ClInclude Include="include\StartDevice.h" />
-    <ClInclude Include="include\StopDevice.h" />
-    <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.h" />
+    <ClInclude Include="include\NotifyAcpiEvent.hpp" />
+    <ClInclude Include="include\QueryAdapterInfo.hpp" />
+    <ClInclude Include="include\QueryChildRelations.hpp" />
+    <ClInclude Include="include\QueryChildStatus.hpp" />
+    <ClInclude Include="include\QueryDeviceDescriptor.hpp" />
+    <ClInclude Include="include\QueryInterface.hpp" />
+    <ClInclude Include="include\RemoveDevice.hpp" />
+    <ClInclude Include="include\ResetDevice.hpp" />
+    <ClInclude Include="include\SetPowerState.hpp" />
+    <ClInclude Include="include\SetVidPnSourceVisibility.hpp" />
+    <ClInclude Include="include\StartDevice.hpp" />
+    <ClInclude Include="include\StopDevice.hpp" />
+    <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.hpp" />
+    <ClInclude Include="include\UpdateActiveVidPnPresentPath.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

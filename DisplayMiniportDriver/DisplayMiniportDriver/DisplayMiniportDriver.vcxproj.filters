@@ -24,19 +24,19 @@
     </Inf>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Driver.c">
+    <ClCompile Include="src\Driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\AddDevice.c">
+    <ClCompile Include="src\AddDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RemoveDevice.c">
+    <ClCompile Include="src\RemoveDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MemoryAllocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\StartDevice.c">
+    <ClCompile Include="src\StartDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\FilterUnload.c">
@@ -60,31 +60,31 @@
     <ClCompile Include="src\FilterMessageNotify.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DeviceComms.c">
+    <ClCompile Include="src\DeviceComms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\StopDevice.c">
+    <ClCompile Include="src\StopDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\QueryAdapterInfo.c">
+    <ClCompile Include="src\QueryAdapterInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\StopDeviceAndReleasePostDisplayOwnership.c">
+    <ClCompile Include="src\StopDeviceAndReleasePostDisplayOwnership.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SetPowerState.c">
+    <ClCompile Include="src\SetPowerState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SetVidPnSourceVisibility.c">
+    <ClCompile Include="src\SetVidPnSourceVisibility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Logging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResetDevice.c">
+    <ClCompile Include="src\ResetDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\QueryInterface.c">
+    <ClCompile Include="src\QueryInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\I2CInterface.c">
@@ -93,28 +93,58 @@
     <ClCompile Include="src\Guids.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DispatchIoRequest.c">
+    <ClCompile Include="src\DispatchIoRequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\InterruptRoutine.c">
+    <ClCompile Include="src\InterruptRoutine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DpcRoutine.c">
+    <ClCompile Include="src\DpcRoutine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\QueryChildRelations.c">
+    <ClCompile Include="src\QueryChildRelations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\QueryChildStatus.c">
+    <ClCompile Include="src\QueryChildStatus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\QueryDeviceDescriptor.c">
+    <ClCompile Include="src\QueryDeviceDescriptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\NotifyAcpiEvent.c">
+    <ClCompile Include="src\NotifyAcpiEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ControlEtwLogging.c">
+    <ClCompile Include="src\ControlEtwLogging.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\IsSupportedVidPn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PresentDisplayOnly.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HyDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RegisterMemCopy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RecommendFunctionalVidPn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EnumVidPnCofuncModality.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CommitVidPn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UpdateActiveVidPnPresentPath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BlockTransfer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DevThunks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -122,13 +152,13 @@
     <ClInclude Include="include\MemoryAllocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\AddDevice.h">
+    <ClInclude Include="include\AddDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\RemoveDevice.h">
+    <ClInclude Include="include\RemoveDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\StartDevice.h">
+    <ClInclude Include="include\StartDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\FilterUnload.h">
@@ -152,67 +182,100 @@
     <ClInclude Include="include\FilterMessageNotify.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\DeviceComms.h">
+    <ClInclude Include="include\DeviceComms.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\StopDevice.h">
+    <ClInclude Include="include\StopDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\comms\MessageType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\QueryAdapterInfo.h">
+    <ClInclude Include="include\QueryAdapterInfo.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.h">
+    <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\SetPowerState.h">
+    <ClInclude Include="include\SetPowerState.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\SetVidPnSourceVisibility.h">
+    <ClInclude Include="include\SetVidPnSourceVisibility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ResetDevice.h">
+    <ClInclude Include="include\ResetDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\QueryInterface.h">
+    <ClInclude Include="include\QueryInterface.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\I2CInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\DispatchIoRequest.h">
+    <ClInclude Include="include\DispatchIoRequest.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\InterruptRoutine.h">
+    <ClInclude Include="include\InterruptRoutine.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\DpcRoutine.h">
+    <ClInclude Include="include\DpcRoutine.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\QueryChildRelations.h">
+    <ClInclude Include="include\QueryChildRelations.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\QueryChildStatus.h">
+    <ClInclude Include="include\QueryChildStatus.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\QueryDeviceDescriptor.h">
+    <ClInclude Include="include\QueryDeviceDescriptor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\NotifyAcpiEvent.h">
+    <ClInclude Include="include\NotifyAcpiEvent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ControlEtwLogging.h">
+    <ClInclude Include="include\ControlEtwLogging.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\RegisterMemCopy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IsSupportedVidPn.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PresentDisplayOnly.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Objects.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyDevice.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\EnumVidPnCofuncModality.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\RecommendFunctionalVidPn.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CommitVidPn.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\UpdateActiveVidPnPresentPath.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\BlockTransfer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DevThunks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -8,3 +8,6 @@
   #define HY_VENDOR_ID (0xFFFD)
 #endif
 
+#ifndef HY_BUILD_AS_KMDOD
+  #define HY_BUILD_AS_KMDOD (1)
+#endif
