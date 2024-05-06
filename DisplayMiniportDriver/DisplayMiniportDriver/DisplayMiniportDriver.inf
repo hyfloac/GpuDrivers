@@ -35,7 +35,7 @@ ExcludeFromSelect=*
 %DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, PCI\VEN_FFFD&DEV_0001&CC_0300
 
 [DisplayMiniportDriver_Device.NT]
-FeatureScore=FA
+FeatureScore=F6 ; Required for WDDM driver: https://learn.microsoft.com/en-us/windows-hardware/drivers/display/setting-the-driver-feature-score
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]

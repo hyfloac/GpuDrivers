@@ -54,6 +54,7 @@ NTSTATUS ThunkHyCollectDbgInfo(
     (void) hAdapter;
     (void) pCollectDbgInfo;
     LOG_DEBUG("ThunkHyCollectDbgInfo, Reason: 0x%08X\n", pCollectDbgInfo->Reason);
+
     return STATUS_SUCCESS;
 }
 

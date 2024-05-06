@@ -57,6 +57,7 @@ extern "C" {
 #endif
 
 #include "StopDeviceAndReleasePostDisplayOwnership.hpp"
+#include "ControlInterrupt.hpp"
 
 
 #include "DevThunks.hpp"
@@ -172,7 +173,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = HyUpdateActiveVidPnPresentPath;
     driverInitializationData.DxgkDdiRecommendMonitorModes = ThunkHyRecommendMonitorModes;
     // DxgkDdiGetScanLine & DxgkDdiControlInterrupt have to both be disabled in a KMDOD
-    //driverInitializationData.DxgkDdiGetScanLine = ThunkHyGetScanLine;
+    driverInitializationData.DxgkDdiGetScanLine = ThunkHyGetScanLine;
     driverInitializationData.DxgkDdiQueryVidPnHWCapability = ThunkHyQueryVidPnCapability;
 
     driverInitializationData.DxgkDdiPresentDisplayOnly = HyPresentDisplayOnly;
@@ -185,7 +186,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiGetChildContainerId = ThunkHyGetChildContainerId;
 
     // DxgkDdiGetScanLine & DxgkDdiControlInterrupt have to both be disabled in a KMDOD
-    //driverInitializationData.DxgkDdiControlInterrupt = ThunkHyControlInterrupt;
+    driverInitializationData.DxgkDdiControlInterrupt = HyControlInterrupt;
 
     driverInitializationData.DxgkDdiSetPowerComponentFState = ThunkHySetPowerComponentFState;
     //driverInitializationData.DxgkDdiPowerRuntimeControlRequest = ThunkHyPowerRuntimeControlRequest;
@@ -239,13 +240,13 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiSubmitCommand = (PDXGKDDI_SUBMITCOMMAND) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiPreemptCommand = (PDXGKDDI_PREEMPTCOMMAND) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiBuildPagingBuffer = (PDXGKDDI_BUILDPAGINGBUFFER) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiSetPalette = (PDXGKDDI_SETPALETTE) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiSetPointerPosition = (PDXGKDDI_SETPOINTERPOSITION) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiSetPointerShape = (PDXGKDDI_SETPOINTERSHAPE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetPalette = ThunkHySetPalette;
+    driverInitializationData.DxgkDdiSetPointerPosition = ThunkHySetPointerPosition;
+    driverInitializationData.DxgkDdiSetPointerShape = ThunkHySetPointerShape;
     driverInitializationData.DxgkDdiResetFromTimeout = (PDXGKDDI_RESETFROMTIMEOUT) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiRestartFromTimeout = (PDXGKDDI_RESTARTFROMTIMEOUT) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiEscape = (PDXGKDDI_ESCAPE) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiCollectDbgInfo = (PDXGKDDI_COLLECTDBGINFO) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiEscape = ThunkHyEscape;
+    driverInitializationData.DxgkDdiCollectDbgInfo = ThunkHyCollectDbgInfo;
     driverInitializationData.DxgkDdiQueryCurrentFence = (PDXGKDDI_QUERYCURRENTFENCE) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiIsSupportedVidPn = HyIsSupportedVidPn;
     driverInitializationData.DxgkDdiRecommendFunctionalVidPn = HyRecommendFunctionalVidPn;
@@ -256,7 +257,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
 
     driverInitializationData.DxgkDdiCommitVidPn = HyCommitVidPn;
     driverInitializationData.DxgkDdiRecommendVidPnTopology = (PDXGKDDI_RECOMMENDVIDPNTOPOLOGY) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiGetScanLine = (PDXGKDDI_GETSCANLINE) DdiNoOpNTSTATUS;
+    //driverInitializationData.DxgkDdiGetScanLine = (PDXGKDDI_GETSCANLINE) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiStopCapture = (PDXGKDDI_STOPCAPTURE) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiCreateOverlay = (PDXGKDDI_CREATEOVERLAY) DdiNoOpNTSTATUS;
 

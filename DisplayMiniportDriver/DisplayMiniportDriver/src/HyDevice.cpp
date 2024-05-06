@@ -562,6 +562,48 @@ NTSTATUS HyMiniportDevice::StopDevice() noexcept
 }
 
 #pragma code_seg("_KTEXT")
+BOOLEAN HyMiniportDevice::InterruptRoutine(IN_ULONG MessageNumber) noexcept
+{
+    (void) MessageNumber;
+
+    CHECK_IRQL(HIGH_LEVEL); // HIGH_LEVEL is the best approximation of DIRQL
+
+    volatile UINT* const pMessageType = GetDeviceConfigRegister(REGISTER_INTERRUPT_TYPE);
+
+    const UINT messageType = *pMessageType;
+    *pMessageType = 0;
+
+    if(messageType >= MSG_INTERRUPT_VSYNC_DISPLAY_0 && messageType < MSG_INTERRUPT_VSYNC_DISPLAY_0 + 8)
+    {
+        if(m_CurrentDisplayMode[0].Flags.VSyncEnabled == 0)
+        {
+            return TRUE;
+        }
+
+        DXGKARGCB_NOTIFY_INTERRUPT_DATA interruptData {};
+        interruptData.Flags.Value = 0;
+
+        if(m_CurrentDisplayMode[0].Flags.VSyncEnabled == 1)
+        {
+            interruptData.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
+            interruptData.CrtcVsync.VidPnTargetId = m_CurrentDisplayMode[0].VidPnTargetId;
+            interruptData.CrtcVsync.PhysicalAddress.QuadPart = static_cast<LONGLONG>(reinterpret_cast<UINT64>(m_CurrentDisplayMode[0].FrameBufferPointer));
+            interruptData.CrtcVsync.PhysicalAdapterMask = 0;
+        }
+        else if(m_CurrentDisplayMode[0].Flags.VSyncEnabled == 2)
+        {
+            LOG_DEBUG("HyMiniportDevice::InterruptRoutine: Handling Display-Only VSync, Target ID: %d\n", m_CurrentDisplayMode[0].VidPnTargetId);
+
+            interruptData.InterruptType = DXGK_INTERRUPT_DISPLAYONLY_VSYNC;
+            interruptData.DisplayOnlyVsync.VidPnTargetId = m_CurrentDisplayMode[0].VidPnTargetId;
+        }
+
+        m_DxgkInterface.DxgkCbNotifyInterrupt(m_DxgkInterface.DeviceHandle, &interruptData);
+    }
+
+    return TRUE;
+}
+
 void HyMiniportDevice::DpcRoutine() noexcept
 {
     CHECK_IRQL(DISPATCH_LEVEL);
@@ -1459,6 +1501,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     {
         // Get the target id for this path
         status = pVidPnTopologyInterface->pfnEnumPathTargetsFromSource(hVidPnTopology, pCommitVidPn->AffectedVidPnSourceId, pathIndex, &TargetId);
+        m_CurrentDisplayMode[0].VidPnTargetId = TargetId;
 
         if(!NT_SUCCESS(status))
         {
@@ -1568,7 +1611,7 @@ static UINT ColorTable[] = {
     0xFFFF007F,
     0xFFFF7F00,
 };
-static const UINT ColorTableSize = sizeof(ColorTable) / sizeof(ColorTable[0]);
+static constexpr UINT ColorTableSize = sizeof(ColorTable) / sizeof(ColorTable[0]);
 
 static UINT CurrentColorTable = 0;
 
@@ -1760,6 +1803,40 @@ NTSTATUS HyMiniportDevice::StopDeviceAndReleasePostDisplayOwnership(IN_CONST_D3D
     return StopDevice();
 }
 
+NTSTATUS HyMiniportDevice::ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE InterruptType, IN_BOOLEAN EnableInterrupt) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    if(InterruptType == DXGK_INTERRUPT_CRTC_VSYNC || InterruptType == DXGK_INTERRUPT_DISPLAYONLY_VSYNC)
+    {
+        if(!EnableInterrupt)
+        {
+            LOG_DEBUG("HyMiniportDevice::ControlInterrupt: VSync Disabled for Display 0.\n");
+            m_CurrentDisplayMode[0].Flags.VSyncEnabled = 0;
+        }
+        else if(InterruptType == DXGK_INTERRUPT_CRTC_VSYNC)
+        {
+            LOG_DEBUG("HyMiniportDevice::ControlInterrupt: CRTC VSync Enabled for Display 0.\n");
+            m_CurrentDisplayMode[0].Flags.VSyncEnabled = 1;
+        }
+        else if(InterruptType == DXGK_INTERRUPT_DISPLAYONLY_VSYNC)
+        {
+            LOG_DEBUG("HyMiniportDevice::ControlInterrupt: Display-Only VSync Enabled for Display 0.\n");
+            m_CurrentDisplayMode[0].Flags.VSyncEnabled = 2;
+        }
+
+        LOG_DEBUG("HyMiniportDevice::ControlInterrupt: %sabling VSync Interrupts for Display 0.\n", EnableInterrupt ? "En" : "Dis");
+
+        volatile UINT* const displayVSyncEnable = GetDeviceConfigRegister(BASE_REGISTER_DI + SIZE_REGISTER_DI * 0 + OFFSET_REGISTER_DI_VSYNC_ENABLE);
+
+        *displayVSyncEnable = EnableInterrupt ? 1 : 0;
+
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_NOT_IMPLEMENTED;
+}
+
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L711
 // Thus it is subject to the Microsoft Public License.
 NTSTATUS HyMiniportDevice::SetSourceModeAndPath(const D3DKMDT_VIDPN_SOURCE_MODE* pSourceMode, const D3DKMDT_VIDPN_PRESENT_PATH* pPath) noexcept
@@ -1769,6 +1846,7 @@ NTSTATUS HyMiniportDevice::SetSourceModeAndPath(const D3DKMDT_VIDPN_SOURCE_MODE*
     currentMode->SrcModeWidth = pSourceMode->Format.Graphics.PrimSurfSize.cx;
     currentMode->SrcModeHeight = pSourceMode->Format.Graphics.PrimSurfSize.cy;
     currentMode->Rotation = pPath->ContentTransformation.Rotation;
+    //currentMode->VidPnTargetId = pPath->VidPnTargetId;
 
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -2039,16 +2117,16 @@ NTSTATUS HyMiniportDevice::AddSingleTargetMode(const DXGK_VIDPNTARGETMODESET_INT
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx = m_CurrentDisplayMode[SourceId].DisplayInfo.Width;
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy = m_CurrentDisplayMode[SourceId].DisplayInfo.Height;
     pVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
-    pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    //pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60;
-    //pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1;
-    //pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = 100000;
-    //pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
-    //pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 4000000;
+    //pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    //pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    //pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    //pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    //pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60;
+    pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1;
+    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = 100000;
+    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
+    pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 4000000;
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM1_3_M1)
     pVidPnTargetModeInfo->VideoSignalInfo.AdditionalSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
     pVidPnTargetModeInfo->VideoSignalInfo.AdditionalSignalInfo.VSyncFreqDivider = 0;

@@ -45,7 +45,8 @@ public:
         UINT FullscreenPresent    : 1; // 0 if should use dirty rects for present
         UINT FrameBufferIsActive  : 1; // 0 if not currently active (i.e. target not connected to source)
         UINT DoNotMapOrUnmap      : 1; // 1 if the FrameBuffer should not be (un)mapped during normal execution
-        UINT Unused               : 28;
+        UINT VSyncEnabled         : 2; // 0 if not enabled. 1 if CRTC enabled. 2 if Display Only Enabled. 3 is invalid.
+        UINT Unused               : 26;
     } Flags;
 
     // The start and end of physical memory known to be all zeroes. Used to optimize the BlackOutScreen function to not write
@@ -57,6 +58,9 @@ public:
 
     // Current monitor power state
     DEVICE_POWER_STATE PowerState;
+
+    // The PN Target ID. This is used for VSync interrupts.
+    D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId;
 };
 
 #define HY_PRIVATE_DRIVER_DATA_MAGIC (0x48794444)
@@ -81,33 +85,38 @@ class HyMiniportDevice final
     DEFAULT_DESTRUCT(HyMiniportDevice);
     DELETE_CM(HyMiniportDevice);
 public:
-    static inline constexpr UINT32 VALUE_REGISTER_MAGIC    = 0x4879666C;
-    static inline constexpr UINT32 VALUE_REGISTER_REVISION = 0x00000001;
-    static inline constexpr UINT32 MASK_REGISTER_CONTROL   = 0x00000001;
+    static inline constexpr UINT32 VALUE_REGISTER_MAGIC            = 0x4879666C;
+    static inline constexpr UINT32 VALUE_REGISTER_REVISION         = 0x00000001;
+    static inline constexpr UINT32 MASK_REGISTER_CONTROL           = 0x00000001;
+                                                                   
+    static inline constexpr UINT32 REGISTER_MAGIC                  = 0x0000;
+    static inline constexpr UINT32 REGISTER_REVISION               = 0x0004;
+    static inline constexpr UINT32 REGISTER_EMULATION              = 0x0008;
+    static inline constexpr UINT32 REGISTER_RESET                  = 0x000C;
+    static inline constexpr UINT32 REGISTER_CONTROL                = 0x0010;
+    static inline constexpr UINT32 REGISTER_VRAM_SIZE_LOW          = 0x0014;
+    static inline constexpr UINT32 REGISTER_VRAM_SIZE_HIGH         = 0x0018;
+    static inline constexpr UINT32 REGISTER_INTERRUPT_TYPE         = 0x001C;
 
-    static inline constexpr UINT32 REGISTER_MAGIC          = 0x0000;
-    static inline constexpr UINT32 REGISTER_REVISION       = 0x0004;
-    static inline constexpr UINT32 REGISTER_EMULATION      = 0x0008;
-    static inline constexpr UINT32 REGISTER_RESET          = 0x000C;
-    static inline constexpr UINT32 REGISTER_CONTROL        = 0x0010;
-    static inline constexpr UINT32 REGISTER_VRAM_SIZE_LOW  = 0x0014;
-    static inline constexpr UINT32 REGISTER_VRAM_SIZE_HIGH = 0x0018;
+    static inline constexpr UINT32 MSG_INTERRUPT_NONE              = 0x00000000;
+    static inline constexpr UINT32 MSG_INTERRUPT_VSYNC_DISPLAY_0   = 0x00000010; // 0x10 - 0x18
 
-    static inline constexpr UINT32 BASE_REGISTER_DI          = 0x2000;
-    static inline constexpr UINT32 SIZE_REGISTER_DI          = 6 * 0x4;
-    static inline constexpr UINT32 OFFSET_REGISTER_DI_WIDTH  = 0x00;
-    static inline constexpr UINT32 OFFSET_REGISTER_DI_HEIGHT = 0x04;
-    static inline constexpr UINT32 OFFSET_REGISTER_DI_BPP    = 0x08;
-    static inline constexpr UINT32 OFFSET_REGISTER_DI_ENABLE = 0x0C;
+    static inline constexpr UINT32 BASE_REGISTER_DI                = 0x2000;
+    static inline constexpr UINT32 SIZE_REGISTER_DI                = 6 * 0x4;
+    static inline constexpr UINT32 OFFSET_REGISTER_DI_WIDTH        = 0x00;
+    static inline constexpr UINT32 OFFSET_REGISTER_DI_HEIGHT       = 0x04;
+    static inline constexpr UINT32 OFFSET_REGISTER_DI_BPP          = 0x08;
+    static inline constexpr UINT32 OFFSET_REGISTER_DI_ENABLE       = 0x0C;
     static inline constexpr UINT32 OFFSET_REGISTER_DI_REFRESH_RATE_NUMERATOR   = 0x10;
     static inline constexpr UINT32 OFFSET_REGISTER_DI_REFRESH_RATE_DENOMINATOR = 0x14;
+    static inline constexpr UINT32 OFFSET_REGISTER_DI_VSYNC_ENABLE = 0x18;
 
-    static inline constexpr UINT32 BASE_REGISTER_EDID = 0x3000;
-    static inline constexpr UINT32 SIZE_REGISTER_EDID = 128;
+    static inline constexpr UINT32 BASE_REGISTER_EDID              = 0x3000;
+    static inline constexpr UINT32 SIZE_REGISTER_EDID              = 128;
 
-    static inline constexpr UINT32 REGISTER_DEBUG_PRINT = 0x8000;
+    static inline constexpr UINT32 REGISTER_DEBUG_PRINT            = 0x8000;
 
-    static inline constexpr UINT MaxViews = 1;
+    static inline constexpr UINT MaxViews    = 1;
     static inline constexpr UINT MaxChildren = 1;
 public:
     static void* operator new(SIZE_T count);
@@ -119,6 +128,7 @@ public:
     NTSTATUS StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDXGKRNL_INTERFACE DxgkInterface, OUT_PULONG NumberOfVideoPresentSurfaces, OUT_PULONG NumberOfChildren) noexcept;
     NTSTATUS StopDevice() noexcept;
 
+    BOOLEAN InterruptRoutine(IN_ULONG MessageNumber) noexcept;
     void DpcRoutine() noexcept;
     NTSTATUS QueryChildRelations(PDXGK_CHILD_DESCRIPTOR ChildRelations, ULONG ChildRelationsSize) noexcept;
     NTSTATUS QueryChildStatus(INOUT_PDXGK_CHILD_STATUS ChildStatus, IN_BOOLEAN NonDestructiveOnly) noexcept;
@@ -139,6 +149,8 @@ public:
     NTSTATUS PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly) noexcept;
 
     NTSTATUS StopDeviceAndReleasePostDisplayOwnership(IN_CONST_D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId, PDXGK_DISPLAY_INFORMATION DisplayInfo) noexcept;
+
+    NTSTATUS ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE InterruptType, IN_BOOLEAN EnableInterrupt) noexcept;
 
     volatile UINT* GetDeviceConfigRegister(const UINT registerAddress) const noexcept
     {
