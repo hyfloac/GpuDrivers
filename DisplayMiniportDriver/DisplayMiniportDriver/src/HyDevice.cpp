@@ -899,6 +899,37 @@ NTSTATUS HyMiniportDevice::FillQuerySegment(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
     return STATUS_SUCCESS;
 }
 
+NTSTATUS HyMiniportDevice::CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pCollectDbgInfo) noexcept
+{
+    // This function should collect debug information for various failures and can be
+    // called at any time and at high IRQL (that is, the IRQL that DxgkDdiCollectDbgInfo
+    // runs at is generally undefined).
+    // https://learn.microsoft.com/en-us/windows-hardware/drivers/display/threading-and-synchronization-zero-level
+    CHECK_IRQL(HIGH_LEVEL);
+
+    if(pCollectDbgInfo->Reason == VIDEO_TDR_TIMEOUT_DETECTED || pCollectDbgInfo->Reason == VIDEO_ENGINE_TIMEOUT_DETECTED)
+    {
+        //  However, if the Reason member of the DXGKARG_COLLECTDBGINFO structure that
+        //  the pCollectDbgInfo parameter points to is set to VIDEO_TDR_TIMEOUT_DETECTED
+        //  or VIDEO_ENGINE_TIMEOUT_DETECTED, the driver must ensure that
+        //  DxgkDdiCollectDbgInfo is pageable, runs at IRQL = PASSIVE_LEVEL, and supports
+        //  synchronization zero level.
+        // https://learn.microsoft.com/en-us/windows-hardware/drivers/display/threading-and-synchronization-zero-level
+        CHECK_IRQL(PASSIVE_LEVEL);
+    }
+
+    LOG_WARN("HyMiniportDevice::CollectDbgInfo: Reason: 0x%X, Buffer: %p, Buffer Size: %zu (0x%zX), Extension: %p\n", pCollectDbgInfo->Reason, pCollectDbgInfo->pBuffer, pCollectDbgInfo->BufferSize, pCollectDbgInfo->BufferSize, pCollectDbgInfo->pExtension);
+
+    pCollectDbgInfo->pExtension->CurrentDmaBufferOffset = 0;
+
+    if(pCollectDbgInfo->Reason == VIDEO_TDR_TIMEOUT_DETECTED)
+    {
+        
+    }
+
+    return STATUS_SUCCESS;
+}
+
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L22
 // Thus it is subject to the Microsoft Public License.
 NTSTATUS HyMiniportDevice::IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsSupportedVidPn) noexcept
@@ -1575,6 +1606,18 @@ NTSTATUS HyMiniportDevice::UpdateActiveVidPnPresentPath(IN_CONST_PDXGKARG_UPDATE
 
     m_CurrentDisplayMode[pUpdateActiveVidPnPresentPath->VidPnPresentPathInfo.VidPnSourceId].Flags.FullscreenPresent = true;
     m_CurrentDisplayMode[pUpdateActiveVidPnPresentPath->VidPnPresentPathInfo.VidPnSourceId].Rotation = pUpdateActiveVidPnPresentPath->VidPnPresentPathInfo.ContentTransformation.Rotation;
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS HyMiniportDevice::GetScanLine(INOUT_PDXGKARG_GETSCANLINE pGetScanLine) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    // Presumably this only applies to CRT monitors.
+    pGetScanLine->InVerticalBlank = FALSE;
+    // Our GPU doesn't really handle scan-lines yet.
+    pGetScanLine->ScanLine = 0;
 
     return STATUS_SUCCESS;
 }

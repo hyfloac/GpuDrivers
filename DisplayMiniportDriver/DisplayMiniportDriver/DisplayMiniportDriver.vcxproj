@@ -442,6 +442,7 @@
   <ItemGroup>
     <ClCompile Include="src\AddDevice.cpp" />
     <ClCompile Include="src\BlockTransfer.cpp" />
+    <ClCompile Include="src\CollectDbgInfo.cpp" />
     <ClCompile Include="src\CommitVidPn.cpp" />
     <ClCompile Include="src\ControlEtwLogging.cpp" />
     <ClCompile Include="src\ControlInterrupt.cpp" />
@@ -458,6 +459,7 @@
     <ClCompile Include="src\FilterInstanceSetup.c" />
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
+    <ClCompile Include="src\GetScanLine.cpp" />
     <ClCompile Include="src\Guids.c" />
     <ClCompile Include="src\HyDevice.cpp" />
     <ClCompile Include="src\I2CInterface.c" />
@@ -486,6 +488,7 @@
   <ItemGroup>
     <ClInclude Include="include\AddDevice.hpp" />
     <ClInclude Include="include\BlockTransfer.hpp" />
+    <ClInclude Include="include\CollectDbgInfo.hpp" />
     <ClInclude Include="include\CommitVidPn.hpp" />
     <ClInclude Include="include\Common.h" />
     <ClInclude Include="include\comms\MessageType.h" />
@@ -504,6 +507,7 @@
     <ClInclude Include="include\FilterInstanceSetup.h" />
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
+    <ClInclude Include="include\GetScanLine.hpp" />
     <ClInclude Include="include\HyDevice.hpp" />
     <ClInclude Include="include\I2CInterface.h" />
     <ClInclude Include="include\InterruptRoutine.hpp" />
