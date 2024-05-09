@@ -1,19 +1,8 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-// ReSharper disable once CppInconsistentNaming
-#define __CPLUSPLUS  // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier, clang-diagnostic-unused-macros)
-#endif
-
-#include <ntddk.h>
-#include <dispmprt.h>
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
+#include "Common.h"
 #include "Objects.hpp"
+#include "GsPresentManager.hpp"
 
 #pragma warning(push)
 #pragma warning(disable:4200) // nonstandard extension used : zero-sized array in struct/union
@@ -61,6 +50,14 @@ public:
 
     // The PN Target ID. This is used for VSync interrupts.
     D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId;
+};
+
+class HyMiniportDevice;
+
+struct GsSynchronizeParams final
+{
+    HyMiniportDevice* Device;
+    DXGKARGCB_NOTIFY_INTERRUPT_DATA InterruptData;
 };
 
 #define HY_PRIVATE_DRIVER_DATA_MAGIC (0x48794444)
@@ -119,7 +116,7 @@ public:
     static inline constexpr UINT MaxViews    = 1;
     static inline constexpr UINT MaxChildren = 1;
 public:
-    static void* operator new(SIZE_T count);
+    void* operator new(SIZE_T count);  // NOLINT(misc-new-delete-overloads)
 public:
     HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept;
 
@@ -154,6 +151,8 @@ public:
     NTSTATUS StopDeviceAndReleasePostDisplayOwnership(IN_CONST_D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId, PDXGK_DISPLAY_INFORMATION DisplayInfo) noexcept;
 
     NTSTATUS ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE InterruptType, IN_BOOLEAN EnableInterrupt) noexcept;
+
+    void ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, BOOLEAN CompletedOrFailed) noexcept;
 
     volatile UINT* GetDeviceConfigRegister(const UINT registerAddress) const noexcept
     {
@@ -192,8 +191,12 @@ private:
 
     NTSTATUS SetSourceModeAndPath(const D3DKMDT_VIDPN_SOURCE_MODE* pSourceMode, const D3DKMDT_VIDPN_PRESENT_PATH* pPath) noexcept;
 
+    NTSTATUS UnmapFrameBuffer(void* VirtualAddress, ULONG Length) noexcept;
+
     NTSTATUS AreVidPnPathFieldsValid(const D3DKMDT_VIDPN_PRESENT_PATH* pPath) const noexcept;
     NTSTATUS AreVidPnSourceModeFieldsValid(const D3DKMDT_VIDPN_SOURCE_MODE* pSourceMode) const noexcept;
+private:
+    static BOOLEAN SynchronizeVidSchNotifyInterrupt(PVOID Params) noexcept;
 private:
     PDEVICE_OBJECT m_PhysicalDeviceObject;
     DXGK_START_INFO m_DxgkStartInfo;
@@ -225,6 +228,8 @@ private:
 
     // Current adapter power state
     DEVICE_POWER_STATE m_AdapterPowerState;
+
+    GsPresentManager m_PresentManager;
 };
 
 #define HY_MINIPORT_DEVICE_FROM_HANDLE(HANDLE) static_cast<HyMiniportDevice*>(HANDLE)

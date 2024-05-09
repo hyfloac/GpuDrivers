@@ -11,7 +11,10 @@ void HyDpcRoutine(IN_CONST_PVOID MiniportDeviceContext)
 
     CHECK_IRQL(DISPATCH_LEVEL);
 
-    LOG_DEBUG("HyDpcRoutine\n");
+    if constexpr(false)
+    {
+        LOG_DEBUG("HyDpcRoutine\n");
+    }
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
@@ -23,5 +26,5 @@ void HyDpcRoutine(IN_CONST_PVOID MiniportDeviceContext)
 
     HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
 
-    return deviceContext->DpcRoutine();
+    deviceContext->DpcRoutine();
 }

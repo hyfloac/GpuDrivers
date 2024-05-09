@@ -11,3 +11,7 @@
 #ifndef HY_BUILD_AS_KMDOD
   #define HY_BUILD_AS_KMDOD (1)
 #endif
+
+#ifndef HY_KMDOD_ENABLE_VSYNC_INTERRUPTS
+  #define HY_KMDOD_ENABLE_VSYNC_INTERRUPTS (1)
+#endif

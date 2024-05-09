@@ -14,7 +14,6 @@ extern "C" {
 #include "Logging.h"
 #include "MemoryAllocator.h"
 #include "Config.h"
-#include "BlockTransfer.hpp"
 
 #pragma code_seg("PAGE")
 
@@ -26,27 +25,27 @@ static D3DDDIFORMAT gPixelFormats[] = {
 };
 
 static NTSTATUS MapFrameBuffer(PHYSICAL_ADDRESS PhysicalAddress, ULONG Length, void** VirtualAddress) noexcept;
-static NTSTATUS UnmapFrameBuffer(void* VirtualAddress, ULONG Length) noexcept;
 
-void* HyMiniportDevice::operator new(const SIZE_T count)
+void* HyMiniportDevice::operator new(const SIZE_T count)  // NOLINT(misc-new-delete-overloads)
 {
-    return HyAllocate(NonPagedPoolNx, count, POOL_TAG_DEVICE_CONTEXT);
+    return HyAllocate(ExDefaultNonPagedPoolType, count, POOL_TAG_DEVICE_CONTEXT);
 }
 
 HyMiniportDevice::HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept
     : m_PhysicalDeviceObject(PhysicalDeviceObject)
-    , m_DxgkStartInfo{ }
-    , m_DxgkInterface{ }
-    , m_DeviceInfo{ }
+    , m_DxgkStartInfo { }
+    , m_DxgkInterface { }
+    , m_DeviceInfo { }
     , m_DeviceId(0)
-    , m_Flags{ .Value = 0 }
+    , m_Flags { .Value = 0 }
     , m_PCIBusNumber(0)
-    , m_PCISlotNumber{ }
-    , m_PCIConfig{ }
+    , m_PCISlotNumber { }
+    , m_PCIConfig { }
     , m_ConfigRegistersPointer(nullptr)
     , m_VRamPointer(nullptr)
-    , m_CurrentDisplayMode{ }
+    , m_CurrentDisplayMode { }
     , m_AdapterPowerState(PowerDeviceUnspecified)
+    , m_PresentManager(this)
 { }
 
 static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERFACE_STANDARD pciInterface)
@@ -263,9 +262,9 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
     if constexpr(true)
     {
         {
-            RTL_OSVERSIONINFOEXW osVersionInfo = { 0 };
+            RTL_OSVERSIONINFOEXW osVersionInfo { };
             osVersionInfo.dwOSVersionInfoSize = sizeof(osVersionInfo);
-            const NTSTATUS getVersionStatus = RtlGetVersion((RTL_OSVERSIONINFOW*) &osVersionInfo);
+            const NTSTATUS getVersionStatus = RtlGetVersion(reinterpret_cast<RTL_OSVERSIONINFOW*>(&osVersionInfo));
 
             // We'll only validate the version if it returned successfully, otherwise we'll just assume that DxgkCbAcquirePostDisplayOwnership will work.
             if(NT_SUCCESS(getVersionStatus))
@@ -403,7 +402,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         } while(getEnumeratorStatus == STATUS_BUFFER_TOO_SMALL);
 
         // The enumerator name for PCI devices, as opposed to Root Enumerated Devices.
-        const wchar_t pciPrefix[] = L"PCI";
+        constexpr wchar_t pciPrefix[] = L"PCI";
 
         // Check only the first 3 characters.
         if(wcsncmp(pciPrefix, enumerator, wcslen(pciPrefix)) == 0)
@@ -459,7 +458,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
                             }
                             else
                             {
-                                LOG_DEBUG("HyMiniportDevice::StartDevice: Mapping BAR1. Start: 0x%I64X, Length: 0x%X\n", desc->u.Memory.Start, desc->u.Memory.Length);
+                                LOG_DEBUG("HyMiniportDevice::StartDevice: Mapping BAR1. Start: 0x%I64X, Length: 0x%X\n", desc->u.Memory.Start.QuadPart, desc->u.Memory.Length);
                                 // This should be BAR1
                                 m_DxgkInterface.DxgkCbMapMemory(m_DxgkInterface.DeviceHandle, desc->u.Memory.Start, desc->u.Memory.Length, FALSE, FALSE, MmCached, &m_VRamPointer);
                                 framebufferBase = desc->u.Memory.Start;
@@ -503,6 +502,18 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         LOG_DEBUG("HyMiniportDevice::StartDevice: Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
     }
 
+    //
+    // Initialize everything for the present queue.
+    //
+    {
+        const NTSTATUS initPresentManagerStatus = m_PresentManager.Init();
+
+        if(!NT_SUCCESS(initPresentManagerStatus))
+        {
+            return initPresentManagerStatus;
+        }
+    }
+
     // Enable Display
     SetDisplayState(0, true);
 
@@ -520,7 +531,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
 NTSTATUS HyMiniportDevice::CheckDevice() noexcept
 {
 #if HY_DEVICE_EMULATED
-    PCI_COMMON_HEADER pciHeader = { 0 };
+    PCI_COMMON_HEADER pciHeader { };
     ULONG bytesRead;
     // Get the device's PCI Vendor and Device ID's.
     const NTSTATUS readDeviceSpaceStatus = m_DxgkInterface.DxgkCbReadDeviceSpace(m_DxgkInterface.DeviceHandle, DXGK_WHICHSPACE_CONFIG, &pciHeader, 0, sizeof(pciHeader), &bytesRead);
@@ -558,6 +569,8 @@ NTSTATUS HyMiniportDevice::StopDevice() noexcept
 
     m_Flags.IsStarted = FALSE;
 
+    m_PresentManager.Close();
+
     return STATUS_SUCCESS;
 }
 
@@ -592,7 +605,10 @@ BOOLEAN HyMiniportDevice::InterruptRoutine(IN_ULONG MessageNumber) noexcept
         }
         else if(m_CurrentDisplayMode[0].Flags.VSyncEnabled == 2)
         {
-            LOG_DEBUG("HyMiniportDevice::InterruptRoutine: Handling Display-Only VSync, Target ID: %d\n", m_CurrentDisplayMode[0].VidPnTargetId);
+            if constexpr(false)
+            {
+                LOG_DEBUG("HyMiniportDevice::InterruptRoutine: Handling Display-Only VSync, Target ID: %d\n", m_CurrentDisplayMode[0].VidPnTargetId);
+            }
 
             interruptData.InterruptType = DXGK_INTERRUPT_DISPLAYONLY_VSYNC;
             interruptData.DisplayOnlyVsync.VidPnTargetId = m_CurrentDisplayMode[0].VidPnTargetId;
@@ -600,6 +616,10 @@ BOOLEAN HyMiniportDevice::InterruptRoutine(IN_ULONG MessageNumber) noexcept
 
         m_DxgkInterface.DxgkCbNotifyInterrupt(m_DxgkInterface.DeviceHandle, &interruptData);
     }
+
+    // This is required to be called. I don't fully get why, but it's explained here:
+    // https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkcb_notify_interrupt
+    m_DxgkInterface.DxgkCbQueueDpc(m_DxgkInterface.DeviceHandle);
 
     return TRUE;
 }
@@ -801,6 +821,8 @@ NTSTATUS HyMiniportDevice::FillDriverCaps(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQu
     // driverCaps->PointerCaps.MaskedColor = FALSE;
     // driverCaps->PointerCaps.Reserved = 0;
 
+    driverCaps->SchedulingCaps.MultiEngineAware = 0;
+    driverCaps->SchedulingCaps.VSyncPowerSaveAware = 1;
     // driverCaps->MemoryManagementCaps.IoMmuSupported = TRUE;
 
     driverCaps->WDDMVersion = DXGKDDI_WDDMv1_2;
@@ -1372,6 +1394,11 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
         tempStatus = pVidPnInterface->pfnReleaseTargetModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnTargetModeSet);
     }
 
+    if(!NT_SUCCESS(tempStatus))
+    {
+        //LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up resources.\n", tempStatus);
+    }
+
     return status;
 }
 
@@ -1642,22 +1669,6 @@ static UINT BPPFromPixelFormat(D3DDDIFORMAT Format)
     }
 }
 
-static UINT ColorTable[] = {
-    0xFF00FF00,
-    0xFF00FFFF,
-    0xFFFF0000,
-    0xFFFF00FF,
-    0xFFFFFF00,
-    0xFFFFFFFF,
-    0xFF7F00FF,
-    0xFF7F7F7F,
-    0xFFFF007F,
-    0xFFFF7F00,
-};
-static constexpr UINT ColorTableSize = sizeof(ColorTable) / sizeof(ColorTable[0]);
-
-static UINT CurrentColorTable = 0;
-
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L444
 // Thus it is subject to the Microsoft Public License.
 NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly) noexcept
@@ -1707,9 +1718,6 @@ NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYO
         dest += centerShift / 2;
     }
 
-    const SIZE_T movesSize = pPresentDisplayOnly->NumMoves * sizeof(D3DKMT_MOVE_RECT);
-    const SIZE_T rectsSize = pPresentDisplayOnly->NumDirtyRects * sizeof(RECT);
-    const SIZE_T size = sizeof(0) + movesSize + rectsSize;
     BYTE* srcAddress = static_cast<BYTE*>(pPresentDisplayOnly->pSource);
     PMDL mdl;
 
@@ -1754,80 +1762,17 @@ NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYO
         }
     }
 
-    BLT_INFO dstBltInfo;
-    dstBltInfo.pBits = dest;
-    dstBltInfo.Pitch = currentMode.DisplayInfo.Pitch;
-    dstBltInfo.BitsPerPel = destBpp;
-    dstBltInfo.Offset.x = 0;
-    dstBltInfo.Offset.y = 0;
-    dstBltInfo.Rotation = rotationNeededByFb;
-    dstBltInfo.Width = currentMode.SrcModeWidth;
-    dstBltInfo.Height = currentMode.SrcModeHeight;
-
-    BLT_INFO srcBltInfo;
-    srcBltInfo.pBits = srcAddress;
-    srcBltInfo.Pitch = pPresentDisplayOnly->Pitch;
-    srcBltInfo.BitsPerPel = 32;
-    srcBltInfo.Offset.x = 0;
-    srcBltInfo.Offset.y = 0;
-    srcBltInfo.Rotation = D3DKMDT_VPPR_IDENTITY;
-
-    if(rotationNeededByFb == D3DKMDT_VPPR_ROTATE90 || rotationNeededByFb == D3DKMDT_VPPR_ROTATE270)
-    {
-        srcBltInfo.Width = dstBltInfo.Height;
-        srcBltInfo.Height = dstBltInfo.Width;
-    }
-    else
-    {
-        srcBltInfo.Width = dstBltInfo.Width;
-        srcBltInfo.Height = dstBltInfo.Height;
-    }
-
-    LOG_DEBUG("HyMiniportDevice::PresentDisplayOnly: Performing Block Transfer. Moves: %d, Dirty: %d.\n", pPresentDisplayOnly->NumMoves, pPresentDisplayOnly->NumDirtyRects);
-
-
-    // Copy all the scroll rects from source image to video frame buffer.
-    for(UINT i = 0; i < pPresentDisplayOnly->NumMoves; ++i)
-    {
-        BltBits(
-            &dstBltInfo,
-            &srcBltInfo,
-            1, // NumRects
-            &pPresentDisplayOnly->pMoves[i].DestRect
-        );
-    }
-
-    // Copy all the dirty rects from source image to video frame buffer.
-    for(UINT i = 0; i < pPresentDisplayOnly->NumDirtyRects; ++i)
-    {
-        if constexpr(false)
-        {
-            BltBits(
-                &dstBltInfo,
-                &srcBltInfo,
-                1, // NumRects
-                &pPresentDisplayOnly->pDirtyRect[i]
-            );
-        }
-        else
-        {
-            BltBits_Dummy(
-                &dstBltInfo,
-                &srcBltInfo,
-                ColorTable[CurrentColorTable % ColorTableSize],
-                1, // NumRects
-                &pPresentDisplayOnly->pDirtyRect[i]
-            );
-            ++CurrentColorTable;
-        }
-    }
-
-    // Unmap unmap and unlock the pages.
-    if(mdl)
-    {
-        MmUnlockPages(mdl);
-        IoFreeMdl(mdl);
-    }
+    m_PresentManager.InsertPresent(
+        pPresentDisplayOnly,
+        mdl,
+        rotationNeededByFb,
+        dest,
+        srcAddress,
+        destBpp,
+        currentMode.DisplayInfo.Pitch,
+        currentMode.SrcModeWidth,
+        currentMode.SrcModeHeight
+    );
 
     return STATUS_SUCCESS;
 }
@@ -1878,6 +1823,70 @@ NTSTATUS HyMiniportDevice::ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE Interru
     }
 
     return STATUS_NOT_IMPLEMENTED;
+}
+
+#pragma code_seg("_KTEXT")
+// This function cannot be paged.
+// This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/blthw.cxx#L21
+// Thus it is subject to the Microsoft Public License.
+BOOLEAN HyMiniportDevice::SynchronizeVidSchNotifyInterrupt(PVOID Params) noexcept
+{
+    GsSynchronizeParams* synchronizeParams = reinterpret_cast<GsSynchronizeParams*>(Params);
+
+    const DXGKRNL_INTERFACE& DxgkInterface = synchronizeParams->Device->m_DxgkInterface;
+
+    // Notify the specified interrupt.
+    DxgkInterface.DxgkCbNotifyInterrupt(DxgkInterface.DeviceHandle, &synchronizeParams->InterruptData);
+
+    // Now queue a DPC for this interrupt (to callback schedule at DCP level and let it do more work there)
+    // DxgkCbQueueDpc can return FALSE if there is already a DPC queued
+    // this is an acceptable condition
+    DxgkInterface.DxgkCbQueueDpc(DxgkInterface.DeviceHandle);
+
+    return TRUE;
+}
+#pragma code_seg("PAGE")
+
+// Fakes an interrupt for present progress.
+// This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/blthw.cxx#L395
+// Thus it is subject to the Microsoft Public License.
+void HyMiniportDevice::ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, BOOLEAN CompletedOrFailed) noexcept
+{
+    PAGED_CODE();
+
+    if constexpr(false)
+    {
+        LOG_DEBUG("HyMiniportDevice::ReportPresentProgress\n");
+    }
+
+    GsSynchronizeParams synchronizeParams {};
+    synchronizeParams.Device = this;
+    synchronizeParams.InterruptData.InterruptType = DXGK_INTERRUPT_DISPLAYONLY_PRESENT_PROGRESS;
+    synchronizeParams.InterruptData.DisplayOnlyPresentProgress.VidPnSourceId = VidPnSourceId;
+    synchronizeParams.InterruptData.DisplayOnlyPresentProgress.ProgressId =
+        CompletedOrFailed ?
+        DXGK_PRESENT_DISPLAYONLY_PROGRESS_ID_COMPLETE :
+        DXGK_PRESENT_DISPLAYONLY_PROGRESS_ID_FAILED;
+    synchronizeParams.InterruptData.Flags.Value = 0;
+
+    BOOLEAN ret = FALSE;
+    const NTSTATUS status = m_DxgkInterface.DxgkCbSynchronizeExecution(
+        m_DxgkInterface.DeviceHandle,     // DeviceHandle
+        SynchronizeVidSchNotifyInterrupt, // SynchronizeRoutine
+        &synchronizeParams,               // Context
+        0,                                // MessageNumber
+        &ret                              // ReturnValue
+    );
+
+    if(!ret)
+    {
+        LOG_WARN("HyMiniportDevice::ReportPresentProgress: Synchronization Routine returned false.\n");
+    }
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("HyMiniportDevice::ReportPresentProgress: Failed to synchronize execution.\n");
+    }
 }
 
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L711
@@ -1959,7 +1968,6 @@ NTSTATUS HyMiniportDevice::AreVidPnPathFieldsValid(const D3DKMDT_VIDPN_PRESENT_P
         return STATUS_SUCCESS;
     }
 }
-
 
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L797
 // Thus it is subject to the Microsoft Public License.
@@ -2160,16 +2168,19 @@ NTSTATUS HyMiniportDevice::AddSingleTargetMode(const DXGK_VIDPNTARGETMODESET_INT
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx = m_CurrentDisplayMode[SourceId].DisplayInfo.Width;
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy = m_CurrentDisplayMode[SourceId].DisplayInfo.Height;
     pVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
-    //pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    //pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    //pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    //pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
-    //pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+#if HY_KMDOD_ENABLE_VSYNC_INTERRUPTS
     pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60;
     pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1;
     pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = 100000;
     pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
     pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 4000000;
+#else
+    pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+    pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = D3DKMDT_FREQUENCY_NOTSPECIFIED;
+#endif
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM1_3_M1)
     pVidPnTargetModeInfo->VideoSignalInfo.AdditionalSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
     pVidPnTargetModeInfo->VideoSignalInfo.AdditionalSignalInfo.VSyncFreqDivider = 0;
@@ -2252,7 +2263,7 @@ static NTSTATUS MapFrameBuffer(PHYSICAL_ADDRESS PhysicalAddress, ULONG Length, v
     return STATUS_SUCCESS;
 }
 
-static NTSTATUS UnmapFrameBuffer(void* VirtualAddress, ULONG Length) noexcept
+NTSTATUS HyMiniportDevice::UnmapFrameBuffer(void* VirtualAddress, ULONG Length) noexcept
 {
     LOG_DEBUG("UnmapFrameBuffer\n");
 
@@ -2273,6 +2284,8 @@ static NTSTATUS UnmapFrameBuffer(void* VirtualAddress, ULONG Length) noexcept
         LOG_ERROR("Invalid Parameter to UnmapFrameBuffer: Length\n");
         return STATUS_INVALID_PARAMETER_2;
     }
+
+    m_PresentManager.FlushPipeline();
 
     MmUnmapIoSpace(VirtualAddress, Length);
 

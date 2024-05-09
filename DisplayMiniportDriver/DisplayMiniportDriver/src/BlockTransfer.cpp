@@ -141,8 +141,11 @@ VOID CopyBits32_32_Dummy(
             {
                 UINT newColor;
                 RtlCopyMemory(&newColor, pStartSrc + j * sizeof(UINT), sizeof(UINT));
-                //newColor ^= Color;
-                //newColor ^= 0xFFFFFFFF;
+                if constexpr(false)
+                {
+                    newColor ^= Color;
+                    // newColor ^= 0xFFFFFFFF;
+                }
                 RtlCopyMemory(pStartDst + j * sizeof(UINT), &newColor, sizeof(UINT));
             }
             //RtlCopyMemory(pStartDst, pStartSrc, BytesToCopy);

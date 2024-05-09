@@ -8,6 +8,7 @@ extern "C" {
 
 #define POOL_TAG_DEVICE_CONTEXT ('CDSG')
 #define POOL_TAG_LOGGING        ('gLSG')
+#define POOL_TAG_PRESENT        ('rPSG')
 
 void* HyAllocate(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);
 void* HyAllocateZeroed(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);

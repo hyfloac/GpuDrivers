@@ -108,6 +108,14 @@ DRIVER_INITIALIZE DriverEntry;
 _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
     PAGED_CODE();
+
+    //
+    // Opt-in to using non-executable pool memory on Windows 8 and later.
+    // This has to be done before any allocations (which our logging functions can potentially do).
+    // https://msdn.microsoft.com/en-us/library/windows/hardware/hh920402(v=vs.85).aspx
+    //
+    ExInitializeDriverRuntime(DrvRtPoolNxOptIn);
+
     CHECK_IRQL(PASSIVE_LEVEL);
 
     LOG_DEBUG("DriverEntryReal - " __TIMESTAMP__ "\n");
@@ -177,7 +185,11 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiCommitVidPn = HyCommitVidPn;
     driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = HyUpdateActiveVidPnPresentPath;
     driverInitializationData.DxgkDdiRecommendMonitorModes = ThunkHyRecommendMonitorModes;
+#if HY_KMDOD_ENABLE_VSYNC_INTERRUPTS
     driverInitializationData.DxgkDdiGetScanLine = HyGetScanLine;
+#else
+    driverInitializationData.DxgkDdiGetScanLine = nullptr;
+#endif
     driverInitializationData.DxgkDdiQueryVidPnHWCapability = ThunkHyQueryVidPnCapability;
 
     driverInitializationData.DxgkDdiPresentDisplayOnly = HyPresentDisplayOnly;
@@ -189,7 +201,11 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
 
     driverInitializationData.DxgkDdiGetChildContainerId = ThunkHyGetChildContainerId;
 
+#if HY_KMDOD_ENABLE_VSYNC_INTERRUPTS
     driverInitializationData.DxgkDdiControlInterrupt = HyControlInterrupt;
+#else
+    driverInitializationData.DxgkDdiControlInterrupt = nullptr;
+#endif
 
     driverInitializationData.DxgkDdiSetPowerComponentFState = ThunkHySetPowerComponentFState;
     //driverInitializationData.DxgkDdiPowerRuntimeControlRequest = ThunkHyPowerRuntimeControlRequest;

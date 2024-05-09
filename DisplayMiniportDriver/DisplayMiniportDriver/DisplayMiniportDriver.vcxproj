@@ -205,7 +205,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -244,7 +244,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -280,7 +280,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -323,7 +323,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -356,7 +356,7 @@
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
       <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
@@ -370,7 +370,7 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -401,7 +401,7 @@
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
       <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
@@ -415,7 +415,7 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -460,6 +460,7 @@
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\GetScanLine.cpp" />
+    <ClCompile Include="src\GsPresentManager.cpp" />
     <ClCompile Include="src\Guids.c" />
     <ClCompile Include="src\HyDevice.cpp" />
     <ClCompile Include="src\I2CInterface.c" />
@@ -495,6 +496,7 @@
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\ControlEtwLogging.hpp" />
     <ClInclude Include="include\ControlInterrupt.hpp" />
+    <ClInclude Include="include\D3DPolyFills.h" />
     <ClInclude Include="include\DeviceComms.hpp" />
     <ClInclude Include="include\DevThunks.hpp" />
     <ClInclude Include="include\DispatchIoRequest.hpp" />
@@ -508,6 +510,7 @@
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
     <ClInclude Include="include\GetScanLine.hpp" />
+    <ClInclude Include="include\GsPresentManager.hpp" />
     <ClInclude Include="include\HyDevice.hpp" />
     <ClInclude Include="include\I2CInterface.h" />
     <ClInclude Include="include\InterruptRoutine.hpp" />
@@ -532,6 +535,7 @@
     <ClInclude Include="include\StopDevice.hpp" />
     <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.hpp" />
     <ClInclude Include="include\UpdateActiveVidPnPresentPath.hpp" />
+    <ClInclude Include="include\XStdDefPolyFill.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

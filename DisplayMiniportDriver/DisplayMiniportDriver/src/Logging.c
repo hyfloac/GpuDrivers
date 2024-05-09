@@ -60,7 +60,6 @@ static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, co
     return STATUS_SUCCESS;
 }
 
-
 static void HyLogAlloc(const char* const level, const size_t levelLength, const ULONG filterLevel, const void* const address, const char* const fmt, va_list args)
 {
     const size_t bufferLength = 8192 * sizeof(char);
