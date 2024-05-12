@@ -220,7 +220,7 @@
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -258,7 +258,7 @@
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -295,7 +295,7 @@
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
       <SpecifyDriverVerDirectiveVersion>true</SpecifyDriverVerDirectiveVersion>
       <VersionHeaderPath>
       </VersionHeaderPath>
@@ -337,7 +337,7 @@
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -359,7 +359,7 @@
       <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -382,7 +382,7 @@
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -404,7 +404,7 @@
       <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -427,7 +427,7 @@
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.20.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
@@ -447,6 +447,7 @@
     <ClCompile Include="src\ControlEtwLogging.cpp" />
     <ClCompile Include="src\ControlInterrupt.cpp" />
     <ClCompile Include="src\DeviceComms.cpp" />
+    <ClCompile Include="src\Devices.cpp" />
     <ClCompile Include="src\DevThunks.cpp" />
     <ClCompile Include="src\DispatchIoRequest.cpp" />
     <ClCompile Include="src\DpcRoutine.cpp" />
@@ -460,6 +461,7 @@
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\GetScanLine.cpp" />
+    <ClCompile Include="src\GsMemoryManager.cpp" />
     <ClCompile Include="src\GsPresentManager.cpp" />
     <ClCompile Include="src\Guids.c" />
     <ClCompile Include="src\HyDevice.cpp" />
@@ -498,6 +500,7 @@
     <ClInclude Include="include\ControlInterrupt.hpp" />
     <ClInclude Include="include\D3DPolyFills.h" />
     <ClInclude Include="include\DeviceComms.hpp" />
+    <ClInclude Include="include\Devices.hpp" />
     <ClInclude Include="include\DevThunks.hpp" />
     <ClInclude Include="include\DispatchIoRequest.hpp" />
     <ClInclude Include="include\DpcRoutine.hpp" />
@@ -516,6 +519,7 @@
     <ClInclude Include="include\InterruptRoutine.hpp" />
     <ClInclude Include="include\IsSupportedVidPn.hpp" />
     <ClInclude Include="include\Logging.h" />
+    <ClInclude Include="include\GsMemoryManager.hpp" />
     <ClInclude Include="include\Objects.hpp" />
     <ClInclude Include="include\PresentDisplayOnly.hpp" />
     <ClInclude Include="include\RecommendFunctionalVidPn.hpp" />

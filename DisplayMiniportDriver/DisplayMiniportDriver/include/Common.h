@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 #include <ntddk.h>
-#include <dispmprt.h>
+#include "D3DPolyFills.h"
 
 #include "Logging.h"
 #include "Config.h"

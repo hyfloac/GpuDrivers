@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Objects.hpp"
 #include "GsPresentManager.hpp"
+#include "GsMemoryManager.hpp"
 
 #pragma warning(push)
 #pragma warning(disable:4200) // nonstandard extension used : zero-sized array in struct/union
@@ -60,12 +61,11 @@ struct GsSynchronizeParams final
     DXGKARGCB_NOTIFY_INTERRUPT_DATA InterruptData;
 };
 
-#define HY_PRIVATE_DRIVER_DATA_MAGIC (0x48794444)
-
-#define HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION (1)
-
 typedef struct HyPrivateDriverData
 {
+    static inline constexpr UINT HY_PRIVATE_DRIVER_DATA_MAGIC = 0x48794444;
+    static inline constexpr UINT HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION = 1;
+
     // A magic value to verify that this is our data.
     UINT Magic; // HY_PRIVATE_DRIVER_DATA_MAGIC 0x48794444 HyDD
     // The size of this structure, this is an additional validation measure for checking that it is our data.
@@ -85,6 +85,9 @@ public:
     static inline constexpr UINT32 VALUE_REGISTER_MAGIC            = 0x4879666C;
     static inline constexpr UINT32 VALUE_REGISTER_REVISION         = 0x00000001;
     static inline constexpr UINT32 MASK_REGISTER_CONTROL           = 0x00000001;
+    static inline constexpr UINT32 VALUE_REGISTER_EMULATION_MICROPROCESSOR = 0;
+    static inline constexpr UINT32 VALUE_REGISTER_EMULATION_FPGA           = 1;
+    static inline constexpr UINT32 VALUE_REGISTER_EMULATION_SIMULATION     = 2;
                                                                    
     static inline constexpr UINT32 REGISTER_MAGIC                  = 0x0000;
     static inline constexpr UINT32 REGISTER_REVISION               = 0x0004;
@@ -115,8 +118,14 @@ public:
 
     static inline constexpr UINT MaxViews    = 1;
     static inline constexpr UINT MaxChildren = 1;
+
+    static inline constexpr UINT GPU_TYPE_SOFTWARE = 0;
+    static inline constexpr UINT GPU_TYPE_SIMULATED = 1;
+    static inline constexpr UINT GPU_TYPE_FPGA = 2;
+    static inline constexpr UINT GPU_TYPE_MICROPROCESSOR = 3;
 public:
-    void* operator new(SIZE_T count);  // NOLINT(misc-new-delete-overloads)
+    void* operator new(SIZE_T count);
+    void operator delete(void* ptr);
 public:
     HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept;
 
@@ -209,7 +218,7 @@ private:
         struct
         {
             UINT IsStarted : 1;
-            UINT IsEmulated : 1;
+            UINT GpuType : 2; // 0 - Software Device (doesn't exist), 1 - simulated in VBox, 2 - FPGA, 2 - Full Hardware
             UINT Reserved : 30;
         };
         UINT Value;
@@ -222,7 +231,6 @@ private:
     //DXGK_DISPLAY_INFORMATION PostDisplayInfo;
 
     void* m_ConfigRegistersPointer;
-    void* m_VRamPointer;
 
     HyDisplayMode m_CurrentDisplayMode[8];
 
@@ -230,6 +238,7 @@ private:
     DEVICE_POWER_STATE m_AdapterPowerState;
 
     GsPresentManager m_PresentManager;
+    GsMemoryManager m_MemoryManager;
 };
 
 #define HY_MINIPORT_DEVICE_FROM_HANDLE(HANDLE) static_cast<HyMiniportDevice*>(HANDLE)

@@ -15,7 +15,7 @@
 ; Specify the subdirectory for the files.  
 ; Your cab file should not have files at the root level,
 ; and each driver package must be in a separate subfolder.
-.Set DestinationDir=VirtualBoxDevice
+.Set DestinationDir=DisplayMiniportDriver
 ;Specify files to be included in cab file
 build\DisplayMiniportDriver.inf
 build\DisplayMiniportDriver.sys

@@ -2,8 +2,7 @@
 extern "C" {
 #endif
 
-#include <ntddk.h>
-#include <dispmprt.h>
+#include "Common.h"
 #include <wdmguid.h>
 
 #ifdef __cplusplus
@@ -31,6 +30,11 @@ void* HyMiniportDevice::operator new(const SIZE_T count)  // NOLINT(misc-new-del
     return HyAllocate(ExDefaultNonPagedPoolType, count, POOL_TAG_DEVICE_CONTEXT);
 }
 
+void HyMiniportDevice::operator delete(void* ptr)
+{
+    HyDeallocate(ptr, POOL_TAG_DEVICE_CONTEXT);
+}
+
 HyMiniportDevice::HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept
     : m_PhysicalDeviceObject(PhysicalDeviceObject)
     , m_DxgkStartInfo { }
@@ -42,10 +46,10 @@ HyMiniportDevice::HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept
     , m_PCISlotNumber { }
     , m_PCIConfig { }
     , m_ConfigRegistersPointer(nullptr)
-    , m_VRamPointer(nullptr)
     , m_CurrentDisplayMode { }
     , m_AdapterPowerState(PowerDeviceUnspecified)
     , m_PresentManager(this)
+    , m_MemoryManager()
 { }
 
 static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERFACE_STANDARD pciInterface)
@@ -309,6 +313,8 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         }
     }
 
+    bool gpuTypeFound = false;
+
     {
         NTSTATUS getEnumeratorStatus;
         wchar_t* enumerator;
@@ -407,12 +413,14 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         // Check only the first 3 characters.
         if(wcsncmp(pciPrefix, enumerator, wcslen(pciPrefix)) == 0)
         {
-            // If it starts with PCI then it is a discrete GPU, as opposed to an emulated one.
-            m_Flags.IsEmulated = FALSE;
+            // If it starts with PCI then it is not a software device (which doesn't work).
+            // It could still be Simulated in VirtualBox, an FPGA, or a full Microprocessor
+            gpuTypeFound = false;
         }
         else
         {
-            m_Flags.IsEmulated = TRUE;
+            m_Flags.GpuType = GPU_TYPE_SOFTWARE;
+            gpuTypeFound = true;
         }
 
         LOG_DEBUG("HyMiniportDevice::StartDevice: Device ID Prefix: %ls\n", enumerator);
@@ -425,60 +433,37 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         }
     }
 
-    PHYSICAL_ADDRESS framebufferBase {};
+    m_MemoryManager.Init(m_DeviceId, m_DeviceInfo, m_DxgkInterface);
 
+    if(m_DeviceId == 0x0001)
     {
-        LOG_DEBUG("HyMiniportDevice::StartDevice: Setting up BARs.\n");
+        m_ConfigRegistersPointer = m_MemoryManager.MappedBarMap().Region0.VirtualPointer;
+    }
+    if(m_DeviceId == 0x0001)
+    {
+        m_ConfigRegistersPointer = m_MemoryManager.MappedBarMap().Region0.VirtualPointer;
+    }
 
-        CM_FULL_RESOURCE_DESCRIPTOR* list = m_DeviceInfo.TranslatedResourceList->List;
-        LOG_DEBUG("HyMiniportDevice::StartDevice: CM_FULL_RESOURCE_DESCRIPTOR: 0x%p.\n", list);
+    //   If we haven't found the GPU type yet (i.e. it's not a software
+    // device, then we'll ask the GPU what type it is).
+    if(!gpuTypeFound)
+    {
+        const UINT gpuType = *GetDeviceConfigRegister(REGISTER_EMULATION);
 
-        for(UINT i = 0; i < m_DeviceInfo.TranslatedResourceList->Count; ++i)
+        switch(gpuType)
         {
-            LOG_DEBUG("HyMiniportDevice::StartDevice: Resource List: %u.\n", i);
-            for(UINT j = 0; j < list->PartialResourceList.Count; ++j)
-            {
-                LOG_DEBUG("HyMiniportDevice::StartDevice: Partial Resource List: %u.\n", j);
-                const CM_PARTIAL_RESOURCE_DESCRIPTOR* const desc = &list->PartialResourceList.PartialDescriptors[j];
-
-                LOG_DEBUG("HyMiniportDevice::StartDevice: Partial Resource List Desc: 0x%p, Type: %d, m_Flags: 0x%04X.\n", desc, desc->Type, desc->Flags);
-                switch(desc->Type)
-                {
-                    case CmResourceTypeMemory:
-                        LOG_DEBUG("HyStartDevice: Handling CmResourceTypeMemory.\n");
-                        if((desc->Flags & CM_RESOURCE_PORT_MEMORY) == CM_RESOURCE_PORT_MEMORY &&
-                           (desc->Flags & CM_RESOURCE_MEMORY_READ_WRITE) == CM_RESOURCE_MEMORY_READ_WRITE
-                        )
-                        {
-                            if(!(desc->Flags & CM_RESOURCE_MEMORY_PREFETCHABLE))
-                            {
-                                LOG_DEBUG("HyMiniportDevice::StartDevice: Mapping BAR0.\n");
-                                // This should be BAR0
-                                m_DxgkInterface.DxgkCbMapMemory(m_DxgkInterface.DeviceHandle, desc->u.Memory.Start, desc->u.Memory.Length, FALSE, FALSE, MmNonCached, &m_ConfigRegistersPointer);
-                            }
-                            else
-                            {
-                                LOG_DEBUG("HyMiniportDevice::StartDevice: Mapping BAR1. Start: 0x%I64X, Length: 0x%X\n", desc->u.Memory.Start.QuadPart, desc->u.Memory.Length);
-                                // This should be BAR1
-                                m_DxgkInterface.DxgkCbMapMemory(m_DxgkInterface.DeviceHandle, desc->u.Memory.Start, desc->u.Memory.Length, FALSE, FALSE, MmCached, &m_VRamPointer);
-                                framebufferBase = desc->u.Memory.Start;
-                            }
-                        }
-                        else
-                        {
-                            LOG_ERROR("HyMiniportDevice::StartDevice: CmResourceTypeMemory must be of type CM_RESOURCE_PORT_MEMORY & CM_RESOURCE_MEMORY_READ_WRITE.\n");
-                        }
-                        break;
-                    case CmResourceTypeMemoryLarge:
-                        LOG_ERROR("HyMiniportDevice::StartDevice: Cannot handle CmResourceTypeMemoryLarge.\n");
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            // Advance to the next full resource descriptor.
-            list = (CM_FULL_RESOURCE_DESCRIPTOR*) (&list->PartialResourceList.PartialDescriptors[list->PartialResourceList.Count]);
+            case VALUE_REGISTER_EMULATION_MICROPROCESSOR:
+                m_Flags.GpuType = GPU_TYPE_MICROPROCESSOR;
+                break;
+            case VALUE_REGISTER_EMULATION_FPGA:
+                m_Flags.GpuType = GPU_TYPE_FPGA;
+                break;
+            case VALUE_REGISTER_EMULATION_SIMULATION:
+                m_Flags.GpuType = GPU_TYPE_SIMULATED;
+                break;
+            default:
+                m_Flags.GpuType = GPU_TYPE_SOFTWARE;
+                break;
         }
     }
 
@@ -494,8 +479,10 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         m_CurrentDisplayMode[0].DisplayInfo.Height = *GetDeviceConfigRegister(BASE_REGISTER_DI + SIZE_REGISTER_DI * 0 + OFFSET_REGISTER_DI_HEIGHT);
         m_CurrentDisplayMode[0].DisplayInfo.Pitch = width * 4;
         m_CurrentDisplayMode[0].DisplayInfo.ColorFormat = D3DDDIFMT_A8R8G8B8;
-        //m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart = reinterpret_cast<UINT_PTR>(m_VRamPointer);
-        m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress = framebufferBase;
+        if(m_DeviceId == 0x0001)
+        {
+            m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart = static_cast<LONGLONG>(m_MemoryManager.MappedBarMap().Region1.Start);
+        }
         m_CurrentDisplayMode[0].DisplayInfo.TargetId = 0;
         m_CurrentDisplayMode[0].DisplayInfo.AcpiId = 0;
 
@@ -530,7 +517,6 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
 
 NTSTATUS HyMiniportDevice::CheckDevice() noexcept
 {
-#if HY_DEVICE_EMULATED
     PCI_COMMON_HEADER pciHeader { };
     ULONG bytesRead;
     // Get the device's PCI Vendor and Device ID's.
@@ -554,7 +540,6 @@ NTSTATUS HyMiniportDevice::CheckDevice() noexcept
         // If we don't recognize the device ID a different version of our driver is probably handling it.
         default: return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
-#endif
 }
 
 NTSTATUS HyMiniportDevice::StopDevice() noexcept
@@ -569,7 +554,9 @@ NTSTATUS HyMiniportDevice::StopDevice() noexcept
 
     m_Flags.IsStarted = FALSE;
 
-    m_PresentManager.Close();
+    (void) m_PresentManager.Close();
+
+    (void) m_MemoryManager.Close();
 
     return STATUS_SUCCESS;
 }
@@ -758,9 +745,9 @@ NTSTATUS HyMiniportDevice::FillUmDriverPrivate(IN_CONST_PDXGKARG_QUERYADAPTERINF
     HyPrivateDriverData* const outputDriverData = static_cast<HyPrivateDriverData*>(pQueryAdapterInfo->pOutputData);
 
     // Validate that the input data Magic value matches our Magic value.
-    if(inputDriverData->Magic != HY_PRIVATE_DRIVER_DATA_MAGIC)
+    if(inputDriverData->Magic != HyPrivateDriverData::HY_PRIVATE_DRIVER_DATA_MAGIC)
     {
-        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Magic != HY_PRIVATE_DRIVER_DATA_MAGIC [0x%08X]\n", HY_PRIVATE_DRIVER_DATA_MAGIC);
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Magic != HY_PRIVATE_DRIVER_DATA_MAGIC [0x%08X]\n", HyPrivateDriverData::HY_PRIVATE_DRIVER_DATA_MAGIC);
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
@@ -772,16 +759,16 @@ NTSTATUS HyMiniportDevice::FillUmDriverPrivate(IN_CONST_PDXGKARG_QUERYADAPTERINF
     }
 
     // Validate that the Miniport Display Driver and the User Mode Driver are using the same version of the private data.
-    if(inputDriverData->Version != HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION)
+    if(inputDriverData->Version != HyPrivateDriverData::HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION)
     {
-        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Version != HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION [0x%08X]\n", HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION);
+        LOG_ERROR("Invalid Parameter to FillUmDriverPrivate: inputDriverData->Version != HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION [0x%08X]\n", HyPrivateDriverData::HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION);
         return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
 
     // Set the same basic data for output
-    outputDriverData->Magic = HY_PRIVATE_DRIVER_DATA_MAGIC;
+    outputDriverData->Magic = HyPrivateDriverData::HY_PRIVATE_DRIVER_DATA_MAGIC;
     outputDriverData->Size = sizeof(HyPrivateDriverData);
-    outputDriverData->Version = HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION;
+    outputDriverData->Version = HyPrivateDriverData::HY_PRIVATE_DRIVER_DATA_CURRENT_VERSION;
 
     // Set the page size to 64KiB.
     outputDriverData->PageSize = 65536;
@@ -869,11 +856,7 @@ NTSTATUS HyMiniportDevice::FillQuerySegment(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
 
     if(querySegment->pSegmentDescriptor)
     {
-        if(!m_Flags.IsEmulated)
-        {
-            // Need to query the adapter for its memory information.
-        }
-        else
+        if(m_Flags.GpuType == GPU_TYPE_SOFTWARE)
         {
             if(querySegment->NbSegment > 1)
             {
@@ -898,16 +881,20 @@ NTSTATUS HyMiniportDevice::FillQuerySegment(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
             // querySegment->pSegmentDescriptor[0].m_Flags.SupportsCpuHostAperture = FALSE;
             // querySegment->pSegmentDescriptor[0].m_Flags.SupportsCachedCpuHostAperture = FALSE;
         }
+        else
+        {
+            // Need to query the adapter for its memory information.
+        }
     }
     else
     {
-        if(!m_Flags.IsEmulated)
+        if(m_Flags.GpuType == GPU_TYPE_SOFTWARE)
         {
-            // Need to query the adapter for its memory information.
             querySegment->NbSegment = 1;
         }
         else
         {
+            // Need to query the adapter for its memory information.
             querySegment->NbSegment = 1;
         }
     }
@@ -1449,15 +1436,34 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     }
 
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = nullptr;
-    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology = 0;
+    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology = nullptr;
     const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface = nullptr;
     SIZE_T numPaths = 0;
-    D3DKMDT_HVIDPNSOURCEMODESET hVidPnSourceModeSet = 0;
+    D3DKMDT_HVIDPNSOURCEMODESET hVidPnSourceModeSet = nullptr;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE* pVidPnSourceModeSetInterface = nullptr;
     const D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo = nullptr;
     const D3DKMDT_VIDPN_PRESENT_PATH* pVidPnPresentPath = nullptr;
     SIZE_T numPathsFromSource = 0;
     D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId = D3DDDI_ID_UNINITIALIZED;
+
+    // I don't like capturing lambdas, but it's better than goto label, in some ways.
+    const auto cleanupHandler = [&]()
+    {
+        if(pVidPnSourceModeSetInterface && hVidPnSourceModeSet != nullptr && pPinnedVidPnSourceModeInfo)
+        {
+            (void) pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);
+        }
+
+        if(pVidPnInterface && pCommitVidPn->hFunctionalVidPn != nullptr && hVidPnSourceModeSet != nullptr)
+        {
+            (void) pVidPnInterface->pfnReleaseSourceModeSet(pCommitVidPn->hFunctionalVidPn, hVidPnSourceModeSet);
+        }
+
+        if(pVidPnTopologyInterface && hVidPnTopology != nullptr && pVidPnPresentPath)
+        {
+            (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pVidPnPresentPath);
+        }
+    };
 
     // Get the VidPn Interface so we can get the 'Source Mode Set', 'Target Mode Set' and 'VidPn Topology' interfaces.
     NTSTATUS status = m_DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPn->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
@@ -1465,7 +1471,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     if(!NT_SUCCESS(status))
     {
         LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get VidPn Interface: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
-        goto Cleanup;
+        cleanupHandler();
+        return status;
     }
 
     // Get the VidPn Topology interface so we can enumerate all paths.
@@ -1474,7 +1481,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     if(!NT_SUCCESS(status))
     {
         LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get VidPnTopology Interface: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
-        goto Cleanup;
+        cleanupHandler();
+        return status;
     }
 
     // Find out the number of paths now, if it's 0 don't bother with source mode set and pinned mode, just clear current and then quit
@@ -1483,7 +1491,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     if(!NT_SUCCESS(status))
     {
         LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get number of paths: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
-        goto Cleanup;
+        cleanupHandler();
+        return status;
     }
 
     if(numPaths != 0)
@@ -1499,7 +1508,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
         if(!NT_SUCCESS(status))
         {
             LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to acquire Source Mode Set: 0x%08X, hFunctionalVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn, pCommitVidPn->AffectedVidPnSourceId);
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
 
         // Get the mode that is being pinned
@@ -1508,7 +1518,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
         if(!NT_SUCCESS(status))
         {
             LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to acquire Pinned Mode Set: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
     }
     else
@@ -1529,7 +1540,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
 
         if(!NT_SUCCESS(status))
         {
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
     }
 
@@ -1537,21 +1549,24 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     {
         // There is no mode to pin on this source, any old paths here have already been cleared
         status = STATUS_SUCCESS;
-        goto Cleanup;
+        cleanupHandler();
+        return status;
     }
 
     status = AreVidPnSourceModeFieldsValid(pPinnedVidPnSourceModeInfo);
 
     if(!NT_SUCCESS(status))
     {
-        goto Cleanup;
+        cleanupHandler();
+        return status;
     }
 
     status = pVidPnTopologyInterface->pfnGetNumPathsFromSource(hVidPnTopology, pCommitVidPn->AffectedVidPnSourceId, &numPathsFromSource);
     if(!NT_SUCCESS(status))
     {
         LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get number of paths from source: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
-        goto Cleanup;
+        cleanupHandler();
+        return status;
     }
 
     // Loop through all paths to set this mode
@@ -1564,7 +1579,8 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
         if(!NT_SUCCESS(status))
         {
             LOG_ERROR("pfnEnumPathTargetsFromSource failed with Status = 0x%I64x, hVidPnTopology = 0x%I64x, SourceId = 0x%I64x, PathIndex = 0x%I64x\n", status, hVidPnTopology, pCommitVidPn->AffectedVidPnSourceId, pathIndex);
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
 
         // Get the actual path info
@@ -1572,48 +1588,37 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
         if(!NT_SUCCESS(status))
         {
             LOG_ERROR("pfnAcquirePathInfo failed with Status = 0x%I64x, hVidPnTopology = 0x%I64x, SourceId = 0x%I64x, TargetId = 0x%I64x\n", status, hVidPnTopology, pCommitVidPn->AffectedVidPnSourceId, TargetId);
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
 
         status = AreVidPnPathFieldsValid(pVidPnPresentPath);
         if(!NT_SUCCESS(status))
         {
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
 
         status = SetSourceModeAndPath(pPinnedVidPnSourceModeInfo, pVidPnPresentPath);
         if(!NT_SUCCESS(status))
         {
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
 
         status = pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pVidPnPresentPath);
         if(!NT_SUCCESS(status))
         {
             LOG_ERROR("pfnReleasePathInfo failed with Status = 0x%I64x, hVidPnTopoogy = 0x%I64x, pVidPnPresentPath = 0x%I64x\n", status, hVidPnTopology, pVidPnPresentPath);
-            goto Cleanup;
+            cleanupHandler();
+            return status;
         }
 
         // We successfully released it.
         pVidPnPresentPath = nullptr; 
     }
 
-Cleanup:
-
-    if(pVidPnSourceModeSetInterface && hVidPnSourceModeSet != 0 && pPinnedVidPnSourceModeInfo)
-    {
-        (void) pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);
-    }
-
-    if(pVidPnInterface && pCommitVidPn->hFunctionalVidPn != 0 && hVidPnSourceModeSet != 0)
-    {
-        (void) pVidPnInterface->pfnReleaseSourceModeSet(pCommitVidPn->hFunctionalVidPn, hVidPnSourceModeSet);
-    }
-
-    if(pVidPnTopologyInterface && hVidPnTopology != 0 && pVidPnPresentPath)
-    {
-        (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pVidPnPresentPath);
-    }
+    cleanupHandler();
 
     return status;
 }

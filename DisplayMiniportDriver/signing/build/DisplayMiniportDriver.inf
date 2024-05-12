@@ -8,7 +8,7 @@ Class=Display ; TODO: specify appropriate Class
 ClassGuid={4d36e968-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
 Provider=%ManufacturerName%
 CatalogFile=DisplayMiniportDriver.cat
-DriverVer = 04/30/2024,1.0.20.82
+DriverVer = 05/08/2024,1.0.21.0
 PnpLockdown=1
 
 [DestinationDirs]
@@ -35,7 +35,7 @@ ExcludeFromSelect=*
 %DisplayMiniportDriver.DeviceDesc%=DisplayMiniportDriver_Device, PCI\VEN_FFFD&DEV_0001&CC_0300
 
 [DisplayMiniportDriver_Device.NT]
-FeatureScore=FA
+FeatureScore=F6 ; Required for WDDM driver: https://learn.microsoft.com/en-us/windows-hardware/drivers/display/setting-the-driver-feature-score
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]

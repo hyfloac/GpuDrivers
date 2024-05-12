@@ -39,7 +39,7 @@ DECL_LOG(Error, DPFLTR_ERROR_LEVEL);
         HyLog##LEVEL(logFuncAddress, FMT , ## __VA_ARGS__); \
     }  while(0)
 
-#if DEBUG
+#if defined(DEBUG) && DEBUG
   #define LOG_DEBUG(FMT, ...) internal_LOG(Debug, FMT , ## __VA_ARGS__)
 #else
   #define LOG_DEBUG(FMT, ...) do { } while(0)

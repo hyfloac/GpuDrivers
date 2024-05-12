@@ -159,6 +159,12 @@
     <ClCompile Include="src\GsPresentManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Devices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GsMemoryManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MemoryAllocator.h">
@@ -306,6 +312,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\XStdDefPolyFill.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\GsMemoryManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Devices.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

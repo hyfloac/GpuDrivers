@@ -575,3 +575,5 @@ FodyWeavers.xsd
 
 bin/
 obj/
+*.sys
+*.rpt

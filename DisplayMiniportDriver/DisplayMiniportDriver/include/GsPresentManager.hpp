@@ -29,9 +29,14 @@ class GsPresentManager final
 {
     DELETE_CM(GsPresentManager);
 public:
-    void* operator new(SIZE_T count);  // NOLINT(misc-new-delete-overloads)
+    void* operator new(SIZE_T count); // NOLINT(misc-new-delete-overloads)
 public:
     GsPresentManager(HyMiniportDevice* const deviceContext) noexcept;
+
+    ~GsPresentManager() noexcept
+    {
+        (void) Close();
+    }
 
     NTSTATUS Init() noexcept;
     NTSTATUS Close() noexcept;
@@ -48,7 +53,6 @@ public:
         UINT DestWidth,
         UINT DestHeight
     ) noexcept;
-
 private:
     [[nodiscard]] GsPresentData* PopPresent(const bool force = false) noexcept;
 
