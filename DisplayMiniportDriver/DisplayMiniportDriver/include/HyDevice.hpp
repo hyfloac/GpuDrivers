@@ -190,6 +190,8 @@ public:
     }
 private:
     NTSTATUS CheckDevice() noexcept;
+    NTSTATUS LoadPostDisplayInfo() noexcept;
+    NTSTATUS CheckDevicePrefix(bool* const gpuTypeFound) noexcept;
 
     NTSTATUS FillUmDriverPrivate(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) const noexcept;
     NTSTATUS FillDriverCaps(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) const noexcept;

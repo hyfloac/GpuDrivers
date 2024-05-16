@@ -157,37 +157,45 @@
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <TargetExt>.sys</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <TargetExt>.sys</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <TargetExt>.sys</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <TargetExt>.sys</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
+    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DriverSign>

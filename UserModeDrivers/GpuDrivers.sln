@@ -18,6 +18,9 @@ Global
 		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
+		TestSetup|ARM64 = TestSetup|ARM64
+		TestSetup|x64 = TestSetup|x64
+		TestSetup|x86 = TestSetup|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.Debug|ARM64.ActiveCfg = Debug|x64
@@ -38,6 +41,12 @@ Global
 		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.Release|x64.Build.0 = Release|x64
 		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.Release|x86.ActiveCfg = Release|Win32
 		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.Release|x86.Build.0 = Release|Win32
+		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.TestSetup|ARM64.ActiveCfg = TestSetup|x64
+		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.TestSetup|ARM64.Build.0 = TestSetup|x64
+		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.TestSetup|x64.ActiveCfg = TestSetup|x64
+		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.TestSetup|x64.Build.0 = TestSetup|x64
+		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.TestSetup|x86.ActiveCfg = TestSetup|Win32
+		{A80AFFFA-B640-416D-8A99-CBBB096D03F1}.TestSetup|x86.Build.0 = TestSetup|Win32
 		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.Debug|ARM64.ActiveCfg = Debug|ARM64
 		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.Debug|ARM64.Build.0 = Debug|ARM64
 		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.Debug|ARM64.Deploy.0 = Debug|ARM64
@@ -65,6 +74,15 @@ Global
 		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.Release|x86.ActiveCfg = Release|x64
 		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.Release|x86.Build.0 = Release|x64
 		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.Release|x86.Deploy.0 = Release|x64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|ARM64.ActiveCfg = TestSetup|ARM64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|ARM64.Build.0 = TestSetup|ARM64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|ARM64.Deploy.0 = TestSetup|ARM64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|x64.ActiveCfg = TestSetup|x64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|x64.Build.0 = TestSetup|x64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|x64.Deploy.0 = TestSetup|x64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|x86.ActiveCfg = TestSetup|x64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|x86.Build.0 = TestSetup|x64
+		{F1BE8726-4036-4363-871C-F3AA89F2DA92}.TestSetup|x86.Deploy.0 = TestSetup|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

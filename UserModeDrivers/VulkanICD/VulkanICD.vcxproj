@@ -25,6 +25,14 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="TestSetup|Win32">
+      <Configuration>TestSetup</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="TestSetup|x64">
+      <Configuration>TestSetup</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -36,6 +44,14 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
@@ -67,6 +83,14 @@
     <UseOfMfc>Static</UseOfMfc>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MSVC|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -90,28 +114,50 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MSVC|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MSVC|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\libs\conan\conandeps.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(SolutionDir)libs\TauUtils\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(VK_SDK_PATH)\Bin32;$(ExecutablePath)</ExecutablePath>
+    <LibraryPath>$(VK_SDK_PATH)\Lib32;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
     <ExecutablePath>$(VK_SDK_PATH)\Bin32;$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -119,7 +165,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(SolutionDir)libs\TauUtils\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
     <ExecutablePath>$(VK_SDK_PATH)\Bin32;$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -127,7 +173,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(SolutionDir)libs\TauUtils\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
     <ExecutablePath>$(VK_SDK_PATH)\Bin32;$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -135,7 +181,15 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(SolutionDir)libs\TauUtils\TauUtils\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(VK_SDK_PATH)\Bin;$(ExecutablePath)</ExecutablePath>
+    <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)libs\TauUtils\bin\debug_win64-x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
     <ExecutablePath>$(VK_SDK_PATH)\Bin;$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)libs\TauUtils\bin\debug_win64-x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -143,7 +197,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(SolutionDir)libs\TauUtils\TauUtils\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
     <ExecutablePath>$(VK_SDK_PATH)\Bin;$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)libs\TauUtils\bin\debug_win64-x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -151,7 +205,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(SolutionDir)libs\TauUtils\TauUtils\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(ProjectDir)include;$(IncludePath)</IncludePath>
     <ExecutablePath>$(VK_SDK_PATH)\Bin;$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)libs\TauUtils\bin\release_win64-x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -174,6 +228,38 @@
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Version>
+      </Version>
+      <ImportLibrary>$(OutDir)$(TargetName)d.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LargeAddressAware>true</LargeAddressAware>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_NO_EXCEPTIONS=1;VK_USE_PLATFORM_WIN32_KHR;TAU_UTILS_IMPORT_SHARED;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>false</OmitFramePointers>
+      <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <AdditionalOptions>-Wno-unknown-attributes -Wno-unused-parameter %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -279,7 +365,42 @@
       <ImportLibrary>$(OutDir)$(TargetName)d.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <LargeAddressAware>true</LargeAddressAware>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestSetup|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_NO_EXCEPTIONS=1;VK_USE_PLATFORM_WIN32_KHR;TAU_UTILS_IMPORT_SHARED;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StringPooling>true</StringPooling>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>false</OmitFramePointers>
+      <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <AdditionalOptions>-Wno-unknown-attributes -Wno-unused-parameter %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Version>
+      </Version>
+      <ImportLibrary>$(OutDir)$(TargetName)d.lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
@@ -314,7 +435,7 @@
       <ImportLibrary>$(OutDir)$(TargetName)d.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
@@ -346,7 +467,7 @@
       </Version>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
   </ItemDefinitionGroup>
@@ -361,6 +482,7 @@
     <ClCompile Include="src\PhysicalDeviceManager.FormatProperties.cpp" />
     <ClCompile Include="src\PhysicalDeviceManager.Groups.cpp" />
     <ClCompile Include="src\QueueManager.cpp" />
+    <ClCompile Include="src\Test.cpp" />
     <ClCompile Include="src\VulkanDriver.cpp" />
     <ClCompile Include="src\VulkanSuface.cpp" />
   </ItemGroup>
@@ -383,15 +505,19 @@
   <ItemGroup>
     <CopyFileToFolders Include="GpuDriverManifest.json">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='TestSetup|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MSVC|Win32'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='TestSetup|Win32'">false</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='MSVC|Win32'">false</DeploymentContent>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='TestSetup|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MSVC|x64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='TestSetup|x64'">false</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='MSVC|x64'">false</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</DeploymentContent>

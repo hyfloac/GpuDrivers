@@ -5,7 +5,7 @@
 #endif
 
 #ifndef HY_BUILD_AS_KMDOD
-  #define HY_BUILD_AS_KMDOD (1)
+  #define HY_BUILD_AS_KMDOD (0)
 #endif
 
 #ifndef HY_KMDOD_ENABLE_VSYNC_INTERRUPTS

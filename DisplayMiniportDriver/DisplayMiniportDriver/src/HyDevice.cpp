@@ -239,8 +239,8 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
     // Copy and save the DXGK interface functions.
     m_DxgkInterface = *DxgkInterface;
 
+    // Get the basic data about our device.
     {
-        // Get the basic data about our device.
         const NTSTATUS getDeviceInfoStatus = m_DxgkInterface.DxgkCbGetDeviceInformation(m_DxgkInterface.DeviceHandle, &m_DeviceInfo);
 
         if(!NT_SUCCESS(getDeviceInfoStatus))
@@ -250,195 +250,44 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         }
     }
 
+    // Check that the device is in fact ours.
     {
-        // Check that the device is in fact ours.
         const NTSTATUS checkDeviceStatus = CheckDevice();
 
         if(!NT_SUCCESS(checkDeviceStatus))
         {
-            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to check device.\n");
+            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to check device: 0x%08X.\n", checkDeviceStatus);
             return checkDeviceStatus;
         }
     }
 
     LOG_DEBUG("HyMiniportDevice::StartDevice: Check device passed.\n");
 
-    if constexpr(true)
+    // Acquire POST display data
     {
+        const NTSTATUS loadPostInfoStatus = LoadPostDisplayInfo();
+
+        if(!NT_SUCCESS(loadPostInfoStatus))
         {
-            RTL_OSVERSIONINFOEXW osVersionInfo { };
-            osVersionInfo.dwOSVersionInfoSize = sizeof(osVersionInfo);
-            const NTSTATUS getVersionStatus = RtlGetVersion(reinterpret_cast<RTL_OSVERSIONINFOW*>(&osVersionInfo));
-
-            // We'll only validate the version if it returned successfully, otherwise we'll just assume that DxgkCbAcquirePostDisplayOwnership will work.
-            if(NT_SUCCESS(getVersionStatus))
-            {
-                LOG_DEBUG("HyMiniportDevice::StartDevice: Running Windows Version %d.%d.\n", osVersionInfo.dwMajorVersion, osVersionInfo.dwMinorVersion);
-
-                // If less than Windows 8, fail.
-                if(osVersionInfo.dwMajorVersion < 6)
-                {
-                    LOG_ERROR("HyMiniportDevice::StartDevice: OS Major Version %d was less than 6.\n", osVersionInfo.dwMajorVersion);
-
-                    return STATUS_UNSUCCESSFUL;
-                }
-
-                if(osVersionInfo.dwMajorVersion == 6 && osVersionInfo.dwMinorVersion < 2)
-                {
-                    LOG_ERROR("HyMiniportDevice::StartDevice: OS Version 6.%d was less than 6.2.\n", osVersionInfo.dwMinorVersion);
-
-                    return STATUS_UNSUCCESSFUL;
-                }
-            }
-        }
-
-        // Check if DxgkCbAcquirePostDisplayOwnership exists, we're not supporting pre WDDM 1.2.
-        if(!m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership)
-        {
-            LOG_ERROR("HyMiniportDevice::StartDevice: DxgkCbAcquirePostDisplayOwnership was not provided.\n");
-            //return STATUS_UNSUCCESSFUL;
-        }
-        else
-        {
-            const NTSTATUS acquirePostDisplayStatus = m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership(m_DxgkInterface.DeviceHandle, &m_CurrentDisplayMode[0].DisplayInfo);
-
-            LOG_DEBUG("HyMiniportDevice::StartDevice: Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
-
-            // If we failed to acquire the POST display we're probably not running a POST device, or we're pre WDDM 1.2.
-            if(!NT_SUCCESS(acquirePostDisplayStatus)/* || deviceContext->PostDisplayInfo.Width == 0 */)
-            {
-                LOG_ERROR("HyMiniportDevice::StartDevice: DxgkCbAcquirePostDisplayOwnership returned status 0x%08X, Width: %d.\n", acquirePostDisplayStatus, m_CurrentDisplayMode[0].DisplayInfo.Width);
-                return STATUS_UNSUCCESSFUL;
-            }
+            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to acquire POST display: 0x%08X.\n", loadPostInfoStatus);
         }
     }
 
     bool gpuTypeFound = false;
 
+    // Check if this is a PCI device or a ROOT device.
     {
-        NTSTATUS getEnumeratorStatus;
-        wchar_t* enumerator;
-        wchar_t staticEnumeratorBuffer[16];
+        const NTSTATUS checkDevicePrefixStatus = CheckDevicePrefix(&gpuTypeFound);
 
-        // Keep iterating until success if the failure is caused by too small of a buffer.
-        do
+        if(!NT_SUCCESS(checkDevicePrefixStatus))
         {
-            LOG_DEBUG("HyMiniportDevice::StartDevice: Attempting to get the DevicePropertyEnumeratorName.\n");
-            // Get the length of the enumerator string.
-            ULONG bufferLength;
-            const NTSTATUS getEnumeratorLengthStatus = IoGetDeviceProperty(m_PhysicalDeviceObject, DevicePropertyEnumeratorName, 0, NULL, &bufferLength);
-
-            // If we fail propagate errors, unless it is a positional argument error.
-            if(!NT_SUCCESS(getEnumeratorLengthStatus) && getEnumeratorLengthStatus != STATUS_BUFFER_TOO_SMALL)
-            {
-                LOG_ERROR("HyMiniportDevice::StartDevice: Failed to get the length of DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorLengthStatus);
-                // This seems to be causing a BugCheck (BSOD).
-                // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
-
-                if(getEnumeratorLengthStatus == STATUS_INVALID_PARAMETER_2)
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
-
-                return getEnumeratorLengthStatus;
-            }
-
-            LOG_DEBUG("HyMiniportDevice::StartDevice: Buffer length: %u\n", bufferLength);
-
-            // If the length is sufficiently small we'll just use static allocation.
-            if(bufferLength <= 16)
-            {
-                LOG_DEBUG("HyMiniportDevice::StartDevice: Using static buffer\n");
-                enumerator = staticEnumeratorBuffer;
-            }
-            else
-            {
-                LOG_DEBUG("HyMiniportDevice::StartDevice: Allocating buffer.\n");
-                // Allocate the buffer for the enumerator name.
-                enumerator = static_cast<wchar_t*>(HyAllocate(NonPagedPoolNx, bufferLength * sizeof(wchar_t), POOL_TAG_DEVICE_CONTEXT));
-
-                // If the allocation fails report that we're out of memory.
-                if(!enumerator)
-                {
-                    LOG_ERROR("HyMiniportDevice::StartDevice: Failed to allocate PCI Device String Buffer.\n");
-                    // This seems to be causing a BugCheck (BSOD).
-                    // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
-
-                    return STATUS_NO_MEMORY;
-                }
-            }
-
-            // Get the enumerator name.
-            getEnumeratorStatus = IoGetDeviceProperty(m_PhysicalDeviceObject, DevicePropertyEnumeratorName, bufferLength, enumerator, &bufferLength);
-
-            // If we're successful we can break out of the loop.
-            if(NT_SUCCESS(getEnumeratorStatus))
-            {
-                break;
-            }
-
-            // If we failed for a reason other than the buffer being too small, propagate errors, unless it is a positional argument error.
-            if(getEnumeratorStatus != STATUS_BUFFER_TOO_SMALL)
-            {
-                LOG_ERROR("HyMiniportDevice::StartDevice: Failed to get DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorStatus);
-                // This seems to be causing a BugCheck (BSOD).
-                // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
-
-                // Only free if it was dynamically allocated.
-                if(enumerator != staticEnumeratorBuffer)
-                {
-                    // Free the buffer containing the enumerator name.
-                    HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
-                }
-
-                if(getEnumeratorStatus == STATUS_INVALID_PARAMETER_2)
-                {
-                    return STATUS_UNSUCCESSFUL;
-                }
-
-                return getEnumeratorStatus;
-            }
-
-            // Only free if it was dynamically allocated.
-            if(enumerator != staticEnumeratorBuffer)
-            {
-                // Free the buffer containing the enumerator name.
-                HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
-            }
-        } while(getEnumeratorStatus == STATUS_BUFFER_TOO_SMALL);
-
-        // The enumerator name for PCI devices, as opposed to Root Enumerated Devices.
-        constexpr wchar_t pciPrefix[] = L"PCI";
-
-        // Check only the first 3 characters.
-        if(wcsncmp(pciPrefix, enumerator, wcslen(pciPrefix)) == 0)
-        {
-            // If it starts with PCI then it is not a software device (which doesn't work).
-            // It could still be Simulated in VirtualBox, an FPGA, or a full Microprocessor
-            gpuTypeFound = false;
-        }
-        else
-        {
-            m_Flags.GpuType = GPU_TYPE_SOFTWARE;
-            gpuTypeFound = true;
-        }
-
-        LOG_DEBUG("HyMiniportDevice::StartDevice: Device ID Prefix: %ls\n", enumerator);
-
-        // Only free if it was dynamically allocated.
-        if(enumerator != staticEnumeratorBuffer)
-        {
-            // Free the buffer containing the enumerator name.
-            HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to check device prefix: 0x%08X.\n", checkDevicePrefixStatus);
+            return checkDevicePrefixStatus;
         }
     }
 
     m_MemoryManager.Init(m_DeviceId, m_DeviceInfo, m_DxgkInterface);
 
-    if(m_DeviceId == 0x0001)
-    {
-        m_ConfigRegistersPointer = m_MemoryManager.MappedBarMap().Region0.VirtualPointer;
-    }
     if(m_DeviceId == 0x0001)
     {
         m_ConfigRegistersPointer = m_MemoryManager.MappedBarMap().Region0.VirtualPointer;
@@ -467,7 +316,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         }
     }
 
-    // DxgkCbAcquirePostDisplayOwnership may return a DXGK_DISPLAY_INFORMATION structure with the Width 
+    //   DxgkCbAcquirePostDisplayOwnership may return a DXGK_DISPLAY_INFORMATION structure with the Width 
     // member set to zero. This indicates that either the current display device is not capable of POST operations or the 
     // operating system does not have the current display information for the current POST device. 
     // 
@@ -489,9 +338,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         LOG_DEBUG("HyMiniportDevice::StartDevice: Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
     }
 
-    //
     // Initialize everything for the present queue.
-    //
     {
         const NTSTATUS initPresentManagerStatus = m_PresentManager.Init();
 
@@ -504,12 +351,12 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
     // Enable Display
     SetDisplayState(0, true);
 
-    m_Flags.IsStarted = TRUE;
+    m_Flags.IsStarted = true;
 
     // We'll specify that we have one VidPN source.
     *NumberOfVideoPresentSurfaces = 1;
-    // ~~We don't have any child devices.~~ https://docs.microsoft.com/en-us/windows-hardware/drivers/display/child-devices-of-the-display-adapter
-    // We apparently do have one child, for the display output, but not the display itself...
+    // https://docs.microsoft.com/en-us/windows-hardware/drivers/display/child-devices-of-the-display-adapter
+    // We have one child, for the display output, but not the display itself.
     *NumberOfChildren = 1;
 
     return STATUS_SUCCESS;
@@ -540,6 +387,152 @@ NTSTATUS HyMiniportDevice::CheckDevice() noexcept
         // If we don't recognize the device ID a different version of our driver is probably handling it.
         default: return STATUS_GRAPHICS_DRIVER_MISMATCH;
     }
+}
+
+NTSTATUS HyMiniportDevice::LoadPostDisplayInfo() noexcept
+{
+    // Check if DxgkCbAcquirePostDisplayOwnership exists.
+    if(!m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership)
+    {
+        LOG_ERROR("HyMiniportDevice::LoadPostDisplayInfo: DxgkCbAcquirePostDisplayOwnership was not provided.\n");
+        return STATUS_SUCCESS;
+    }
+    else
+    {
+        const NTSTATUS acquirePostDisplayStatus = m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership(m_DxgkInterface.DeviceHandle, &m_CurrentDisplayMode[0].DisplayInfo);
+
+        LOG_DEBUG("HyMiniportDevice::LoadPostDisplayInfo: Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
+
+        // If we failed to acquire the POST display we're probably not running a POST device, or we're pre WDDM 1.2.
+        if(!NT_SUCCESS(acquirePostDisplayStatus))
+        {
+            LOG_ERROR("HyMiniportDevice::LoadPostDisplayInfo: DxgkCbAcquirePostDisplayOwnership returned status 0x%08X, Width: %d.\n", acquirePostDisplayStatus, m_CurrentDisplayMode[0].DisplayInfo.Width);
+            return acquirePostDisplayStatus;
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS HyMiniportDevice::CheckDevicePrefix(bool* const gpuTypeFound) noexcept
+{
+    NTSTATUS getEnumeratorStatus;
+    wchar_t* enumerator;
+    wchar_t staticEnumeratorBuffer[16];
+
+    // Keep iterating until success if the failure is caused by too small of a buffer.
+    do
+    {
+        LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Attempting to get the DevicePropertyEnumeratorName.\n");
+        // Get the length of the enumerator string.
+        ULONG bufferLength;
+        const NTSTATUS getEnumeratorLengthStatus = IoGetDeviceProperty(m_PhysicalDeviceObject, DevicePropertyEnumeratorName, 0, NULL, &bufferLength);
+
+        // If we fail propagate errors, unless it is a positional argument error.
+        if(!NT_SUCCESS(getEnumeratorLengthStatus) && getEnumeratorLengthStatus != STATUS_BUFFER_TOO_SMALL)
+        {
+            LOG_ERROR("HyMiniportDevice::CheckDevicePrefix: Failed to get the length of DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorLengthStatus);
+            // This seems to be causing a BugCheck (BSOD).
+            // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+
+            if(getEnumeratorLengthStatus == STATUS_INVALID_PARAMETER_2)
+            {
+                return STATUS_UNSUCCESSFUL;
+            }
+
+            return getEnumeratorLengthStatus;
+        }
+
+        LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Buffer length: %u\n", bufferLength);
+
+        // If the length is sufficiently small we'll just use static allocation.
+        if(bufferLength <= 16)
+        {
+            LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Using static buffer\n");
+            enumerator = staticEnumeratorBuffer;
+        }
+        else
+        {
+            LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Allocating buffer.\n");
+            // Allocate the buffer for the enumerator name.
+            enumerator = static_cast<wchar_t*>(HyAllocate(NonPagedPoolNx, bufferLength * sizeof(wchar_t), POOL_TAG_DEVICE_CONTEXT));
+
+            // If the allocation fails report that we're out of memory.
+            if(!enumerator)
+            {
+                LOG_ERROR("HyMiniportDevice::CheckDevicePrefix: Failed to allocate PCI Device String Buffer.\n");
+                // This seems to be causing a BugCheck (BSOD).
+                // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+
+                return STATUS_NO_MEMORY;
+            }
+        }
+
+        // Get the enumerator name.
+        getEnumeratorStatus = IoGetDeviceProperty(m_PhysicalDeviceObject, DevicePropertyEnumeratorName, bufferLength, enumerator, &bufferLength);
+
+        // If we're successful we can break out of the loop.
+        if(NT_SUCCESS(getEnumeratorStatus))
+        {
+            break;
+        }
+
+        // If we failed for a reason other than the buffer being too small, propagate errors, unless it is a positional argument error.
+        if(getEnumeratorStatus != STATUS_BUFFER_TOO_SMALL)
+        {
+            LOG_ERROR("HyMiniportDevice::CheckDevicePrefix: Failed to get DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorStatus);
+            // This seems to be causing a BugCheck (BSOD).
+            // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
+
+            // Only free if it was dynamically allocated.
+            if(enumerator != staticEnumeratorBuffer)
+            {
+                // Free the buffer containing the enumerator name.
+                HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+            }
+
+            if(getEnumeratorStatus == STATUS_INVALID_PARAMETER_2)
+            {
+                return STATUS_UNSUCCESSFUL;
+            }
+
+            return getEnumeratorStatus;
+        }
+
+        // Only free if it was dynamically allocated.
+        if(enumerator != staticEnumeratorBuffer)
+        {
+            // Free the buffer containing the enumerator name.
+            HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+        }
+    } while(getEnumeratorStatus == STATUS_BUFFER_TOO_SMALL);
+
+    // The enumerator name for PCI devices, as opposed to Root Enumerated Devices.
+    constexpr wchar_t pciPrefix[] = L"PCI";
+
+    // Check only the first 3 characters.
+    if(wcsncmp(pciPrefix, enumerator, wcslen(pciPrefix)) == 0)
+    {
+        // If it starts with PCI then it is not a software device (which doesn't work).
+        // It could still be Simulated in VirtualBox, an FPGA, or a full Microprocessor
+        *gpuTypeFound = false;
+    }
+    else
+    {
+        m_Flags.GpuType = GPU_TYPE_SOFTWARE;
+        *gpuTypeFound = true;
+    }
+
+    LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Device ID Prefix: %ls\n", enumerator);
+
+    // Only free if it was dynamically allocated.
+    if(enumerator != staticEnumeratorBuffer)
+    {
+        // Free the buffer containing the enumerator name.
+        HY_FREE(enumerator, POOL_TAG_DEVICE_CONTEXT);
+    }
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS HyMiniportDevice::StopDevice() noexcept
@@ -884,6 +877,32 @@ NTSTATUS HyMiniportDevice::FillQuerySegment(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
         else
         {
             // Need to query the adapter for its memory information.
+
+            // If more than 2 segments, report that we only filled out 2.
+            if(querySegment->NbSegment > 2)
+            {
+                querySegment->NbSegment = 2;
+            }
+
+            // Aperature Segment
+            querySegment->pSegmentDescriptor[0].BaseAddress.QuadPart = 0x7FFFFFFF00000000ull;
+            querySegment->pSegmentDescriptor[0].Flags.Value = 0;
+            querySegment->pSegmentDescriptor[0].Flags.Aperture = 1;
+            querySegment->pSegmentDescriptor[0].Flags.Agp = 0;
+            querySegment->pSegmentDescriptor[0].Flags.CpuVisible = 0;
+            querySegment->pSegmentDescriptor[0].Flags.UseBanking = 0;
+            querySegment->pSegmentDescriptor[0].Flags.CacheCoherent = 0;
+            querySegment->pSegmentDescriptor[0].Flags.PitchAlignment = 1;
+            querySegment->pSegmentDescriptor[0].Flags.PopulatedFromSystemMemory = 0;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+            querySegment->pSegmentDescriptor[0].Flags.PreservedDuringStandby = 1;
+            querySegment->pSegmentDescriptor[0].Flags.PreservedDuringHibernate = 1;
+            querySegment->pSegmentDescriptor[0].Flags.DirectFlip = 1;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+            querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = 1;
+#endif
+#endif
+
         }
     }
     else
@@ -895,7 +914,7 @@ NTSTATUS HyMiniportDevice::FillQuerySegment(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
         else
         {
             // Need to query the adapter for its memory information.
-            querySegment->NbSegment = 1;
+            querySegment->NbSegment = 2;
         }
     }
 

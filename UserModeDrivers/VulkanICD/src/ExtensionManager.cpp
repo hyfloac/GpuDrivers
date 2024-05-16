@@ -1,6 +1,5 @@
 #include <vulkan/vk_icd.h>
 #include <ConPrinter.hpp>
-#include <Utils.hpp>
 #include <String.hpp>
 #include <unordered_set>
 

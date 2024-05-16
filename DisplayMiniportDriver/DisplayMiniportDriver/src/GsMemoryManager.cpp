@@ -163,9 +163,10 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
     }
 
     // We don't use IO ports.
-    if((desc.Flags & CM_RESOURCE_PORT_MEMORY) == CM_RESOURCE_PORT_MEMORY)
+    if((desc.Flags & CM_RESOURCE_PORT_MEMORY) != CM_RESOURCE_PORT_MEMORY)
     {
         LOG_ERROR("GsMemoryManager::LoadBar: CmResourceTypeMemory must be of type CM_RESOURCE_PORT_MEMORY.\n");
+        return STATUS_INVALID_PARAMETER_1;
     }
 
     // The region info for this region index
@@ -287,6 +288,11 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
         region.IsCached ? MmCached : MmNonCached, // CacheType
         &mappedRegion->VirtualPointer             // VirtualAddress
     );
+
+    if constexpr(EnableExtensiveLogging)
+    {
+        LOG_DEBUG("GsMemoryManager::LoadBar: Memory Start: 0x%016llX, Length: 0x%016llX.\n", mappedRegion->Start, mappedRegion->Length);
+    }
 
     // Report any error with memory mapping.
     if(!NT_SUCCESS(mapStatus))

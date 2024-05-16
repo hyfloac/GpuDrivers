@@ -19,8 +19,6 @@ extern "C" {
 
 #pragma code_seg("PAGE")
 
-static NTSTATUS GetAdapterInfo(HyMiniportDevice* const miniportDeviceContext);
-
 NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID MiniportDeviceContext)
 {
     PAGED_CODE();

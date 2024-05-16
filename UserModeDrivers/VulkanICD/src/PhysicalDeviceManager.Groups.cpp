@@ -1,7 +1,6 @@
 #include <vulkan/vulkan.h>
 #include <new>
 #include <cstring>
-#include <Utils.hpp>
 #include <ConPrinter.hpp>
 
 #include "PhysicalDeviceManager.hpp"
