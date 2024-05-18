@@ -20,6 +20,7 @@ Drivers_Dir = 13
 
 [SourceDisksFiles]
 DisplayMiniportDriver.sys = 1,,
+D3DUserModeDriver.dll = 1,,
 
 ;*****************************************
 ; Install Section
@@ -37,9 +38,16 @@ ExcludeFromSelect=*
 [DisplayMiniportDriver_Device.NT]
 FeatureScore=F6 ; Required for WDDM driver: https://learn.microsoft.com/en-us/windows-hardware/drivers/display/setting-the-driver-feature-score
 CopyFiles=Drivers_Dir
+AddReg=SoftGpu_SoftwareDeviceSettings
+
+[SoftGpu_SoftwareDeviceSettings]
+HKR,,InstalledDisplayDrivers,%REG_MULTI_SZ%,D3DUserModeDriver.dll,D3DUserModeDriver.dll
+HKR,,CapabilityOverride,%REG_DWORD%,0x08
+HKR,,UserModeDriverName,%REG_MULTI_SZ%,D3DUserModeDriver.dll
 
 [Drivers_Dir]
 DisplayMiniportDriver.sys
+D3DUserModeDriver.dll
 
 ;-------------- Service installation
 [DisplayMiniportDriver_Device.NT.Services]
@@ -64,3 +72,5 @@ ManufacturerName="Grafika Strahlen LLC"
 DiskName = "SoftGpu Installation Disk"
 DisplayMiniportDriver.DeviceDesc = "SoftGpu"
 DisplayMiniportDriver.SVCDESC = "SoftGpu MiniPort Service"
+REG_MULTI_SZ = 0x00010000 
+REG_DWORD = 0x00010001 

@@ -1,3 +1,4 @@
+#include "Common.h"
 #include "Devices.hpp"
 
 GsBarMap Device0001ManufacturerFFFD = GsBarMap(

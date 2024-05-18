@@ -1,4 +1,5 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_query_child_relations
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "QueryChildRelations.hpp"
 #include "Logging.h"

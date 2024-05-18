@@ -4,6 +4,7 @@ extern "C" {
 
 #include "Common.h"
 #include <wdmguid.h>
+#include "RegisterMemCopy.h"
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -25,7 +26,7 @@ static D3DDDIFORMAT gPixelFormats[] = {
 
 static NTSTATUS MapFrameBuffer(PHYSICAL_ADDRESS PhysicalAddress, ULONG Length, void** VirtualAddress) noexcept;
 
-void* HyMiniportDevice::operator new(const SIZE_T count)  // NOLINT(misc-new-delete-overloads)
+void* HyMiniportDevice::operator new(const SIZE_T count)
 {
     return HyAllocate(ExDefaultNonPagedPoolType, count, POOL_TAG_DEVICE_CONTEXT);
 }
@@ -248,6 +249,8 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
             LOG_ERROR("HyMiniportDevice::StartDevice: Failed to get device info.\n");
             return getDeviceInfoStatus;
         }
+
+        LOG_DEBUG("HyMiniportDevice::StartDevice: Registry Path: %S\n", m_DeviceInfo.DeviceRegistryPath.Buffer);
     }
 
     // Check that the device is in fact ours.
@@ -292,6 +295,8 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
     {
         m_ConfigRegistersPointer = m_MemoryManager.MappedBarMap().Region0.VirtualPointer;
     }
+
+    m_MemoryManager.InitSegments(GetDeviceVramSize());
 
     //   If we haven't found the GPU type yet (i.e. it's not a software
     // device, then we'll ask the GPU what type it is).
@@ -391,6 +396,7 @@ NTSTATUS HyMiniportDevice::CheckDevice() noexcept
 
 NTSTATUS HyMiniportDevice::LoadPostDisplayInfo() noexcept
 {
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
     // Check if DxgkCbAcquirePostDisplayOwnership exists.
     if(!m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership)
     {
@@ -410,6 +416,7 @@ NTSTATUS HyMiniportDevice::LoadPostDisplayInfo() noexcept
             return acquirePostDisplayStatus;
         }
     }
+#endif
 
     return STATUS_SUCCESS;
 }
@@ -590,8 +597,12 @@ BOOLEAN HyMiniportDevice::InterruptRoutine(IN_ULONG MessageNumber) noexcept
                 LOG_DEBUG("HyMiniportDevice::InterruptRoutine: Handling Display-Only VSync, Target ID: %d\n", m_CurrentDisplayMode[0].VidPnTargetId);
             }
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
             interruptData.InterruptType = DXGK_INTERRUPT_DISPLAYONLY_VSYNC;
             interruptData.DisplayOnlyVsync.VidPnTargetId = m_CurrentDisplayMode[0].VidPnTargetId;
+#else
+            LOG_WARN("HyMiniportDevice::InterruptRoutine: Driver needs to be compiled against DXGKDDI_INTERFACE_VERSION_WIN8 to use VSync Interrupts.\n");
+#endif
         }
 
         m_DxgkInterface.DxgkCbNotifyInterrupt(m_DxgkInterface.DeviceHandle, &interruptData);
@@ -646,7 +657,7 @@ NTSTATUS HyMiniportDevice::QueryChildStatus(INOUT_PDXGK_CHILD_STATUS ChildStatus
         case StatusConnection:
             // HpdAwarenessInterruptible was reported since HpdAwarenessNone is deprecated.
             // However, wae have no knowledge of HotPlug events, so just always return connected.
-            ChildStatus->HotPlug.Connected = (BOOLEAN) m_Flags.IsStarted;
+            ChildStatus->HotPlug.Connected = static_cast<BOOLEAN>(m_Flags.IsStarted);
             return STATUS_SUCCESS;
         case StatusRotation:
             // D3DKMDT_MOA_NONE was reported, so this should never be called
@@ -656,6 +667,38 @@ NTSTATUS HyMiniportDevice::QueryChildStatus(INOUT_PDXGK_CHILD_STATUS ChildStatus
             LOG_ERROR("Unknown pChildStatus->Type %d requested.", ChildStatus->Type);
             return STATUS_NOT_SUPPORTED;
     }
+}
+
+NTSTATUS HyMiniportDevice::QueryDeviceDescriptor(IN_ULONG ChildUid, INOUT_PDXGK_DEVICE_DESCRIPTOR DeviceDescriptor) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG("HyMiniportDevice::QueryDeviceDescriptor\n");
+
+    // We're only going to report our single display.
+    if(ChildUid > 1)
+    {
+        return STATUS_GRAPHICS_CHILD_DESCRIPTOR_NOT_SUPPORTED;
+    }
+
+    if(DeviceDescriptor->DescriptorOffset >= 128)
+    {
+        return STATUS_MONITOR_NO_MORE_DESCRIPTOR_DATA;
+    }
+
+    const ULONG edidOffset = DeviceDescriptor->DescriptorOffset;
+    ULONG edidLength = 128;
+
+    if(edidLength - edidOffset > DeviceDescriptor->DescriptorLength)
+    {
+        edidLength = DeviceDescriptor->DescriptorLength;
+    }
+
+    const volatile UINT* const edidDisplay0 = GetDeviceConfigRegister(BASE_REGISTER_EDID + SIZE_REGISTER_EDID * 0 + edidOffset);
+
+    RegisterMemCopyNV32(DeviceDescriptor->DescriptorBuffer, edidDisplay0, static_cast<int>(edidLength));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS HyMiniportDevice::SetPowerState(IN_ULONG DeviceUid, IN_DEVICE_POWER_STATE DevicePowerState, IN_POWER_ACTION ActionType) noexcept
@@ -805,10 +848,14 @@ NTSTATUS HyMiniportDevice::FillDriverCaps(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQu
     driverCaps->SchedulingCaps.VSyncPowerSaveAware = 1;
     // driverCaps->MemoryManagementCaps.IoMmuSupported = TRUE;
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
     driverCaps->WDDMVersion = DXGKDDI_WDDMv1_2;
+#endif
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
     driverCaps->SupportNonVGA = TRUE;
     driverCaps->SupportSmoothRotation = TRUE;
+#endif
 
     return STATUS_SUCCESS;
 }
@@ -847,84 +894,166 @@ NTSTATUS HyMiniportDevice::FillQuerySegment(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
 
     DXGK_QUERYSEGMENTOUT* const querySegment = static_cast<DXGK_QUERYSEGMENTOUT*>(pQueryAdapterInfo->pOutputData);
 
-    if(querySegment->pSegmentDescriptor)
-    {
-        if(m_Flags.GpuType == GPU_TYPE_SOFTWARE)
-        {
-            if(querySegment->NbSegment > 1)
-            {
-                querySegment->NbSegment = 1;
-            }
-
-            querySegment->pSegmentDescriptor[0].BaseAddress.QuadPart = 0;
-            querySegment->pSegmentDescriptor[0].CpuTranslatedAddress.QuadPart = 0;
-            querySegment->pSegmentDescriptor[0].Size = 0;
-
-            querySegment->pSegmentDescriptor[0].Flags.Value = 0;
-
-            querySegment->pSegmentDescriptor[0].Flags.Aperture = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.Agp = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.CpuVisible = TRUE;
-            querySegment->pSegmentDescriptor[0].Flags.CacheCoherent = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.PitchAlignment = FALSE;
-            querySegment->pSegmentDescriptor[0].Flags.PopulatedFromSystemMemory = TRUE;
-
-            // querySegment->pSegmentDescriptor[0].m_Flags.Use64KBPages = FALSE;
-            // querySegment->pSegmentDescriptor[0].m_Flags.ReservedSysMem = FALSE;
-            // querySegment->pSegmentDescriptor[0].m_Flags.SupportsCpuHostAperture = FALSE;
-            // querySegment->pSegmentDescriptor[0].m_Flags.SupportsCachedCpuHostAperture = FALSE;
-        }
-        else
-        {
-            // Need to query the adapter for its memory information.
-
-            // If more than 2 segments, report that we only filled out 2.
-            if(querySegment->NbSegment > 2)
-            {
-                querySegment->NbSegment = 2;
-            }
-
-            // Aperature Segment
-            querySegment->pSegmentDescriptor[0].BaseAddress.QuadPart = 0x7FFFFFFF00000000ull;
-            querySegment->pSegmentDescriptor[0].Flags.Value = 0;
-            querySegment->pSegmentDescriptor[0].Flags.Aperture = 1;
-            querySegment->pSegmentDescriptor[0].Flags.Agp = 0;
-            querySegment->pSegmentDescriptor[0].Flags.CpuVisible = 0;
-            querySegment->pSegmentDescriptor[0].Flags.UseBanking = 0;
-            querySegment->pSegmentDescriptor[0].Flags.CacheCoherent = 0;
-            querySegment->pSegmentDescriptor[0].Flags.PitchAlignment = 1;
-            querySegment->pSegmentDescriptor[0].Flags.PopulatedFromSystemMemory = 0;
-#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
-            querySegment->pSegmentDescriptor[0].Flags.PreservedDuringStandby = 1;
-            querySegment->pSegmentDescriptor[0].Flags.PreservedDuringHibernate = 1;
-            querySegment->pSegmentDescriptor[0].Flags.DirectFlip = 1;
-#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
-            querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = 1;
-#endif
-#endif
-
-        }
-    }
-    else
-    {
-        if(m_Flags.GpuType == GPU_TYPE_SOFTWARE)
-        {
-            querySegment->NbSegment = 1;
-        }
-        else
-        {
-            // Need to query the adapter for its memory information.
-            querySegment->NbSegment = 2;
-        }
-    }
-
-    // The paging buffer segment being 0 forces to use write-combined memory. This seems to be what we want when emulating as we presumably don't have an aperture.
-    querySegment->PagingBufferSegmentId = 0;
-    // We shouldn't need a paging buffer as all memory is already local to the system, hopefully this is a valid value.
-    querySegment->PagingBufferSize = 0;
     querySegment->PagingBufferPrivateDataSize = 0;
+    return m_MemoryManager.FillSegments(*querySegment);
 
-    return STATUS_SUCCESS;
+//     const UINT64 vramSize = GetDeviceVramSize();
+//     const UINT64 cpuInvisibleVramSize = vramSize - m_MemoryManager.MappedBarMap().Region1.Length;
+//
+//     UINT requiredSegments = cpuInvisibleVramSize != 0 ? 2 : 1;
+//
+//     if constexpr(EnableApertureSegment)
+//     {
+//         ++requiredSegments;
+//     }
+//
+//     if(querySegment->pSegmentDescriptor)
+//     {
+//         if(m_Flags.GpuType == GPU_TYPE_SOFTWARE)
+//         {
+//             if(querySegment->NbSegment > 1)
+//             {
+//                 querySegment->NbSegment = 1;
+//             }
+//
+//             querySegment->pSegmentDescriptor[0].BaseAddress.QuadPart = 0;
+//             querySegment->pSegmentDescriptor[0].CpuTranslatedAddress.QuadPart = 0;
+//             querySegment->pSegmentDescriptor[0].Size = 0;
+//
+//             querySegment->pSegmentDescriptor[0].Flags.Value = 0;
+//
+//             querySegment->pSegmentDescriptor[0].Flags.Aperture = FALSE;
+//             querySegment->pSegmentDescriptor[0].Flags.Agp = FALSE;
+//             querySegment->pSegmentDescriptor[0].Flags.CpuVisible = TRUE;
+//             querySegment->pSegmentDescriptor[0].Flags.CacheCoherent = FALSE;
+//             querySegment->pSegmentDescriptor[0].Flags.PitchAlignment = FALSE;
+//             querySegment->pSegmentDescriptor[0].Flags.PopulatedFromSystemMemory = TRUE;
+//
+//             // querySegment->pSegmentDescriptor[0].m_Flags.Use64KBPages = FALSE;
+//             // querySegment->pSegmentDescriptor[0].m_Flags.ReservedSysMem = FALSE;
+//             // querySegment->pSegmentDescriptor[0].m_Flags.SupportsCpuHostAperture = FALSE;
+//             // querySegment->pSegmentDescriptor[0].m_Flags.SupportsCachedCpuHostAperture = FALSE;
+//         }
+//         else
+//         {
+//             // Need to query the adapter for its memory information.
+//
+//             // If more than 2 segments, report that we only filled out 2.
+//             if(querySegment->NbSegment > requiredSegments)
+//             {
+//                 querySegment->NbSegment = requiredSegments;
+//             }
+//
+//             int index = 0;
+//
+//             if constexpr(EnableApertureSegment)
+//             {
+//                 DXGK_SEGMENTDESCRIPTOR& descriptor = querySegment->pSegmentDescriptor[index++];
+//
+//                 constexpr SIZE_T size = static_cast<SIZE_T>(32) * 1024u * 1024u;
+//
+//                 // Aperature Segment
+//                 descriptor.BaseAddress.QuadPart = 0;
+//                 descriptor.CpuTranslatedAddress.QuadPart = 0;
+//                 descriptor.Size = size;
+//                 descriptor.NbOfBanks = 0;
+//                 descriptor.pBankRangeTable = nullptr;
+//                 descriptor.CommitLimit = (size / 16) * 4096;
+//
+//                 descriptor.Flags.Value = 0;
+//                 descriptor.Flags.Aperture = 1;
+//                 descriptor.Flags.Agp = 0;
+//                 descriptor.Flags.CpuVisible = 0;
+//                 descriptor.Flags.UseBanking = 0;
+//                 descriptor.Flags.CacheCoherent = 0;
+//                 descriptor.Flags.PitchAlignment = 0;
+//                 descriptor.Flags.PopulatedFromSystemMemory = 0;
+// #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+//                 descriptor.Flags.PreservedDuringStandby = 1;
+//                 descriptor.Flags.PreservedDuringHibernate = 1;
+//                 descriptor.Flags.DirectFlip = 0;
+// #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+//                 querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = 1;
+// #endif
+// #endif
+//             }
+//
+//             {
+//                 DXGK_SEGMENTDESCRIPTOR& descriptor = querySegment->pSegmentDescriptor[index++];
+//
+//                 // CPU Visible Segment
+//                 descriptor.BaseAddress.QuadPart = 0;
+//                 descriptor.CpuTranslatedAddress.QuadPart = 0;
+//                 descriptor.Size = m_MemoryManager.MappedBarMap().Region1.Length;
+//                 descriptor.NbOfBanks = 0;
+//                 descriptor.pBankRangeTable = nullptr;
+//                 descriptor.CommitLimit = 0;
+//
+//                 descriptor.Flags.Value = 0;
+//                 descriptor.Flags.Aperture = 0;
+//                 descriptor.Flags.Agp = 0;
+//                 descriptor.Flags.CpuVisible = 1;
+//                 descriptor.Flags.UseBanking = 0;
+//                 descriptor.Flags.CacheCoherent = 0;
+//                 descriptor.Flags.PitchAlignment = 0;
+//                 descriptor.Flags.PopulatedFromSystemMemory = 0;
+// #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+//                 descriptor.Flags.PreservedDuringStandby = 1;
+//                 descriptor.Flags.PreservedDuringHibernate = 1;
+//                 descriptor.Flags.DirectFlip = 1;
+// #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+//                 querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = 1;
+// #endif
+// #endif
+//             }
+//
+//             if(cpuInvisibleVramSize != 0)
+//             {
+//                 DXGK_SEGMENTDESCRIPTOR& descriptor = querySegment->pSegmentDescriptor[index++];
+//
+//                 // CPU Invisible Segment
+//                 descriptor.BaseAddress.QuadPart = 0;
+//                 descriptor.CpuTranslatedAddress.QuadPart = 0;
+//                 descriptor.Size = cpuInvisibleVramSize;
+//                 descriptor.NbOfBanks = 0;
+//                 descriptor.pBankRangeTable = nullptr;
+//                 descriptor.CommitLimit = 0;
+//
+//                 descriptor.Flags.Value = 0;
+//                 descriptor.Flags.Aperture = 0;
+//                 descriptor.Flags.Agp = 0;
+//                 descriptor.Flags.CpuVisible = 1;
+//                 descriptor.Flags.UseBanking = 0;
+//                 descriptor.Flags.CacheCoherent = 0;
+//                 descriptor.Flags.PitchAlignment = 0;
+//                 descriptor.Flags.PopulatedFromSystemMemory = 0;
+// #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+//                 descriptor.Flags.PreservedDuringStandby = 1;
+//                 descriptor.Flags.PreservedDuringHibernate = 1;
+//                 descriptor.Flags.DirectFlip = 1;
+// #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+//                 querySegment->pSegmentDescriptor[0].Flags.Use64KBPages = 1;
+// #endif
+// #endif
+//             }
+//         }
+//     }
+//     else
+//     {
+//         if(m_Flags.GpuType == GPU_TYPE_SOFTWARE)
+//         {
+//             querySegment->NbSegment = 1;
+//         }
+//         else
+//         {
+//             querySegment->NbSegment = requiredSegments;
+//         }
+//     }
+//
+//     // The paging buffer segment being 0 forces to use write-combined memory. Not sure what to put here yet.
+//     querySegment->PagingBufferSegmentId = 0;
+//     // Not sure what to put here yet
+//     querySegment->PagingBufferSize = 65536; 
 }
 
 NTSTATUS HyMiniportDevice::CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pCollectDbgInfo) noexcept
@@ -1673,6 +1802,7 @@ NTSTATUS HyMiniportDevice::GetScanLine(INOUT_PDXGKARG_GETSCANLINE pGetScanLine) 
     return STATUS_SUCCESS;
 }
 
+#if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8
 // Given pixel format, give back the bits per pixel. Only supports pixel formats expected by BDD
 // (i.e. the ones found below in PixelFormatFromBPP or that may come in from FallbackStart)
 // This is because these two functions combine to allow BDD to store the bpp of a VBE mode in the
@@ -1800,6 +1930,7 @@ NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYO
 
     return STATUS_SUCCESS;
 }
+#endif
 
 NTSTATUS HyMiniportDevice::StopDeviceAndReleasePostDisplayOwnership(IN_CONST_D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId, PDXGK_DISPLAY_INFORMATION DisplayInfo) noexcept
 {
@@ -1819,7 +1950,11 @@ NTSTATUS HyMiniportDevice::ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE Interru
 {
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    if(InterruptType == DXGK_INTERRUPT_CRTC_VSYNC || InterruptType == DXGK_INTERRUPT_DISPLAYONLY_VSYNC)
+    if(InterruptType == DXGK_INTERRUPT_CRTC_VSYNC
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+        || InterruptType == DXGK_INTERRUPT_DISPLAYONLY_VSYNC
+#endif
+    )
     {
         if(!EnableInterrupt)
         {
@@ -1831,11 +1966,13 @@ NTSTATUS HyMiniportDevice::ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE Interru
             LOG_DEBUG("HyMiniportDevice::ControlInterrupt: CRTC VSync Enabled for Display 0.\n");
             m_CurrentDisplayMode[0].Flags.VSyncEnabled = 1;
         }
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
         else if(InterruptType == DXGK_INTERRUPT_DISPLAYONLY_VSYNC)
         {
             LOG_DEBUG("HyMiniportDevice::ControlInterrupt: Display-Only VSync Enabled for Display 0.\n");
             m_CurrentDisplayMode[0].Flags.VSyncEnabled = 2;
         }
+#endif
 
         LOG_DEBUG("HyMiniportDevice::ControlInterrupt: %sabling VSync Interrupts for Display 0.\n", EnableInterrupt ? "En" : "Dis");
 
@@ -1876,6 +2013,9 @@ BOOLEAN HyMiniportDevice::SynchronizeVidSchNotifyInterrupt(PVOID Params) noexcep
 // Thus it is subject to the Microsoft Public License.
 void HyMiniportDevice::ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, BOOLEAN CompletedOrFailed) noexcept
 {
+    (void) VidPnSourceId;
+    (void) CompletedOrFailed;
+
     PAGED_CODE();
 
     if constexpr(false)
@@ -1883,6 +2023,7 @@ void HyMiniportDevice::ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidP
         LOG_DEBUG("HyMiniportDevice::ReportPresentProgress\n");
     }
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
     GsSynchronizeParams synchronizeParams {};
     synchronizeParams.Device = this;
     synchronizeParams.InterruptData.InterruptType = DXGK_INTERRUPT_DISPLAYONLY_PRESENT_PROGRESS;
@@ -1911,6 +2052,7 @@ void HyMiniportDevice::ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidP
     {
         LOG_ERROR("HyMiniportDevice::ReportPresentProgress: Failed to synchronize execution.\n");
     }
+#endif
 }
 
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L711

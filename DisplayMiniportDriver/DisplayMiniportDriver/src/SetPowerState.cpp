@@ -1,4 +1,5 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_set_power_state
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "SetPowerState.hpp"
 #include "Logging.h"

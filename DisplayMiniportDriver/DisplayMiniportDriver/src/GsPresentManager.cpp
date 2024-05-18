@@ -1,3 +1,4 @@
+#include "Common.h"
 #include "GsPresentManager.hpp"
 
 #include "BlockTransfer.hpp"
@@ -19,6 +20,7 @@ GsPresentManager::GsPresentManager(HyMiniportDevice* const deviceContext) noexce
     , m_PresentQueueSemaphore { }
     , m_PresentThreadObject(nullptr)
     , m_QueuedPresentCount(0)
+    , m_Started(false)
 { }
 
 NTSTATUS GsPresentManager::Init() noexcept
@@ -94,12 +96,19 @@ NTSTATUS GsPresentManager::Init() noexcept
         }
     }
 
+    m_Started = true;
+
     return STATUS_SUCCESS;
 }
 
 NTSTATUS GsPresentManager::Close() noexcept
 {
     LOG_DEBUG("GsPresentManager::Close\n");
+
+    if(!m_Started)
+    {
+        return STATUS_SUCCESS;
+    }
 
     if(m_PresentThreadObject)
     {
@@ -174,7 +183,7 @@ void GsPresentManager::FlushPipeline() noexcept
 }
 
 void GsPresentManager::InsertPresent(
-    const IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly,
+    const void* const pPresentDisplayOnlyVoid,
     const PMDL Mdl,
     const D3DKMDT_VIDPN_PRESENT_PATH_ROTATION Rotation,
     BYTE* const Destination,
@@ -185,11 +194,25 @@ void GsPresentManager::InsertPresent(
     const UINT DestHeight
 ) noexcept
 {
+    (void) pPresentDisplayOnlyVoid;
+    (void) Mdl;
+    (void) Rotation;
+    (void) Destination;
+    (void) Source;
+    (void) DestBPP;
+    (void) DestPitch;
+    (void) DestWidth;
+    (void) DestHeight;
+
     CHECK_IRQL(DISPATCH_LEVEL);
     if constexpr(false)
     {
         LOG_DEBUG("GsPresentManager::InsertPresent\n");
     }
+
+
+#if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8
+    const IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly = reinterpret_cast<IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY>(pPresentDisplayOnlyVoid);
 
     const SIZE_T movesSize = pPresentDisplayOnly->NumMoves * sizeof(D3DKMT_MOVE_RECT);
     const SIZE_T rectsSize = pPresentDisplayOnly->NumDirtyRects * sizeof(RECT);
@@ -227,6 +250,7 @@ void GsPresentManager::InsertPresent(
     (void) ExInterlockedInsertTailList(&m_PendingPresentQueue, &presentData->ListEntry, &m_PresentQueueLock);
     InterlockedIncrement(&m_QueuedPresentCount);
     WakeThread();
+#endif
 }
 
 GsPresentData* GsPresentManager::PopPresent(const bool force) noexcept

@@ -213,7 +213,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -231,8 +231,12 @@
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DriverSign>
@@ -252,7 +256,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -269,8 +273,12 @@
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DriverSign>
@@ -288,7 +296,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -310,8 +318,12 @@
       <SpecifyDriverVerDirectiveDate>true</SpecifyDriverVerDirectiveDate>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DriverSign>
@@ -331,7 +343,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -348,8 +360,12 @@
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <DriverSign>
@@ -364,21 +380,25 @@
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -393,8 +413,12 @@
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DriverSign>
@@ -409,21 +433,25 @@
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DriverSign>
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>DXGKDDI_INTERFACE_VERSION=0x300E;POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -438,8 +466,12 @@
       <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="DisplayMiniportDriver.inf" />
@@ -469,6 +501,7 @@
     <ClCompile Include="src\FilterMessageNotify.c" />
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\GetScanLine.cpp" />
+    <ClCompile Include="src\GsGraphicsContext.cpp" />
     <ClCompile Include="src\GsMemoryManager.cpp" />
     <ClCompile Include="src\GsPresentManager.cpp" />
     <ClCompile Include="src\Guids.c" />
@@ -522,6 +555,7 @@
     <ClInclude Include="include\FilterUnload.h" />
     <ClInclude Include="include\GetScanLine.hpp" />
     <ClInclude Include="include\GsPresentManager.hpp" />
+    <ClInclude Include="include\GsGraphicsContext.hpp" />
     <ClInclude Include="include\HyDevice.hpp" />
     <ClInclude Include="include\I2CInterface.h" />
     <ClInclude Include="include\InterruptRoutine.hpp" />

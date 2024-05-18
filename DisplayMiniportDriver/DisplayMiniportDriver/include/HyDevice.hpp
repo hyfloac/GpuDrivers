@@ -82,6 +82,8 @@ class HyMiniportDevice final
     DEFAULT_DESTRUCT(HyMiniportDevice);
     DELETE_CM(HyMiniportDevice);
 public:
+    static inline constexpr bool EnableApertureSegment = true;
+
     static inline constexpr UINT32 VALUE_REGISTER_MAGIC            = 0x4879666C;
     static inline constexpr UINT32 VALUE_REGISTER_REVISION         = 0x00000001;
     static inline constexpr UINT32 MASK_REGISTER_CONTROL           = 0x00000001;
@@ -138,7 +140,7 @@ public:
     void DpcRoutine() noexcept;
     NTSTATUS QueryChildRelations(PDXGK_CHILD_DESCRIPTOR ChildRelations, ULONG ChildRelationsSize) noexcept;
     NTSTATUS QueryChildStatus(INOUT_PDXGK_CHILD_STATUS ChildStatus, IN_BOOLEAN NonDestructiveOnly) noexcept;
-
+    NTSTATUS QueryDeviceDescriptor(IN_ULONG ChildUid, INOUT_PDXGK_DEVICE_DESCRIPTOR DeviceDescriptor) noexcept;
     NTSTATUS SetPowerState(IN_ULONG DeviceUid, IN_DEVICE_POWER_STATE DevicePowerState, IN_POWER_ACTION ActionType) noexcept;
 
     NTSTATUS QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) noexcept;
@@ -155,7 +157,9 @@ public:
 
     NTSTATUS GetScanLine(INOUT_PDXGKARG_GETSCANLINE pGetScanLine) noexcept;
 
+#if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8
     NTSTATUS PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly) noexcept;
+#endif
 
     NTSTATUS StopDeviceAndReleasePostDisplayOwnership(IN_CONST_D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId, PDXGK_DISPLAY_INFORMATION DisplayInfo) noexcept;
 

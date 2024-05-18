@@ -1,4 +1,5 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_reset_device
+#include "Common.h"
 #include "ResetDevice.hpp"
 #include "HyDevice.hpp"
 #include "Logging.h"

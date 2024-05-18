@@ -1,5 +1,6 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_query_interface
 // ReSharper disable CppParameterMayBeConstPtrOrRef
+#include "Common.h"
 #include "QueryInterface.hpp"
 #include "Logging.h"
 
@@ -82,7 +83,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyQueryInterface\n");
+    // LOG_DEBUG("HyQueryInterface\n");
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
@@ -118,11 +119,13 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 
     if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM))
     {
+        LOG_DEBUG("HyQueryInterface: Querying OPM\n");
+
         if constexpr(false)
         {
             if(QueryInterface->Size == sizeof(DXGK_OPM_INTERFACE) && QueryInterface->Version == DXGK_OPM_INTERFACE_VERSION_1)
             {
-                DXGK_OPM_INTERFACE* opmInterface = (DXGK_OPM_INTERFACE*) QueryInterface->Interface;
+                DXGK_OPM_INTERFACE* opmInterface = reinterpret_cast<DXGK_OPM_INTERFACE*>(QueryInterface->Interface);
 
                 opmInterface->Size = sizeof(DXGK_OPM_INTERFACE);
                 opmInterface->Version = DXGK_OPM_INTERFACE_VERSION_1;
@@ -136,6 +139,8 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 #if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM_2))
     {
+        LOG_DEBUG("HyQueryInterface: Querying OPM 2\n");
+
         if constexpr(false)
         {
             if(QueryInterface->Size == sizeof(DXGK_OPM_INTERFACE_2) && QueryInterface->Version == DXGK_OPM_INTERFACE_VERSION_2)
@@ -153,6 +158,8 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
     }
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM_2_JTP))
     {
+        LOG_DEBUG("HyQueryInterface: Querying OPM 2 JTP\n");
+
         if constexpr(false)
         {
             if(QueryInterface->Size == sizeof(DXGK_OPM_INTERFACE_2_JTP) && QueryInterface->Version == DXGK_OPM_INTERFACE_VERSION_2_JTP)
@@ -172,6 +179,8 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 #if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_3
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM_3))
     {
+        LOG_DEBUG("HyQueryInterface: Querying OPM 3\n");
+
         if constexpr(false)
         {
             if(QueryInterface->Size == sizeof(DXGK_OPM_INTERFACE_3) && QueryInterface->Version == DXGK_OPM_INTERFACE_VERSION_3)
@@ -190,6 +199,8 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 #endif
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_I2C))
     {
+        LOG_DEBUG("HyQueryInterface: Querying I2C\n");
+
         if(QueryInterface->Size == sizeof(DXGK_I2C_INTERFACE) && QueryInterface->Version == DXGK_I2C_INTERFACE_VERSION_1)
         {
             DXGK_I2C_INTERFACE* pI2CInterface = reinterpret_cast<DXGK_I2C_INTERFACE*>(QueryInterface->Interface);
@@ -207,7 +218,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
     }
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_FUCKY))
     {
-        LOG_WARN("HyQueryInterface: Querying that special fucky Interface that may be required, but is undocumented, and only needs to return not-implemented...\n");
+        LOG_DEBUG("HyQueryInterface: Querying Fucky Interface\n");
 
         if(QueryInterface->Size == sizeof(DX_FUCKY_INTERFACE) && QueryInterface->Version == FUCKY_VERSION)
         {

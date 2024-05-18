@@ -1,4 +1,5 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_recommendfunctionalvidpn
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "RecommendFunctionalVidPn.hpp"
 #include "Logging.h"

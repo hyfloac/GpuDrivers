@@ -1,5 +1,6 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_controlinterrupt
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/display/saving-energy-with-vsync-control#display-only-vsync-requirements-for-windows-8-and-later-versions
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "InterruptRoutine.hpp"
 #include "Logging.h"

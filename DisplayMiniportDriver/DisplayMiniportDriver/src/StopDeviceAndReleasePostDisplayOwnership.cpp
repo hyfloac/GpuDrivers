@@ -1,4 +1,5 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_stop_device_and_release_post_display_ownership
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "StopDeviceAndReleasePostDisplayOwnership.hpp"
 #include "Logging.h"

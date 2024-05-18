@@ -1,8 +1,13 @@
+
 #include <Windows.h>
+extern "C" {
+#include <d3d9types.h>
 #include <d3dumddi.h>
+}
 
 extern "C" HRESULT __declspec(dllexport) OpenAdapter(D3DDDIARG_OPENADAPTER* const pOpenAdapter)
 {
+    pOpenAdapter->DriverVersion = D3D_UMD_INTERFACE_VERSION;
     return S_OK;
 }
 
@@ -20,7 +25,7 @@ extern "C" HRESULT __declspec(dllexport) OpenAdapter10(D3DDDIARG_OPENADAPTER* co
 
     pOpenAdapter->DriverVersion = D3D_UMD_INTERFACE_VERSION;
 
-    pOpenAdapter->pAdapterCallbacks->pfnQueryAdapterInfoCb();
+    // pOpenAdapter->pAdapterCallbacks->pfnQueryAdapterInfoCb();
 
     return S_OK;
 }

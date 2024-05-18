@@ -1,14 +1,7 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "Common.h"
 
-#include <ntddk.h>
-#include <dispmprt.h>
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
+#if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8
 NTSTATUS HyPresentDisplayOnly(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly);
+#endif

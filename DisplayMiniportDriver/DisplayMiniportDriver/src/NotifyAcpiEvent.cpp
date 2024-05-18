@@ -1,4 +1,5 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_notify_acpi_event
+#include "Common.h"
 #include "NotifyAcpiEvent.hpp"
 #include "Logging.h"
 

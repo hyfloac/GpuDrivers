@@ -1,4 +1,5 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_updateactivevidpnpresentpath
+#include "Common.h"
 #include "UpdateActiveVidPnPresentPath.hpp"
 #include "HyDevice.hpp"
 

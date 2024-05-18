@@ -1,3 +1,4 @@
+#include "Common.h"
 #include "BlockTransfer.hpp"
 
 // For the following macros, c must be a UCHAR.

@@ -1,11 +1,10 @@
 // ReSharper disable CppCStyleCast
 #pragma once
 
+#include "Common.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <ntddk.h>
 
 BOOLEAN RegisterMemCopyVV32(volatile void* const Destination, const volatile void* const Source, const UINT64 ByteCount);
 

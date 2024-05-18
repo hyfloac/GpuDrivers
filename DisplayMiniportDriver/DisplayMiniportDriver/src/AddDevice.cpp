@@ -1,17 +1,5 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_add_device
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <ntddk.h>
-#include <dispmprt.h>
-#include <wdmguid.h>
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
-
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "AddDevice.hpp"
 #include "MemoryAllocator.h"

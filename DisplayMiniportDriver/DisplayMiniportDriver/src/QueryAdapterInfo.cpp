@@ -1,4 +1,5 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_queryadapterinfo
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "QueryAdapterInfo.hpp"
 #include "Logging.h"

@@ -1,4 +1,4 @@
-#include <ntddk.h>
+#include "Common.h"
 #include <ntstrsafe.h>
 
 #include "MemoryAllocator.h"

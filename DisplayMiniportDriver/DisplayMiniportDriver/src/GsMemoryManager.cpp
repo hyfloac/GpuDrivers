@@ -1,3 +1,4 @@
+#include "Common.h"
 #include "GsMemoryManager.hpp"
 
 NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& deviceInfo, const DXGKRNL_INTERFACE& dxgkInterface) noexcept
@@ -88,6 +89,154 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
     }
 
     m_Initialized = true;
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
+{
+    const UINT64 cpuInvisibleVramSize = vramSize - m_MappedBarMap.Region1.Length;
+
+    m_ActiveSegments = 0;
+
+    if constexpr(EnableApertureSegment)
+    {
+        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+
+        constexpr SIZE_T size = static_cast<SIZE_T>(32) * 1024u * 1024u;
+
+        // Aperature Segment
+        descriptor.BaseAddress.QuadPart = 0;
+        descriptor.CpuTranslatedAddress.QuadPart = 0;
+        descriptor.Size = size;
+        descriptor.CommitLimit = (size / 16) * 4096;
+
+        descriptor.Flags.Value = 0;
+        descriptor.Flags.Bits.Aperture = 1;
+        descriptor.Flags.Bits.Agp = 0;
+        descriptor.Flags.Bits.CpuVisible = 0;
+        descriptor.Flags.Bits.UseBanking = 0;
+        descriptor.Flags.Bits.CacheCoherent = 0;
+        descriptor.Flags.Bits.PitchAlignment = 0;
+        descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
+        descriptor.Flags.Bits.PreservedDuringStandby = 1;
+        descriptor.Flags.Bits.PreservedDuringHibernate = 1;
+        descriptor.Flags.Bits.DirectFlip = 0;
+        descriptor.Flags.Bits.Use64KBPages = 1;
+    }
+
+    {
+        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+
+        // CPU Visible Segment
+        descriptor.BaseAddress.QuadPart = 0;
+        descriptor.CpuTranslatedAddress.QuadPart = 0;
+        descriptor.Size = m_MappedBarMap.Region1.Length;
+        descriptor.CommitLimit = 0;
+
+        descriptor.Flags.Value = 0;
+        descriptor.Flags.Bits.Aperture = 0;
+        descriptor.Flags.Bits.Agp = 0;
+        descriptor.Flags.Bits.CpuVisible = 1;
+        descriptor.Flags.Bits.UseBanking = 0;
+        descriptor.Flags.Bits.CacheCoherent = 0;
+        descriptor.Flags.Bits.PitchAlignment = 0;
+        descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
+        descriptor.Flags.Bits.PreservedDuringStandby = 1;
+        descriptor.Flags.Bits.PreservedDuringHibernate = 1;
+        descriptor.Flags.Bits.DirectFlip = 1;
+        descriptor.Flags.Bits.Use64KBPages = 1;
+    }
+
+    if(cpuInvisibleVramSize != 0)
+    {
+        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+
+        // CPU Invisible Segment
+        descriptor.BaseAddress.QuadPart = 0;
+        descriptor.CpuTranslatedAddress.QuadPart = 0;
+        descriptor.Size = cpuInvisibleVramSize;
+        descriptor.CommitLimit = 0;
+
+        descriptor.Flags.Value = 0;
+        descriptor.Flags.Bits.Aperture = 0;
+        descriptor.Flags.Bits.Agp = 0;
+        descriptor.Flags.Bits.CpuVisible = 1;
+        descriptor.Flags.Bits.UseBanking = 0;
+        descriptor.Flags.Bits.CacheCoherent = 0;
+        descriptor.Flags.Bits.PitchAlignment = 0;
+        descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
+        descriptor.Flags.Bits.PreservedDuringStandby = 1;
+        descriptor.Flags.Bits.PreservedDuringHibernate = 1;
+        descriptor.Flags.Bits.DirectFlip = 1;
+        descriptor.Flags.Bits.Use64KBPages = 1;
+    }
+
+    m_PagingBufferSegmentId = 0;
+    m_PagingBufferSize = 65536;
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS GsMemoryManager::FillSegments(DXGK_QUERYSEGMENTOUT& querySegment) const noexcept
+{
+    // The paging buffer segment being 0 forces to use write-combined memory. Not sure what to put here yet.
+    querySegment.PagingBufferSegmentId = m_PagingBufferSegmentId;
+    // Not sure what to put here yet
+    querySegment.PagingBufferSize = m_PagingBufferSize;
+
+    if(!querySegment.pSegmentDescriptor)
+    {
+        querySegment.NbSegment = m_ActiveSegments;
+        return STATUS_SUCCESS;
+    }
+
+    if(querySegment.NbSegment > m_ActiveSegments)
+    {
+        querySegment.NbSegment = m_ActiveSegments;
+    }
+
+    for(UINT i = 0; i < m_ActiveSegments; ++i)
+    {
+        DXGK_SEGMENTDESCRIPTOR& descriptorDest = querySegment.pSegmentDescriptor[i];
+        const GsSegment& descriptorSrc = m_EmbeddedSegments[i];
+
+        descriptorDest.CpuTranslatedAddress = descriptorSrc.CpuTranslatedAddress;
+        descriptorDest.BaseAddress = descriptorSrc.BaseAddress;
+        descriptorDest.Size = descriptorSrc.Size;
+        descriptorDest.NbOfBanks = 0;
+        descriptorDest.pBankRangeTable = nullptr;
+        descriptorDest.CommitLimit = descriptorSrc.CommitLimit;
+        descriptorDest.Flags.Value = 0;
+        descriptorDest.Flags.Aperture = descriptorSrc.Flags.Bits.Aperture;
+        descriptorDest.Flags.Agp = descriptorSrc.Flags.Bits.Agp;
+        descriptorDest.Flags.CpuVisible = descriptorSrc.Flags.Bits.CpuVisible;
+        descriptorDest.Flags.UseBanking = false;
+        descriptorDest.Flags.CacheCoherent = descriptorSrc.Flags.Bits.CacheCoherent;
+        descriptorDest.Flags.PitchAlignment = descriptorSrc.Flags.Bits.PitchAlignment;
+        descriptorDest.Flags.PopulatedFromSystemMemory = descriptorSrc.Flags.Bits.PopulatedFromSystemMemory;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+        descriptorDest.Flags.PreservedDuringStandby = descriptorSrc.Flags.Bits.PreservedDuringStandby;
+        descriptorDest.Flags.PreservedDuringHibernate = descriptorSrc.Flags.Bits.PreservedDuringHibernate;
+        descriptorDest.Flags.PartiallyPreservedDuringHibernate = descriptorSrc.Flags.Bits.PartiallyPreservedDuringHibernate;
+        descriptorDest.Flags.DirectFlip = descriptorSrc.Flags.Bits.DirectFlip;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+        descriptorDest.Flags.Use64KBPages = descriptorSrc.Flags.Bits.Use64KBPages;
+        descriptorDest.Flags.ReservedSysMem = descriptorSrc.Flags.Bits.ReservedSysMem;
+        descriptorDest.Flags.SupportsCpuHostAperture = descriptorSrc.Flags.Bits.SupportsCpuHostAperture;
+        descriptorDest.Flags.SupportsCachedCpuHostAperture = descriptorSrc.Flags.Bits.SupportsCachedCpuHostAperture;
+        descriptorDest.Flags.ApplicationTarget = descriptorSrc.Flags.Bits.ApplicationTarget;
+        descriptorDest.Flags.VprSupported = descriptorSrc.Flags.Bits.VprSupported;
+        descriptorDest.Flags.VprPreservedDuringStandby = descriptorSrc.Flags.Bits.VprPreservedDuringStandby;
+        descriptorDest.Flags.EncryptedPagingSupported = descriptorSrc.Flags.Bits.EncryptedPagingSupported;
+        descriptorDest.Flags.LocalBudgetGroup = descriptorSrc.Flags.Bits.LocalBudgetGroup;
+        descriptorDest.Flags.NonLocalBudgetGroup = descriptorSrc.Flags.Bits.NonLocalBudgetGroup;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_9)
+        descriptorDest.Flags.PopulatedByReservedDDRByFirmware = descriptorSrc.Flags.Bits.PopulatedByReservedDDRByFirmware;
+#endif
+#endif
+#endif
+    }
 
     return STATUS_SUCCESS;
 }
@@ -303,3 +452,4 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
 
     return STATUS_SUCCESS;
 }
+

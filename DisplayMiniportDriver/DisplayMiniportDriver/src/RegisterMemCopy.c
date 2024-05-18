@@ -1,5 +1,4 @@
 // ReSharper disable CppCStyleCast
-#pragma once
 
 #ifdef __cplusplus
 extern "C" {

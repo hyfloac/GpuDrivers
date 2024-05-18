@@ -1,20 +1,8 @@
 // See https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_start_device
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <ntddk.h>
-#include <dispmprt.h>
-#include <wdmguid.h>
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
+#include "Common.h"
 
 #include "StartDevice.hpp"
 #include "HyDevice.hpp"
-#include "Config.h"
 #include "Logging.h"
 #include "MemoryAllocator.h"
 

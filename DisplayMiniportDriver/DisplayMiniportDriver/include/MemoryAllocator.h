@@ -1,3 +1,4 @@
+// ReSharper disable CppClangTidyModernizeMacroToEnum
 #pragma once
 
 #ifdef __cplusplus
@@ -6,9 +7,10 @@ extern "C" {
 
 #include <wdm.h>
 
-#define POOL_TAG_DEVICE_CONTEXT ('CDSG')
-#define POOL_TAG_LOGGING        ('gLSG')
-#define POOL_TAG_PRESENT        ('rPSG')
+#define POOL_TAG_DEVICE_CONTEXT   ('CDSG')
+#define POOL_TAG_LOGGING          ('gLSG')
+#define POOL_TAG_PRESENT          ('rPSG')
+#define POOL_TAG_GRAPHICS_CONTEXT ('CGSG')
 
 void* HyAllocate(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);
 void* HyAllocateZeroed(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);

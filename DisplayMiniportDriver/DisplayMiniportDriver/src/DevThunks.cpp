@@ -1,3 +1,4 @@
+#include "Common.h"
 #include <DevThunks.hpp>
 
 #pragma code_seg("PAGE")
@@ -80,6 +81,7 @@ NTSTATUS ThunkHyGetScanLine(
     return STATUS_SUCCESS;
 }
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
 NTSTATUS ThunkHyQueryVidPnCapability(
     IN_CONST_HANDLE                             hAdapter,
     INOUT_PDXGKARG_QUERYVIDPNHWCAPABILITY       pVidPnHWCaps
@@ -90,7 +92,9 @@ NTSTATUS ThunkHyQueryVidPnCapability(
     LOG_DEBUG("ThunkHyQueryVidPnCapability\n");
     return STATUS_SUCCESS;
 }
+#endif
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
 NTSTATUS ThunkHySystemDisplayEnable(
     _In_ PVOID MiniportDeviceContext,
     _In_ D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId,
@@ -109,6 +113,7 @@ NTSTATUS ThunkHySystemDisplayEnable(
     LOG_DEBUG("ThunkHySystemDisplayEnable\n");
     return STATUS_SUCCESS;
 }
+#endif
 
 void ThunkHySystemDisplayWrite(
     _In_ PVOID MiniportDeviceContext,
@@ -130,7 +135,7 @@ void ThunkHySystemDisplayWrite(
     LOG_DEBUG("ThunkHySystemDisplayWrite\n");
 }
 
-
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
 NTSTATUS ThunkHyGetChildContainerId(
     _In_ PVOID MiniportDeviceContext,
     _In_ ULONG ChildUid,
@@ -143,6 +148,7 @@ NTSTATUS ThunkHyGetChildContainerId(
     LOG_DEBUG("ThunkHyGetChildContainerId\n");
     return STATUS_SUCCESS;
 }
+#endif
 
 NTSTATUS ThunkHyControlInterrupt(
     IN_CONST_HANDLE                 hAdapter,
@@ -192,6 +198,7 @@ NTSTATUS ThunkHyPowerRuntimeControlRequest(
     return STATUS_SUCCESS;
 }
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
 NTSTATUS ThunkHyNotifySurpriseRemoval(
     _In_ PVOID MiniportDeviceContext,
     _In_ DXGK_SURPRISE_REMOVAL_TYPE RemovalType
@@ -202,3 +209,4 @@ NTSTATUS ThunkHyNotifySurpriseRemoval(
     LOG_DEBUG("ThunkHyNotifySurpriseRemoval\n");
     return STATUS_SUCCESS;
 }
+#endif

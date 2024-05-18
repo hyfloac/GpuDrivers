@@ -1,4 +1,5 @@
 // See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/dispmprt/nc-dispmprt-dxgkddi_remove_device
+#include "Common.h"
 #include "HyDevice.hpp"
 #include "RemoveDevice.hpp"
 #include "MemoryAllocator.h"

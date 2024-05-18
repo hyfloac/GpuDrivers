@@ -37,11 +37,14 @@ NTSTATUS ThunkHyGetScanLine(
     INOUT_PDXGKARG_GETSCANLINE  pGetScanLine
 );
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
 NTSTATUS ThunkHyQueryVidPnCapability(
     IN_CONST_HANDLE                             hAdapter,
     INOUT_PDXGKARG_QUERYVIDPNHWCAPABILITY       pVidPnHWCaps
 );
+#endif
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
 NTSTATUS ThunkHySystemDisplayEnable(
     _In_ PVOID MiniportDeviceContext,
     _In_ D3DDDI_VIDEO_PRESENT_TARGET_ID TargetId,
@@ -50,6 +53,7 @@ NTSTATUS ThunkHySystemDisplayEnable(
     _Out_ UINT* Height,
     _Out_ D3DDDIFORMAT* ColorFormat
 );
+#endif
 
 void ThunkHySystemDisplayWrite(
     _In_ PVOID MiniportDeviceContext,
@@ -61,11 +65,13 @@ void ThunkHySystemDisplayWrite(
     _In_ UINT PositionY
 );
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
 NTSTATUS ThunkHyGetChildContainerId(
     _In_ PVOID MiniportDeviceContext,
     _In_ ULONG ChildUid,
     _Inout_ PDXGK_CHILD_CONTAINER_ID ContainerId
 );
+#endif
 
 NTSTATUS ThunkHyControlInterrupt(
     IN_CONST_HANDLE                 hAdapter,
@@ -89,7 +95,9 @@ NTSTATUS ThunkHyPowerRuntimeControlRequest(
     OUT OPTIONAL    PSIZE_T BytesReturned
 );
 
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
 NTSTATUS ThunkHyNotifySurpriseRemoval(
     _In_ PVOID MiniportDeviceContext,
     _In_ DXGK_SURPRISE_REMOVAL_TYPE RemovalType
 );
+#endif

@@ -43,7 +43,7 @@ public:
     void FlushPipeline() noexcept;
 
     void InsertPresent(
-        IN_CONST_PDXGKARG_PRESENT_DISPLAYONLY pPresentDisplayOnly, 
+        const void* const pPresentDisplayOnlyVoid, 
         PMDL mdl,
         D3DKMDT_VIDPN_PRESENT_PATH_ROTATION Rotation,
         BYTE* Destination,
@@ -74,4 +74,5 @@ private:
     KSEMAPHORE m_PresentQueueSemaphore;
     PETHREAD m_PresentThreadObject;
     volatile LONG m_QueuedPresentCount;
+    bool m_Started;
 };
