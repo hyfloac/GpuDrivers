@@ -486,6 +486,8 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\CommitVidPn.cpp" />
     <ClCompile Include="src\ControlEtwLogging.cpp" />
     <ClCompile Include="src\ControlInterrupt.cpp" />
+    <ClCompile Include="src\CreateDevice.cpp" />
+    <ClCompile Include="src\DestroyDevice.cpp" />
     <ClCompile Include="src\DeviceComms.cpp" />
     <ClCompile Include="src\Devices.cpp" />
     <ClCompile Include="src\DevThunks.cpp" />
@@ -539,7 +541,9 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\ControlEtwLogging.hpp" />
     <ClInclude Include="include\ControlInterrupt.hpp" />
+    <ClInclude Include="include\CreateDevice.hpp" />
     <ClInclude Include="include\D3DPolyFills.h" />
+    <ClInclude Include="include\DestroyDevice.hpp" />
     <ClInclude Include="include\DeviceComms.hpp" />
     <ClInclude Include="include\Devices.hpp" />
     <ClInclude Include="include\DevThunks.hpp" />

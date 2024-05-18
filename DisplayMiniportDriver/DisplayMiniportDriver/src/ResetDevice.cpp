@@ -17,12 +17,7 @@ void HyResetDevice(IN_CONST_PVOID MiniportDeviceContext)
     }
 
     // Get our context structure.
-    const HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
 
-    const volatile UINT* const resetReg = deviceContext->GetDeviceConfigRegister(HyMiniportDevice::REGISTER_RESET);
-
-    // We don't actually care about the value, reading the register is enough to reset the device.
-    const UINT resetValue = *resetReg;
-
-    (void) resetValue;
+    deviceContext->ResetDevice();
 }

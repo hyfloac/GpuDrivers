@@ -129,6 +129,11 @@ public:
     void* operator new(SIZE_T count);
     void operator delete(void* ptr);
 public:
+    static HyMiniportDevice* FromHandle(HANDLE hDevice) noexcept
+    {
+        return static_cast<HyMiniportDevice*>(hDevice);
+    }
+public:
     HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept;
 
     NTSTATUS GetAdapterInfo() noexcept;
@@ -143,7 +148,10 @@ public:
     NTSTATUS QueryDeviceDescriptor(IN_ULONG ChildUid, INOUT_PDXGK_DEVICE_DESCRIPTOR DeviceDescriptor) noexcept;
     NTSTATUS SetPowerState(IN_ULONG DeviceUid, IN_DEVICE_POWER_STATE DevicePowerState, IN_POWER_ACTION ActionType) noexcept;
 
+    void ResetDevice() noexcept;
+
     NTSTATUS QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) noexcept;
+    NTSTATUS CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevice) noexcept;
 
     NTSTATUS CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pCollectDbgInfo) noexcept;
     NTSTATUS IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsSupportedVidPn) noexcept;
@@ -247,6 +255,7 @@ private:
     GsMemoryManager m_MemoryManager;
 };
 
-#define HY_MINIPORT_DEVICE_FROM_HANDLE(HANDLE) static_cast<HyMiniportDevice*>(HANDLE)
+// #define HY_MINIPORT_DEVICE_FROM_HANDLE(HANDLE) static_cast<HyMiniportDevice*>(HANDLE)
+#define HY_MINIPORT_DEVICE_FROM_HANDLE(HANDLE) HyMiniportDevice::FromHandle(HANDLE)
 
 #pragma warning(pop)

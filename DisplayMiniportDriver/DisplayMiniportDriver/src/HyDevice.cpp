@@ -14,7 +14,9 @@ extern "C" {
 #include "Logging.h"
 #include "MemoryAllocator.h"
 #include "Config.h"
+#include "GsGraphicsContext.hpp"
 
+#pragma code_seg(push)
 #pragma code_seg("PAGE")
 
 // Display-Only Devices can only return display modes of D3DDDIFMT_A8R8G8B8.
@@ -561,6 +563,7 @@ NTSTATUS HyMiniportDevice::StopDevice() noexcept
     return STATUS_SUCCESS;
 }
 
+#pragma code_seg(push)
 #pragma code_seg("_KTEXT")
 BOOLEAN HyMiniportDevice::InterruptRoutine(IN_ULONG MessageNumber) noexcept
 {
@@ -621,7 +624,7 @@ void HyMiniportDevice::DpcRoutine() noexcept
 
     m_DxgkInterface.DxgkCbNotifyDpc(m_DxgkInterface.DeviceHandle);
 }
-#pragma code_seg("PAGE")
+#pragma code_seg(pop)
 
 NTSTATUS HyMiniportDevice::QueryChildRelations(PDXGK_CHILD_DESCRIPTOR ChildRelations, ULONG ChildRelationsSize) noexcept
 {
@@ -730,6 +733,19 @@ NTSTATUS HyMiniportDevice::SetPowerState(IN_ULONG DeviceUid, IN_DEVICE_POWER_STA
     return STATUS_SUCCESS;
 }
 
+#pragma code_seg(push)
+#pragma code_seg("_KTEXT")
+void HyMiniportDevice::ResetDevice() noexcept
+{
+    const volatile UINT* const resetReg = GetDeviceConfigRegister(REGISTER_RESET);
+
+    // We don't actually care about the value, reading the register is enough to reset the device.
+    const UINT resetValue = *resetReg;
+
+    (void) resetValue;
+}
+#pragma code_seg(pop)
+
 NTSTATUS HyMiniportDevice::QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
@@ -741,6 +757,29 @@ NTSTATUS HyMiniportDevice::QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
         case DXGKQAITYPE_QUERYSEGMENT: return FillQuerySegment(pQueryAdapterInfo);
         default: return STATUS_NOT_IMPLEMENTED;
     }
+}
+
+NTSTATUS HyMiniportDevice::CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevice) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+    LOG_DEBUG("HyMiniportDevice::CreateDevice: System Device: %d, GDI Device: %d\n", pCreateDevice->Flags.SystemDevice, pCreateDevice->Flags.GdiDevice);
+
+    GsGraphicsContext* graphicsContext = new GsGraphicsContext(
+        pCreateDevice->hDevice,            // dxgkHandle
+        pCreateDevice->Flags.SystemDevice, // isSystemDevice
+        pCreateDevice->Flags.GdiDevice     // isGdiDevice
+    );
+
+    if(!graphicsContext)
+    {
+        LOG_WARN("HyMiniportDevice::CreateDevice: Failed to allocate Graphics Context.\n");
+        return STATUS_NO_MEMORY;
+    }
+
+    pCreateDevice->hDevice = graphicsContext;
+    pCreateDevice->pInfo = &graphicsContext->DeviceInfo();
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS HyMiniportDevice::FillUmDriverPrivate(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) const noexcept
@@ -2457,3 +2496,5 @@ NTSTATUS HyMiniportDevice::UnmapFrameBuffer(void* VirtualAddress, ULONG Length) 
 
     return STATUS_SUCCESS;
 }
+
+#pragma code_seg(pop)

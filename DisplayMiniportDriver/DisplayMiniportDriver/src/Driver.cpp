@@ -39,6 +39,7 @@ extern "C" {
 #include "QueryInterface.hpp"
 #include "ControlEtwLogging.hpp"
 #include "QueryAdapterInfo.hpp"
+#include "CreateDevice.hpp"
 
 #include "RecommendFunctionalVidPn.hpp"
 #include "EnumVidPnCofuncModality.hpp"
@@ -60,9 +61,10 @@ extern "C" {
 #include "PresentDisplayOnly.hpp"
 #endif
 
-#include "StopDeviceAndReleasePostDisplayOwnership.hpp"
 #include "ControlInterrupt.hpp"
+#include "DestroyDevice.hpp"
 
+#include "StopDeviceAndReleasePostDisplayOwnership.hpp"
 
 #include "DevThunks.hpp"
 
@@ -255,7 +257,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiControlEtwLogging = HyControlEtwLogging;
 
     driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
-    // driverInitializationData.DxgkDdiCreateDevice = (PDXGKDDI_CREATEDEVICE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCreateDevice = HyCreateDevice;
     // driverInitializationData.DxgkDdiCreateAllocation = (PDXGKDDI_CREATEALLOCATION) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiDestroyAllocation = (PDXGKDDI_DESTROYALLOCATION) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiDescribeAllocation = (PDXGKDDI_DESCRIBEALLOCATION) DdiNoOpNTSTATUS;
@@ -288,7 +290,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiControlInterrupt = HyControlInterrupt;
     // driverInitializationData.DxgkDdiCreateOverlay = (PDXGKDDI_CREATEOVERLAY) DdiNoOpNTSTATUS;
     //
-    // driverInitializationData.DxgkDdiDestroyDevice = (PDXGKDDI_DESTROYDEVICE) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDestroyDevice = HyDestroyDevice;
     // driverInitializationData.DxgkDdiOpenAllocation = (PDXGKDDI_OPENALLOCATIONINFO) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiCloseAllocation = (PDXGKDDI_CLOSEALLOCATION) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiRender = (PDXGKDDI_RENDER) DdiNoOpNTSTATUS;
