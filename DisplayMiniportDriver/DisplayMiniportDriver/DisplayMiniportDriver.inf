@@ -43,7 +43,7 @@ AddReg=SoftGpu_SoftwareDeviceSettings
 [SoftGpu_SoftwareDeviceSettings]
 HKR,,InstalledDisplayDrivers,%REG_MULTI_SZ%,D3DUserModeDriver.dll,D3DUserModeDriver.dll
 HKR,,CapabilityOverride,%REG_DWORD%,0x08
-HKR,,UserModeDriverName,%REG_MULTI_SZ%,D3DUserModeDriver.dll
+HKR,,UserModeDriverName,%REG_MULTI_SZ%,%13%\D3DUserModeDriver.dll
 
 [Drivers_Dir]
 DisplayMiniportDriver.sys

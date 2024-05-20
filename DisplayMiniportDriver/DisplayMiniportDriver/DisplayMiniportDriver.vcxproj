@@ -158,44 +158,52 @@
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <TargetExt>.sys</TargetExt>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <TargetExt>.sys</TargetExt>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <TargetExt>.sys</TargetExt>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <TargetExt>.sys</TargetExt>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DriverSign>
@@ -213,7 +221,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -228,7 +236,7 @@
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -256,7 +264,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -270,7 +278,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -296,7 +304,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -311,7 +319,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
       <SpecifyDriverVerDirectiveVersion>true</SpecifyDriverVerDirectiveVersion>
       <VersionHeaderPath>
       </VersionHeaderPath>
@@ -343,7 +351,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -357,7 +365,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -380,10 +388,10 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -398,7 +406,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -410,7 +418,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -433,10 +441,10 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -451,7 +459,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -463,7 +471,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Inf>
-      <TimeStamp>1.0.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
       <Command>python $(ProjectDir)UpdatePatchVersion.py
@@ -549,6 +557,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\DevThunks.hpp" />
     <ClInclude Include="include\DispatchIoRequest.hpp" />
     <ClInclude Include="include\DpcRoutine.hpp" />
+    <ClInclude Include="include\DriverVersion.h" />
     <ClInclude Include="include\EnumVidPnCofuncModality.hpp" />
     <ClInclude Include="include\FilterConnectNotify.h" />
     <ClInclude Include="include\FilterDeviceManager.h" />
@@ -586,6 +595,9 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.hpp" />
     <ClInclude Include="include\UpdateActiveVidPnPresentPath.hpp" />
     <ClInclude Include="include\XStdDefPolyFill.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DisplayMiniportDriver.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

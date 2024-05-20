@@ -1,0 +1,2 @@
+#define GS_MINOR_VERSION 21
+#define GS_PATCH_VERSION 83

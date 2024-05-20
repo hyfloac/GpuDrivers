@@ -1,0 +1,27 @@
+#include <Windows.h>
+#include <ntverp.h>
+#include "DriverVersionNumbers.h"
+#include "DriverVersion.h"
+
+#define VER_FILETYPE VFT_DRV
+#define VER_FILESUBTYPE VFT2_DRV_DISPLAY
+
+#define VER_FILEDESCRIPTION_STR "Display Miniport Driver"
+
+#undef VER_PRODUCTNAME_STR
+#define VER_PRODUCTNAME_STR VER_FILEDESCRIPTION_STR
+
+#define VER_ORIGINALFILENAME_STR "DisplayMiniportDriver.sys"
+
+#define VER_INTERNALNAME_STR VER_ORIGINALFILENAME_STR " " VER_PRODUCTVERSION_STR
+
+#undef VER_COMPANYNAME_STR
+#define VER_COMPANYNAME_STR "Grafika Strahlen LLC"
+
+#if defined(RC_INVOKED) && !defined(WIN16)
+#define VER_LEGALCOPYRIGHT_STR L"\251 " VER_COMPANYNAME_STR ". All rights reserved."
+#else
+#define VER_LEGALCOPYRIGHT_STR "Copyright (c) " VER_COMPANYNAME_STR ". All rights reserved."
+#endif
+
+#include "common.ver"
