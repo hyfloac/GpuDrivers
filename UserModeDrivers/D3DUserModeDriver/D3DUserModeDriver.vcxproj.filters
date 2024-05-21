@@ -30,21 +30,39 @@
     <ClCompile Include="src\OpenAdapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\d3d9\GetCaps.cpp">
+    <ClCompile Include="src\d3d9\GetCaps9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\d3d9\GsAdapter9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\d3d9\CreateDevice.cpp">
+    <ClCompile Include="src\d3d9\CreateDevice9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\d3d9\GsDevice9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\d3d9\SetRenderState9.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d9\CloseAdapter9.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\GsAdapter10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\CreateDevice10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\GsDevice10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\CloseAdapter10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\d3d9\GetCaps.hpp">
+    <ClInclude Include="include\d3d9\GetCaps9.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Common.hpp">
@@ -53,13 +71,31 @@
     <ClInclude Include="include\d3d9\GsAdapter9.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\d3d9\CreateDevice.hpp">
+    <ClInclude Include="include\d3d9\CreateDevice9.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\d3d9\GsDevice9.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\WindowsNtPolyfill.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d9\SetRenderState9.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d9\CloseAdapter9.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\GsAdapter10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\CreateDevice10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\GsDevice10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\CloseAdapter10.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

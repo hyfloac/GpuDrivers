@@ -264,20 +264,32 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\d3d9\CreateDevice.cpp" />
-    <ClCompile Include="src\d3d9\GetCaps.cpp" />
+    <ClCompile Include="src\d3d10\CloseAdapter10.cpp" />
+    <ClCompile Include="src\d3d10\CreateDevice10.cpp" />
+    <ClCompile Include="src\d3d10\GsAdapter10.cpp" />
+    <ClCompile Include="src\d3d10\GsDevice10.cpp" />
+    <ClCompile Include="src\d3d9\CloseAdapter9.cpp" />
+    <ClCompile Include="src\d3d9\CreateDevice9.cpp" />
+    <ClCompile Include="src\d3d9\GetCaps9.cpp" />
     <ClCompile Include="src\d3d9\GsAdapter9.cpp" />
     <ClCompile Include="src\d3d9\GsDevice9.cpp" />
+    <ClCompile Include="src\d3d9\SetRenderState9.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
     <ClCompile Include="src\OpenAdapter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Common.hpp" />
-    <ClInclude Include="include\d3d9\CreateDevice.hpp" />
-    <ClInclude Include="include\d3d9\GetCaps.hpp" />
+    <ClInclude Include="include\d3d10\CloseAdapter10.hpp" />
+    <ClInclude Include="include\d3d10\CreateDevice10.hpp" />
+    <ClInclude Include="include\d3d10\GsAdapter10.hpp" />
+    <ClInclude Include="include\d3d9\CloseAdapter9.hpp" />
+    <ClInclude Include="include\d3d9\CreateDevice9.hpp" />
+    <ClInclude Include="include\d3d9\GetCaps9.hpp" />
     <ClInclude Include="include\d3d9\GsAdapter9.hpp" />
     <ClInclude Include="include\d3d9\GsDevice9.hpp" />
+    <ClInclude Include="include\d3d9\SetRenderState9.hpp" />
     <ClInclude Include="include\WindowsNtPolyfill.hpp" />
+    <ClInclude Include="include\d3d10\GsDevice10.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

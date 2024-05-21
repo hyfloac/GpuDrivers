@@ -1,4 +1,5 @@
-#include "d3d9/CreateDevice.hpp"
+// See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dumddi/nc-d3dumddi-pfnd3dddi_createdevice
+#include "d3d9/CreateDevice9.hpp"
 #include "d3d9/GsAdapter9.hpp"
 
 HRESULT GsCreateDeviceD3D9(HANDLE hAdapter, D3DDDIARG_CREATEDEVICE* pCreateDevice)
