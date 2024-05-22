@@ -2,7 +2,7 @@
 #include "d3d9/CreateDevice9.hpp"
 #include "d3d9/GsAdapter9.hpp"
 
-HRESULT GsCreateDeviceD3D9(HANDLE hAdapter, D3DDDIARG_CREATEDEVICE* pCreateDevice)
+HRESULT GsCreateDeviceD3D9(HANDLE hAdapter, D3DDDIARG_CREATEDEVICE* const pCreateDevice)
 {
     if(!hAdapter)
     {

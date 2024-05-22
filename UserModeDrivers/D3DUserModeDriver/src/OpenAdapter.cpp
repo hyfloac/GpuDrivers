@@ -1,6 +1,7 @@
 #include "Common.hpp"
 #include <ConPrinter.hpp>
 
+#include "d3d10/CalcPrivateDeviceSize10.hpp"
 #include "d3d10/CloseAdapter10.hpp"
 #include "d3d10/CreateDevice10.hpp"
 #include "d3d10/GsAdapter10.hpp"
@@ -9,6 +10,14 @@
 #include "d3d9/GetCaps9.hpp"
 #include "d3d9/GsAdapter9.hpp"
 
+bool g_DebugEnable = false;
+
+extern "C" int __declspec(dllexport) EnableD3DDebugLogging(const int enable)
+{
+    g_DebugEnable = enable ? true : false;
+    return 0;
+}
+
 extern "C" HRESULT __declspec(dllexport) OpenAdapter(D3DDDIARG_OPENADAPTER* const pOpenAdapter)
 {
     if(!pOpenAdapter)
@@ -16,10 +25,13 @@ extern "C" HRESULT __declspec(dllexport) OpenAdapter(D3DDDIARG_OPENADAPTER* cons
         return E_INVALIDARG;
     }
 
-    static wchar_t fileName[MAX_PATH + 1];
-    (void) GetModuleFileNameW(nullptr, fileName, static_cast<DWORD>(std::size(fileName)));
-    
-    ConPrinter::PrintLn(u8"OpenAdapter: {}", fileName);
+    if(g_DebugEnable)
+    {
+        static wchar_t fileName[MAX_PATH + 1];
+        (void) GetModuleFileNameW(nullptr, fileName, static_cast<DWORD>(std::size(fileName)));
+
+        ConPrinter::PrintLn(u8"OpenAdapter: {}", fileName);
+    }
 
     // D3DDDICB_QUERYADAPTERINFO queryAdapter { };
     // pOpenAdapter->pAdapterCallbacks->pfnQueryAdapterInfoCb(pOpenAdapter->hAdapter, &queryAdapter);
@@ -49,10 +61,13 @@ extern "C" HRESULT __declspec(dllexport) OpenAdapter10(D3D10DDIARG_OPENADAPTER* 
         return E_INVALIDARG;
     }
 
-    static wchar_t fileName[MAX_PATH + 1];
-    (void) GetModuleFileNameW(nullptr, fileName, static_cast<DWORD>(std::size(fileName)));
-    
-    ConPrinter::PrintLn(u8"OpenAdapter10: {}", fileName);
+    if(g_DebugEnable)
+    {
+        static wchar_t fileName[MAX_PATH + 1];
+        (void) GetModuleFileNameW(nullptr, fileName, static_cast<DWORD>(std::size(fileName)));
+
+        ConPrinter::PrintLn(u8"OpenAdapter10: {}", fileName);
+    }
 
     pOpenAdapter->pAdapterFuncs->pfnCalcPrivateDeviceSize = nullptr;
 
@@ -60,7 +75,7 @@ extern "C" HRESULT __declspec(dllexport) OpenAdapter10(D3D10DDIARG_OPENADAPTER* 
 
     pOpenAdapter->hAdapter.pDrvPrivate = adapter;
 
-    pOpenAdapter->pAdapterFuncs->pfnCalcPrivateDeviceSize = nullptr;
+    pOpenAdapter->pAdapterFuncs->pfnCalcPrivateDeviceSize = GsCalcPrivateDeviceSizeD3D10;
     pOpenAdapter->pAdapterFuncs->pfnCreateDevice = GsCreateDeviceD3D10;
     pOpenAdapter->pAdapterFuncs->pfnCloseAdapter = GsCloseAdapterD3D10;
 

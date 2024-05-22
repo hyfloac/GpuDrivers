@@ -145,11 +145,12 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <Inf>
-      <TimeStamp>1.0.0.$([System.IO.File]::ReadAllText("$(SolutionDir)d3d_patch_version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/buildVersion.txt"))</TimeStamp>
       <SpecifyArchitecture>true</SpecifyArchitecture>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -161,7 +162,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -175,11 +176,12 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <Inf>
-      <TimeStamp>1.0.0.$([System.IO.File]::ReadAllText("$(SolutionDir)d3d_patch_version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/buildVersion.txt"))</TimeStamp>
       <SpecifyArchitecture>true</SpecifyArchitecture>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -191,7 +193,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -205,11 +207,12 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <Inf>
-      <TimeStamp>1.0.0.$([System.IO.File]::ReadAllText("$(SolutionDir)d3d_patch_version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/buildVersion.txt"))</TimeStamp>
       <SpecifyArchitecture>true</SpecifyArchitecture>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -221,7 +224,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -235,11 +238,12 @@
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <Inf>
-      <TimeStamp>1.0.0.$([System.IO.File]::ReadAllText("$(SolutionDir)d3d_patch_version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(SolutionDir)../DisplayMiniportDriver/DisplayMiniportDriver/version/buildVersion.txt"))</TimeStamp>
       <SpecifyArchitecture>true</SpecifyArchitecture>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -251,7 +255,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -264,8 +268,10 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\d3d10\CalcPrivateDeviceSize10.cpp" />
     <ClCompile Include="src\d3d10\CloseAdapter10.cpp" />
     <ClCompile Include="src\d3d10\CreateDevice10.cpp" />
+    <ClCompile Include="src\d3d10\device\DestroyDevice10.cpp" />
     <ClCompile Include="src\d3d10\GsAdapter10.cpp" />
     <ClCompile Include="src\d3d10\GsDevice10.cpp" />
     <ClCompile Include="src\d3d9\CloseAdapter9.cpp" />
@@ -273,23 +279,29 @@
     <ClCompile Include="src\d3d9\GetCaps9.cpp" />
     <ClCompile Include="src\d3d9\GsAdapter9.cpp" />
     <ClCompile Include="src\d3d9\GsDevice9.cpp" />
-    <ClCompile Include="src\d3d9\SetRenderState9.cpp" />
+    <ClCompile Include="src\d3d9\device\SetRenderState9.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
     <ClCompile Include="src\OpenAdapter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DriverVersionNumbers.h" />
     <ClInclude Include="include\Common.hpp" />
+    <ClInclude Include="include\d3d10\CalcPrivateDeviceSize10.hpp" />
     <ClInclude Include="include\d3d10\CloseAdapter10.hpp" />
     <ClInclude Include="include\d3d10\CreateDevice10.hpp" />
+    <ClInclude Include="include\d3d10\device\DestroyDevice10.hpp" />
     <ClInclude Include="include\d3d10\GsAdapter10.hpp" />
     <ClInclude Include="include\d3d9\CloseAdapter9.hpp" />
     <ClInclude Include="include\d3d9\CreateDevice9.hpp" />
     <ClInclude Include="include\d3d9\GetCaps9.hpp" />
     <ClInclude Include="include\d3d9\GsAdapter9.hpp" />
     <ClInclude Include="include\d3d9\GsDevice9.hpp" />
-    <ClInclude Include="include\d3d9\SetRenderState9.hpp" />
+    <ClInclude Include="include\d3d9\device\SetRenderState9.hpp" />
     <ClInclude Include="include\WindowsNtPolyfill.hpp" />
     <ClInclude Include="include\d3d10\GsDevice10.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="D3DUserModeDriver.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -8,7 +8,7 @@ class GsDevice10 final
     DEFAULT_DESTRUCT(GsDevice10);
     DELETE_CM(GsDevice10);
 public:
-    static GsDevice10* FromHandle(D3D10DDI_HADAPTER adapter) noexcept
+    static GsDevice10* FromHandle(D3D10DDI_HDEVICE adapter) noexcept
     {
         return static_cast<GsDevice10*>(adapter.pDrvPrivate);
     }

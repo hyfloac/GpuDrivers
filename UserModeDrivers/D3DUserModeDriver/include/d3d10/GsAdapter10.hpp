@@ -18,6 +18,7 @@ public:
         const D3DDDI_ADAPTERCALLBACKS& adapterCallbacks
     ) noexcept;
 
+    SIZE_T CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZE& calcPrivateDeviceSize) noexcept;
     HRESULT CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexcept;
 private:
     D3D10DDI_HRTADAPTER m_DriverHandle;

@@ -1,9 +1,11 @@
 #include <Console.hpp>
 #include <ConPrinter.hpp>
+#include <d3d9.h>
 #include <d3d10.h>
 #include <dxgi.h>
 #include <atlbase.h>
 #include <new>
+#include <D3DDebug.h>
 
 void PrintHelp(int argCount, char* args[]) noexcept
 {
@@ -18,7 +20,7 @@ void PrintHelp(int argCount, char* args[]) noexcept
 }
 
 // From https://learn.microsoft.com/en-us/windows/win32/seccrypto/retrieving-error-messages
-void LogError(const DWORD dwErr) noexcept
+static void LogError(const DWORD dwErr) noexcept
 {
     WCHAR   wszMsgBuff[512];  // Buffer for text.
 
@@ -62,254 +64,8 @@ void LogError(const DWORD dwErr) noexcept
     ConPrinter::PrintLn("{}", wszMsgBuff);
 }
 
-void TestLoadDriver()
-{
-    HKEY pciKey;
-
-    LSTATUS status = RegOpenKeyExA(
-        HKEY_LOCAL_MACHINE,
-        R"(SYSTEM\ControlSet001\Enum\PCI\VEN_FFFD&DEV_0001&SUBSYS_00000000&REV_01)",
-        0,
-        KEY_READ,
-        &pciKey
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find PCI device key.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to load PCI device key.");
-        }
-
-        return;
-    }
-
-    char keyNameBuffer[256];
-    DWORD keyNameSize;
-
-    status = RegEnumKeyExA(
-        pciKey,
-        0,
-        keyNameBuffer,
-        &keyNameSize,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        ConPrinter::PrintLn("Failed to enumerate PCI device sub-key.");
-        return;
-    }
-
-    HKEY pciSubKey;
-    status = RegOpenKeyExA(
-        pciKey,
-        keyNameBuffer,
-        0,
-        KEY_READ,
-        &pciSubKey
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find PCI device sub-key.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to load PCI device sub-key.");
-        }
-
-        return;
-    }
-
-    DWORD driverValueType;
-    DWORD driverValueLength;
-
-    status = RegQueryValueExA(
-        pciSubKey,
-        "Driver",
-        nullptr,
-        &driverValueType,
-        nullptr,
-        &driverValueLength
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find Driver value.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to get Driver value length.");
-        }
-
-        return;
-    }
-
-    char* driverValue = new(::std::nothrow) char[driverValueLength];
-
-    if(!driverValue)
-    {
-        ConPrinter::PrintLn("Failed to allocate buffer for Driver value.");
-        return;
-    }
-
-    status = RegQueryValueExA(
-        pciSubKey,
-        "Driver",
-        nullptr,
-        &driverValueType,
-        reinterpret_cast<LPBYTE>(driverValue),
-        &driverValueLength
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        delete[] driverValue;
-
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find Driver value.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to get Driver value.");
-        }
-
-        return;
-    }
-
-    HKEY controlClassKey;
-
-    status = RegOpenKeyExA(
-        HKEY_LOCAL_MACHINE,
-        R"(SYSTEM\ControlSet001\Control\Class)",
-        0,
-        KEY_READ,
-        &controlClassKey
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        delete[] driverValue;
-
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find Control\\Class key.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to load Control\\Class key.");
-        }
-
-        return;
-    }
-
-    HKEY driverInfoKey;
-
-    status = RegOpenKeyExA(
-        controlClassKey,
-        driverValue,
-        0,
-        KEY_READ,
-        &driverInfoKey
-    );
-
-    delete[] driverValue;
-    driverValue = nullptr;
-
-    if(status != ERROR_SUCCESS)
-    {
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find Driver Info key.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to load Driver Info key.");
-        }
-
-        return;
-    }
-
-    DWORD umdValueType;
-    DWORD umdValueLength;
-
-    status = RegQueryValueExA(
-        driverInfoKey,
-        "UserModeDriverName",
-        nullptr,
-        &umdValueType,
-        nullptr,
-        &umdValueLength
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find UserModeDriverName value.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to get UserModeDriverName value length.");
-        }
-
-        return;
-    }
-
-    char* umdValue = new(::std::nothrow) char[umdValueLength];
-
-    if(!umdValue)
-    {
-        ConPrinter::PrintLn("Failed to allocate buffer for UserModeDriverName value.");
-        return;
-    }
-
-    status = RegQueryValueExA(
-        driverInfoKey,
-        "UserModeDriverName",
-        nullptr,
-        &umdValueType,
-        reinterpret_cast<LPBYTE>(umdValue),
-        &umdValueLength
-    );
-
-    if(status != ERROR_SUCCESS)
-    {
-        delete[] umdValue;
-
-        if(status == ERROR_FILE_NOT_FOUND)
-        {
-            ConPrinter::PrintLn("Failed to find UserModeDriverName value.");
-        }
-        else
-        {
-            ConPrinter::PrintLn("Failed to get UserModeDriverName value.");
-        }
-
-        return;
-    }
-
-    ConPrinter::PrintLn(u8"Driver Path: {}", umdValue);
-
-    HANDLE driverHandle = LoadLibraryA(umdValue);
-
-    ConPrinter::PrintLn(u8"Driver Handle: {}", driverHandle);
-
-    LogError(GetLastError());
-}
+int RunD3D9(const bool enableDebug) noexcept;
+int RunD3D10(const bool enableDebug) noexcept;
 
 int main(int argCount, char* args[])
 {
@@ -317,6 +73,7 @@ int main(int argCount, char* args[])
     (void) args;
 
     bool enableDebug = false;
+    int d3dVersion = 10;
 
     // As a DLL create a Console window.
     Console::Create();
@@ -336,13 +93,83 @@ int main(int argCount, char* args[])
                 PrintHelp(argCount, args);
                 return 0;
             }
+            else if(strcmp(args[i], "--d3d9") == 0)
+            {
+                d3dVersion = 9;
+            }
         }
     }
 
+    // It appears our device is not being presented because it is not active
+    // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-display_devicea
+    // This is just a guess at what D3D9 is doing...
+
+    DISPLAY_DEVICEA displayDevice;
+    displayDevice.cb = sizeof(DISPLAY_DEVICEA);
+    for(UINT i = 0; EnumDisplayDevicesA(nullptr, i, &displayDevice, 0); ++i)
+    {
+        ConPrinter::PrintLn("Device {} - {}", i, displayDevice.DeviceString);
+    }
+
+    if(d3dVersion == 9)
+    {
+        return RunD3D9(enableDebug);
+    }
+    else if(d3dVersion == 10)
+    {
+        return RunD3D10(enableDebug);
+    }
+
+    return 0;
+}
+
+int RunD3D9(const bool enableDebug) noexcept
+{
+    OutputDebugStringA("Starting D3D9 Tester.\n");
+    ConPrinter::PrintLn(u8"Starting D3D9 Tester.");
+
+
+    CComPtr<IDirect3D9> direct3D9 = Direct3DCreate9(D3D_SDK_VERSION);
+
+    if(!direct3D9)
+    {
+        ConPrinter::PrintLn("Failed to initialize D3D9.");
+        return 1;
+    }
+
+    EnableD3DDebugLogging(1);
+
+    const UINT adapterCount = direct3D9->GetAdapterCount();
+
+    ConPrinter::PrintLn("Adapter Count: {}", adapterCount);
+
+    D3DADAPTER_IDENTIFIER9 adapter {};
+    for(UINT i = 0; i < adapterCount; ++i)
+    {
+        if(!SUCCEEDED(direct3D9->GetAdapterIdentifier(i, 0, &adapter)))
+        {
+            ConPrinter::PrintLn("Failed to get adapter {}.", i);
+            continue;
+        }
+
+        ConPrinter::PrintLn("Adapter: {} - {}, Vendor: 0x{X}, Device 0x{X}", i, adapter.Description, adapter.VendorId, adapter.DeviceId);
+
+        if(adapter.VendorId == 0xFFFD && adapter.DeviceId == 0x0001)
+        {
+            break;
+        }
+    }
+
+    return 0;
+}
+
+int RunD3D10(const bool enableDebug) noexcept
+{
     OutputDebugStringA("Starting D3D10 Tester.\n");
+    ConPrinter::PrintLn(u8"Starting D3D10 Tester.");
 
     CComPtr<IDXGIFactory1> dxgiFactory;
-    
+
     HRESULT status = CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(&dxgiFactory));
 
     if(!SUCCEEDED(status))
@@ -392,12 +219,11 @@ int main(int argCount, char* args[])
         return 2;
     }
 
+    EnableD3DDebugLogging(1);
+
     adapter.Release();
 
-
     ConPrinter::PrintLn(u8"Device successfully created.");
-
-    Sleep(5000);
 
     return 0;
 }

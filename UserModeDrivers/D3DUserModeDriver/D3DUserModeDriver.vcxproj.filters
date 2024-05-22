@@ -42,7 +42,7 @@
     <ClCompile Include="src\d3d9\GsDevice9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\d3d9\SetRenderState9.cpp">
+    <ClCompile Include="src\d3d9\device\SetRenderState9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\d3d9\CloseAdapter9.cpp">
@@ -58,6 +58,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\d3d10\CloseAdapter10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\CalcPrivateDeviceSize10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\device\DestroyDevice10.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,7 +86,7 @@
     <ClInclude Include="include\WindowsNtPolyfill.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\d3d9\SetRenderState9.hpp">
+    <ClInclude Include="include\d3d9\device\SetRenderState9.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\d3d9\CloseAdapter9.hpp">
@@ -98,5 +104,19 @@
     <ClInclude Include="include\d3d10\CloseAdapter10.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\d3d10\CalcPrivateDeviceSize10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\device\DestroyDevice10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverVersionNumbers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="D3DUserModeDriver.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

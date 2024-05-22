@@ -221,7 +221,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -236,14 +236,14 @@
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -264,7 +264,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -278,14 +278,14 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -304,7 +304,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));DEBUG;_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -319,18 +319,18 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
       <SpecifyDriverVerDirectiveVersion>true</SpecifyDriverVerDirectiveVersion>
       <VersionHeaderPath>
       </VersionHeaderPath>
       <SpecifyDriverVerDirectiveDate>true</SpecifyDriverVerDirectiveDate>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -351,7 +351,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <CallingConvention>StdCall</CallingConvention>
       <AdditionalIncludeDirectories>$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));_NO_EXCEPTIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>Default</CompileAs>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -365,14 +365,14 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <AdditionalLibraryDirectories>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -388,17 +388,17 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
@@ -406,7 +406,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));DEBUG;_ARM_;ARM;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -418,14 +418,14 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -441,17 +441,17 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <EnableModules>false</EnableModules>
       <CallingConvention>StdCall</CallingConvention>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -459,7 +459,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
     </DriverSign>
     <ClCompile>
-      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_MINOR_VERSION=21;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"));DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_NX_OPTIN=1;_HAS_EXCEPTIONS=0;GS_PATCH_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt"));GS_BUILD_VERSION=$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"));DEBUG;_ARM64_;ARM64;_USE_DECLSPECS_FOR_SAL=1;STD_CALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsManaged>false</CompileAsManaged>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -471,14 +471,14 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Inf>
-      <TimeStamp>7.15.21.$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</TimeStamp>
+      <TimeStamp>$([System.IO.File]::ReadAllText("$(ProjectDir)version/majorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/minorVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/patchVersion.txt")).$([System.IO.File]::ReadAllText("$(ProjectDir)version/buildVersion.txt"))</TimeStamp>
     </Inf>
     <PreBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py
+      <Command>python $(ProjectDir)GenWddmVersion.py
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver\D3DUserModeDriver.dll $(OutDir)</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -540,6 +540,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\UpdateActiveVidPnPresentPath.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DriverVersionNumbers.h" />
     <ClInclude Include="include\AddDevice.hpp" />
     <ClInclude Include="include\BlockTransfer.hpp" />
     <ClInclude Include="include\CollectDbgInfo.hpp" />
@@ -595,6 +596,8 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.hpp" />
     <ClInclude Include="include\UpdateActiveVidPnPresentPath.hpp" />
     <ClInclude Include="include\XStdDefPolyFill.h" />
+    <ClInclude Include="WddmMajorVersion.h" />
+    <ClInclude Include="WddmMinorVersion.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DisplayMiniportDriver.rc" />

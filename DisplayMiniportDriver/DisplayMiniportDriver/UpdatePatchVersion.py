@@ -1,16 +1,4 @@
-# import xml.etree.ElementTree as ET
-
-# ET.register_namespace('', 'http://schemas.microsoft.com/developer/msbuild/2003')
-# tree = ET.parse('Version.props')
-# root = tree.getroot()
-
-# for patchVersion in root.iter('{http://schemas.microsoft.com/developer/msbuild/2003}PATCH_VERSION'):
-#     newVersion = int(patchVersion.text) + 1
-#     print("Updated version to {}".format(newVersion))
-#     patchVersion.text = str(newVersion)
-
-
-# tree.write("Version.props", encoding='utf-8', xml_declaration=True)
+import subprocess
 
 def read_version(filename):
     try:
@@ -24,28 +12,45 @@ def read_version(filename):
         print("Invalid content in file. Please make sure it contains a valid number.")
         return None
 
-def write_version(filename, macroFilename, version):
+def write_version(filename, macroFilename, patchVersion, buildVersion):
     try:
         with open(filename, 'w') as file:
-            file.write(str(version))
+            file.write(str(buildVersion))
     except IOError:
         print("Error writing to file.")
+
     try:
         with open(macroFilename, 'w') as file:
-            file.write("#define GS_MINOR_VERSION 21\n#define GS_PATCH_VERSION " + str(version) + "\n")
+            file.write(f"#define GS_PATCH_VERSION {patchVersion}\n#define GS_BUILD_VERSION {buildVersion}\n")
+    except IOError:
+        print("Error writing to file.")
+        
+    try:
+        with open(f"../../UserModeDrivers/D3DUserModeDriver/{macroFilename}", 'w') as file:
+            file.write(f"#define GS_PATCH_VERSION {patchVersion}\n#define GS_BUILD_VERSION {buildVersion}\n")
     except IOError:
         print("Error writing to file.")
 
-def increment_version(filename, macroFilename):
-    current_version = read_version(filename)
-    if current_version is not None:
-        new_version = current_version + 1
-        write_version(filename, macroFilename, new_version)
-        print(f"Version incremented. New version: {new_version}")
+def increment_build_version(patchFilename, buildFilename, macroFilename):
+    patch_version = read_version(patchFilename)
+    build_version = read_version(buildFilename)
+    if patch_version is None:
+        patch_version = 1
+
+    if build_version is not None:
+        build_version = build_version + 1
+    else:
+        build_version = 1
+
+    write_version(buildFilename, macroFilename, patch_version, build_version)
+    print(f"Version incremented. New version: {patch_version}.{build_version}")
 
 # File name
-file_name = "../version.txt"
+major_file_name = "version/majorVersion.txt"
+minor_file_name = "version/minorVersion.txt"
+patch_file_name = "version/patchVersion.txt"
+build_file_name = "version/buildVersion.txt"
 macro_file_name = "DriverVersionNumbers.h"
 
 # Increment version
-increment_version(file_name, macro_file_name)
+increment_build_version(patch_file_name, build_file_name, macro_file_name)

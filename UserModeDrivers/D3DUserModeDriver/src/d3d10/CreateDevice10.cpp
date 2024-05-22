@@ -2,7 +2,7 @@
 #include "d3d10/CreateDevice10.hpp"
 #include "d3d10/GsAdapter10.hpp"
 
-HRESULT GsCreateDeviceD3D10(D3D10DDI_HADAPTER hAdapter, D3D10DDIARG_CREATEDEVICE* pCreateDevice)
+HRESULT GsCreateDeviceD3D10(D3D10DDI_HADAPTER hAdapter, D3D10DDIARG_CREATEDEVICE* const pCreateDevice)
 {
     if(!hAdapter.pDrvPrivate)
     {

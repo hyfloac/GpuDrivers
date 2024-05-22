@@ -1,5 +1,6 @@
 // ReSharper disable CppClangTidyModernizeMacroToEnum
-#pragma once
+#ifndef GS_CONFIG_H
+#define GS_CONFIG_H
 
 #ifndef HY_VENDOR_ID
   #define HY_VENDOR_ID (0xFFFD)
@@ -54,3 +55,4 @@
   #define D3D_11_ON_10 0
 #endif
 
+#endif

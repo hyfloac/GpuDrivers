@@ -1179,6 +1179,7 @@ NTSTATUS HyMiniportDevice::IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsS
         }
         else if(numPathsFromSource > MaxChildren)
         {
+            LOG_DEBUG("HyMiniportDevice::IsSupportedVidPn: VidPN is not supported.\n");
             // This VidPn is not supported, which has already been set as the default
             return STATUS_SUCCESS;
         }

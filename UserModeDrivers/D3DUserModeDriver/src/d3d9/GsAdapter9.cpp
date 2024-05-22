@@ -2,7 +2,7 @@
 #include "d3d9/GsDevice9.hpp"
 #include <ConPrinter.hpp>
 
-#include "d3d9/SetRenderState9.hpp"
+#include "d3d9/device/SetRenderState9.hpp"
 
 GsAdapter9::GsAdapter9(
     const HANDLE driverHandle, 
@@ -19,7 +19,7 @@ HRESULT GsAdapter9::GetCaps(const D3DDDIARG_GETCAPS& getCaps) noexcept
         case D3DDDICAPS_DDRAW: return GetCapsDDraw(getCaps);
         case D3DDDICAPS_DDRAW_MODE_SPECIFIC: return GetCapsDDrawModeSpecific(getCaps);
         case D3DDDICAPS_GETD3D9CAPS: return GetCapsD3D9(getCaps);
-        default: return E_OUTOFMEMORY;
+        default: return S_OK;
     }
 }
 
@@ -49,7 +49,7 @@ HRESULT GsAdapter9::CreateDevice(D3DDDIARG_CREATEDEVICE& createDevice) noexcept
 
     createDevice.hDevice = device;
 
-    createDevice.pDeviceFuncs->pfnSetRenderState = GsSetRenderState;
+    createDevice.pDeviceFuncs->pfnSetRenderState = GsSetRenderState9;
     GEN_NOOP_HRESULT(createDevice.pDeviceFuncs->pfnUpdateWInfo);
     GEN_NOOP_HRESULT(createDevice.pDeviceFuncs->pfnSetTextureStageState);
     GEN_NOOP_HRESULT(createDevice.pDeviceFuncs->pfnSetTexture);

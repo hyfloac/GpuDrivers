@@ -2,7 +2,7 @@
 #include "d3d9/GetCaps9.hpp"
 #include "d3d9/GsAdapter9.hpp"
 
-HRESULT GsGetCapsD3D9(HANDLE hAdapter, const D3DDDIARG_GETCAPS* pGetCaps)
+HRESULT GsGetCapsD3D9(HANDLE hAdapter, const D3DDDIARG_GETCAPS* const pGetCaps)
 {
     if(!hAdapter)
     {

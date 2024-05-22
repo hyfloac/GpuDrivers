@@ -341,6 +341,15 @@
     <ClInclude Include="include\DriverVersion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WddmMinorVersion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WddmMajorVersion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverVersionNumbers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DisplayMiniportDriver.rc">
