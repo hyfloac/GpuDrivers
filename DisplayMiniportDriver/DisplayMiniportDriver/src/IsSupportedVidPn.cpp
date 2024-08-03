@@ -11,26 +11,30 @@ NTSTATUS HyIsSupportedVidPn(IN_CONST_HANDLE hAdapter, INOUT_PDXGKARG_ISSUPPORTED
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyIsSupportedVidPn\n");
+    TRACE_ENTRYPOINT();
 
     // If hAdapter is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyIsSupportedVidPn: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
     // If pIsSupportedVidPn is null inform the kernel that the second parameter was invalid.
     // This should probably never happen.
-    if(!hAdapter)
+    if(!pIsSupportedVidPn)
     {
-        LOG_ERROR("Invalid Parameter to HyIsSupportedVidPn: pIsSupportedVidPn\n");
+        LOG_ERROR("Invalid Parameter: pIsSupportedVidPn\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
     // Get our context structure.
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
-    return deviceContext->IsSupportedVidPn(pIsSupportedVidPn);
+    const NTSTATUS status = deviceContext->IsSupportedVidPn(pIsSupportedVidPn);
+
+    LOG_DEBUG("Status: 0x%08X, Supported: %s\n", status, pIsSupportedVidPn->IsVidPnSupported ? "TRUE" : "FALSE");
+
+    return status;
 }

@@ -330,7 +330,8 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
 xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDriver.dll $(OutDir)DisplayMiniportDriver\</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>python $(ProjectDir)UpdatePatchVersion.py</Command>
+      <Command>python $(ProjectDir)UpdatePatchVersion.py
+xcopy /y $(OutDir)DisplayMiniportDriver.pdb $(OutDir)DisplayMiniportDriver\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -494,7 +495,9 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\CommitVidPn.cpp" />
     <ClCompile Include="src\ControlEtwLogging.cpp" />
     <ClCompile Include="src\ControlInterrupt.cpp" />
+    <ClCompile Include="src\CreateContext.cpp" />
     <ClCompile Include="src\CreateDevice.cpp" />
+    <ClCompile Include="src\DestroyContext.cpp" />
     <ClCompile Include="src\DestroyDevice.cpp" />
     <ClCompile Include="src\DeviceComms.cpp" />
     <ClCompile Include="src\Devices.cpp" />
@@ -512,6 +515,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\FilterUnload.c" />
     <ClCompile Include="src\GetScanLine.cpp" />
     <ClCompile Include="src\GsGraphicsContext.cpp" />
+    <ClCompile Include="src\GsLogicalDevice.cpp" />
     <ClCompile Include="src\GsMemoryManager.cpp" />
     <ClCompile Include="src\GsPresentManager.cpp" />
     <ClCompile Include="src\Guids.c" />
@@ -529,10 +533,12 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\QueryDeviceDescriptor.cpp" />
     <ClCompile Include="src\QueryInterface.cpp" />
     <ClCompile Include="src\RecommendFunctionalVidPn.cpp" />
+    <ClCompile Include="src\RecommendMonitorModes.cpp" />
     <ClCompile Include="src\RegisterMemCopy.c" />
     <ClCompile Include="src\RemoveDevice.cpp" />
     <ClCompile Include="src\ResetDevice.cpp" />
     <ClCompile Include="src\SetPowerState.cpp" />
+    <ClCompile Include="src\SetVidPnSourceAddress.cpp" />
     <ClCompile Include="src\SetVidPnSourceVisibility.cpp" />
     <ClCompile Include="src\StartDevice.cpp" />
     <ClCompile Include="src\StopDevice.cpp" />
@@ -550,8 +556,10 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\ControlEtwLogging.hpp" />
     <ClInclude Include="include\ControlInterrupt.hpp" />
+    <ClInclude Include="include\CreateContext.hpp" />
     <ClInclude Include="include\CreateDevice.hpp" />
     <ClInclude Include="include\D3DPolyFills.h" />
+    <ClInclude Include="include\DestroyContext.hpp" />
     <ClInclude Include="include\DestroyDevice.hpp" />
     <ClInclude Include="include\DeviceComms.hpp" />
     <ClInclude Include="include\Devices.hpp" />
@@ -568,8 +576,9 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\FilterMessageNotify.h" />
     <ClInclude Include="include\FilterUnload.h" />
     <ClInclude Include="include\GetScanLine.hpp" />
-    <ClInclude Include="include\GsPresentManager.hpp" />
     <ClInclude Include="include\GsGraphicsContext.hpp" />
+    <ClInclude Include="include\GsPresentManager.hpp" />
+    <ClInclude Include="include\GsLogicalDevice.hpp" />
     <ClInclude Include="include\HyDevice.hpp" />
     <ClInclude Include="include\I2CInterface.h" />
     <ClInclude Include="include\InterruptRoutine.hpp" />
@@ -579,6 +588,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\Objects.hpp" />
     <ClInclude Include="include\PresentDisplayOnly.hpp" />
     <ClInclude Include="include\RecommendFunctionalVidPn.hpp" />
+    <ClInclude Include="include\RecommendMonitorModes.hpp" />
     <ClInclude Include="include\RegisterMemCopy.h" />
     <ClInclude Include="include\MemoryAllocator.h" />
     <ClInclude Include="include\NotifyAcpiEvent.hpp" />
@@ -590,6 +600,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\RemoveDevice.hpp" />
     <ClInclude Include="include\ResetDevice.hpp" />
     <ClInclude Include="include\SetPowerState.hpp" />
+    <ClInclude Include="include\SetVidPnSourceAddress.hpp" />
     <ClInclude Include="include\SetVidPnSourceVisibility.hpp" />
     <ClInclude Include="include\StartDevice.hpp" />
     <ClInclude Include="include\StopDevice.hpp" />

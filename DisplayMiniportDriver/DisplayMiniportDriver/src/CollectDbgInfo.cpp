@@ -14,17 +14,25 @@ NTSTATUS HyCollectDbgInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_COLLECTDBG
     // runs at is generally undefined).
     CHECK_IRQL(HIGH_LEVEL);
 
-    LOG_DEBUG("HyCollectDbgInfo\n");
+    TRACE_ENTRYPOINT();
 
     // If hAdapter is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyCollectDbgInfo: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    // If pCollectDbgInfo is null inform the kernel that the second parameter was invalid.
+    // This should probably never happen.
+    if(!hAdapter)
+    {
+        LOG_ERROR("Invalid Parameter: pCollectDbgInfo\n");
+        return STATUS_INVALID_PARAMETER_2;
+    }
+
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->CollectDbgInfo(pCollectDbgInfo);
 }

@@ -6,18 +6,18 @@
 
 void HyResetDevice(IN_CONST_PVOID MiniportDeviceContext)
 {
-    LOG_DEBUG("HyResetDevice\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform log that the parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyResetDevice: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return;
     }
 
     // Get our context structure.
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     deviceContext->ResetDevice();
 }

@@ -165,13 +165,28 @@
     <ClCompile Include="src\GsMemoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\GsGraphicsContext.cpp">
+    <ClCompile Include="src\GsLogicalDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\CreateDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DestroyDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RecommendMonitorModes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CreateContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DestroyContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GsGraphicsContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SetVidPnSourceAddress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -329,7 +344,7 @@
     <ClInclude Include="include\Devices.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\GsGraphicsContext.hpp">
+    <ClInclude Include="include\GsLogicalDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\CreateDevice.hpp">
@@ -348,6 +363,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DriverVersionNumbers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\RecommendMonitorModes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CreateContext.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DestroyContext.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\GsGraphicsContext.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SetVidPnSourceAddress.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -12,7 +12,7 @@ void HyFilterDisconnectNotify(PVOID ConnectionPortCookie)
 {
     PAGED_CODE();
 
-    LOG_DEBUG("HyFilterDisconnectNotify\n");
+    TRACE_ENTRYPOINT();
 
     HyUnregisterFilterClient(ConnectionPortCookie);
 }

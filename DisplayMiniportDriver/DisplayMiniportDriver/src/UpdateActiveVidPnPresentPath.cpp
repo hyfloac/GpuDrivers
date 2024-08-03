@@ -8,13 +8,13 @@ NTSTATUS HyUpdateActiveVidPnPresentPath(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGK
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyUpdateActiveVidPnPresentPath\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext (hAdapter) is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyUpdateActiveVidPnPresentPath: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -22,11 +22,11 @@ NTSTATUS HyUpdateActiveVidPnPresentPath(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGK
     // This should probably never happen.
     if(!pUpdateActiveVidPnPresentPath)
     {
-        LOG_ERROR("Invalid Parameter to HyUpdateActiveVidPnPresentPath: pUpdateActiveVidPnPresentPath\n");
+        LOG_ERROR("Invalid Parameter: pUpdateActiveVidPnPresentPath\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->UpdateActiveVidPnPresentPath(pUpdateActiveVidPnPresentPath);
 }

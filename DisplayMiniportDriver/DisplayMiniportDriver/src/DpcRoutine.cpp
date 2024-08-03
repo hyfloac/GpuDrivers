@@ -14,18 +14,18 @@ void HyDpcRoutine(IN_CONST_PVOID MiniportDeviceContext)
 
     if constexpr(false)
     {
-        LOG_DEBUG("HyDpcRoutine\n");
+        TRACE_ENTRYPOINT();
     }
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyDpcRoutine: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     deviceContext->DpcRoutine();
 }

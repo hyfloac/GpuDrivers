@@ -15,18 +15,18 @@ BOOLEAN HyInterruptRoutine(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG Messag
 
     if constexpr(false)
     {
-        LOG_DEBUG("HyInterruptRoutine\n");
+        TRACE_ENTRYPOINT();
     }
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyInterruptRoutine: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return FALSE;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     return deviceContext->InterruptRoutine(MessageNumber);
 }

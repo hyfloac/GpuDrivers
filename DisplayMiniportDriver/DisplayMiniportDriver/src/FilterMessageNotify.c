@@ -18,7 +18,7 @@ NTSTATUS HyFilterMessageNotify(PVOID PortCookie, PVOID InputBuffer, ULONG InputB
 
     PAGED_CODE();
 
-    LOG_DEBUG("HyFilterMessageNotify\n");
+    TRACE_ENTRYPOINT();
 
     PFLT_PORT port;
     const NTSTATUS getFilterClientStatus = HyGetFilterClient(PortCookie, &port);

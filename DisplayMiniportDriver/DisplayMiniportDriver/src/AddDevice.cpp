@@ -12,13 +12,13 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyAddDevice\n");
+    TRACE_ENTRYPOINT();
 
     // If PhysicalDeviceObject is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!PhysicalDeviceObject)
     {
-        LOG_ERROR("Invalid Parameter to HyAddDevice: PhysicalDeviceObject\n");
+        LOG_ERROR("Invalid Parameter: PhysicalDeviceObject\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -26,7 +26,7 @@ NTSTATUS HyAddDevice(IN_CONST_PDEVICE_OBJECT PhysicalDeviceObject, OUT_PPVOID Mi
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyAddDevice: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 

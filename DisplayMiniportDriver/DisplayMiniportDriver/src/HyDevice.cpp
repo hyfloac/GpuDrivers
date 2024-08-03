@@ -14,7 +14,7 @@ extern "C" {
 #include "Logging.h"
 #include "MemoryAllocator.h"
 #include "Config.h"
-#include "GsGraphicsContext.hpp"
+#include "GsLogicalDevice.hpp"
 
 #pragma code_seg(push)
 #pragma code_seg("PAGE")
@@ -33,7 +33,7 @@ void* HyMiniportDevice::operator new(const SIZE_T count)
     return HyAllocate(ExDefaultNonPagedPoolType, count, POOL_TAG_DEVICE_CONTEXT);
 }
 
-void HyMiniportDevice::operator delete(void* ptr)
+void HyMiniportDevice::operator delete(void* const ptr)
 {
     HyDeallocate(ptr, POOL_TAG_DEVICE_CONTEXT);
 }
@@ -51,6 +51,7 @@ HyMiniportDevice::HyMiniportDevice(PDEVICE_OBJECT PhysicalDeviceObject) noexcept
     , m_ConfigRegistersPointer(nullptr)
     , m_CurrentDisplayMode { }
     , m_AdapterPowerState(PowerDeviceUnspecified)
+    , m_CurrentLogLockValue(1)
     , m_PresentManager(this)
     , m_MemoryManager()
 { }
@@ -136,7 +137,7 @@ static NTSTATUS GetPCIInterface(PDEVICE_OBJECT physicalDeviceObject, PBUS_INTERF
 
 NTSTATUS HyMiniportDevice::GetAdapterInfo() noexcept
 {
-    LOG_DEBUG("HyMiniportDevice::GetAdapterInfo: PDO: 0x%p, Type: %d, Device Type: %s [0x%08X]\n", m_PhysicalDeviceObject, m_PhysicalDeviceObject->Type, GetFileDeviceString(m_PhysicalDeviceObject->DeviceType), m_PhysicalDeviceObject->DeviceType);
+    LOG_DEBUG("PDO: 0x%p, Type: %d, Device Type: %s [0x%08X]\n", m_PhysicalDeviceObject, m_PhysicalDeviceObject->Type, GetFileDeviceString(m_PhysicalDeviceObject->DeviceType), m_PhysicalDeviceObject->DeviceType);
 
     // This needs to be in non-paged memory. https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/obtaining-device-configuration-information-at-irql---dispatch-level
     PBUS_INTERFACE_STANDARD pciInterface = HY_ALLOC_ZERO(BUS_INTERFACE_STANDARD, NonPagedPoolNx, POOL_TAG_DEVICE_CONTEXT);
@@ -177,7 +178,7 @@ NTSTATUS HyMiniportDevice::GetAdapterInfo() noexcept
 
         if(!NT_SUCCESS(busStatus))
         {
-            LOG_ERROR("HyMiniportDevice::GetAdapterInfo: Failed to retrieve PCI bus number. 0x%08X\n", busStatus);
+            LOG_ERROR("Failed to retrieve PCI bus number. 0x%08X\n", busStatus);
             retStatus = busStatus;
         }
     }
@@ -191,7 +192,7 @@ NTSTATUS HyMiniportDevice::GetAdapterInfo() noexcept
 
         if(!NT_SUCCESS(slotStatus))
         {
-            LOG_ERROR("HyMiniportDevice::GetAdapterInfo: Failed to retrieve PCI address. 0x%08X\n", slotStatus);
+            LOG_ERROR("Failed to retrieve PCI address. 0x%08X\n", slotStatus);
             retStatus = slotStatus;
         }
         else
@@ -199,7 +200,7 @@ NTSTATUS HyMiniportDevice::GetAdapterInfo() noexcept
             m_PCISlotNumber.u.bits.DeviceNumber = (address >> 16) & 0xFFFF;
             m_PCISlotNumber.u.bits.FunctionNumber = address & 0xFFFF;
 
-            LOG_DEBUG("HyMiniportDevice::GetAdapterInfo: Adapter: Device: 0x%04X Function: 0x%04X\n", m_PCISlotNumber.u.bits.DeviceNumber, m_PCISlotNumber.u.bits.FunctionNumber);
+            LOG_DEBUG("Adapter: Device: 0x%04X Function: 0x%04X\n", m_PCISlotNumber.u.bits.DeviceNumber, m_PCISlotNumber.u.bits.FunctionNumber);
         }
     }
 
@@ -207,7 +208,7 @@ NTSTATUS HyMiniportDevice::GetAdapterInfo() noexcept
     {
         if(!pciInterface->GetBusData)
         {
-            LOG_ERROR("HyMiniportDevice::GetAdapterInfo: Failed to read PCI device configuration space.\n");
+            LOG_ERROR("Failed to read PCI device configuration space.\n");
             retStatus = STATUS_INSUFFICIENT_RESOURCES;
         }
         else
@@ -215,7 +216,7 @@ NTSTATUS HyMiniportDevice::GetAdapterInfo() noexcept
             // Attempt to get the PCI configuration space.
             if(pciInterface->GetBusData(pciInterface->Context, PCI_WHICHSPACE_CONFIG, &m_PCIConfig, 0, sizeof(PCI_COMMON_CONFIG)) != sizeof(PCI_COMMON_CONFIG))
             {
-                LOG_ERROR("HyMiniportDevice::GetAdapterInfo: Failed to read PCI device configuration space.\n");
+                LOG_ERROR("Failed to read PCI device configuration space.\n");
                 retStatus = STATUS_INSUFFICIENT_RESOURCES;
             }
         }
@@ -248,11 +249,11 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
 
         if(!NT_SUCCESS(getDeviceInfoStatus))
         {
-            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to get device info.\n");
+            LOG_ERROR("Failed to get device info.\n");
             return getDeviceInfoStatus;
         }
 
-        LOG_DEBUG("HyMiniportDevice::StartDevice: Registry Path: %S\n", m_DeviceInfo.DeviceRegistryPath.Buffer);
+        LOG_DEBUG("Registry Path: %S\n", m_DeviceInfo.DeviceRegistryPath.Buffer);
     }
 
     // Check that the device is in fact ours.
@@ -261,12 +262,12 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
 
         if(!NT_SUCCESS(checkDeviceStatus))
         {
-            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to check device: 0x%08X.\n", checkDeviceStatus);
+            LOG_ERROR("Failed to check device: 0x%08X.\n", checkDeviceStatus);
             return checkDeviceStatus;
         }
     }
 
-    LOG_DEBUG("HyMiniportDevice::StartDevice: Check device passed.\n");
+    LOG_DEBUG("Check device passed.\n");
 
     // Acquire POST display data
     {
@@ -274,7 +275,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
 
         if(!NT_SUCCESS(loadPostInfoStatus))
         {
-            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to acquire POST display: 0x%08X.\n", loadPostInfoStatus);
+            LOG_ERROR("Failed to acquire POST display: 0x%08X.\n", loadPostInfoStatus);
         }
     }
 
@@ -286,7 +287,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
 
         if(!NT_SUCCESS(checkDevicePrefixStatus))
         {
-            LOG_ERROR("HyMiniportDevice::StartDevice: Failed to check device prefix: 0x%08X.\n", checkDevicePrefixStatus);
+            LOG_ERROR("Failed to check device prefix: 0x%08X.\n", checkDevicePrefixStatus);
             return checkDevicePrefixStatus;
         }
     }
@@ -342,7 +343,7 @@ NTSTATUS HyMiniportDevice::StartDevice(IN_PDXGK_START_INFO DxgkStartInfo, IN_PDX
         m_CurrentDisplayMode[0].DisplayInfo.TargetId = 0;
         m_CurrentDisplayMode[0].DisplayInfo.AcpiId = 0;
 
-        LOG_DEBUG("HyMiniportDevice::StartDevice: Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
+        LOG_DEBUG("Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
     }
 
     // Initialize everything for the present queue.
@@ -402,19 +403,19 @@ NTSTATUS HyMiniportDevice::LoadPostDisplayInfo() noexcept
     // Check if DxgkCbAcquirePostDisplayOwnership exists.
     if(!m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership)
     {
-        LOG_ERROR("HyMiniportDevice::LoadPostDisplayInfo: DxgkCbAcquirePostDisplayOwnership was not provided.\n");
+        LOG_ERROR("DxgkCbAcquirePostDisplayOwnership was not provided.\n");
         return STATUS_SUCCESS;
     }
     else
     {
         const NTSTATUS acquirePostDisplayStatus = m_DxgkInterface.DxgkCbAcquirePostDisplayOwnership(m_DxgkInterface.DeviceHandle, &m_CurrentDisplayMode[0].DisplayInfo);
 
-        LOG_DEBUG("HyMiniportDevice::LoadPostDisplayInfo: Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
+        LOG_DEBUG("Display 0: %dx%d, Pitch: %d, 0x%I64X\n", m_CurrentDisplayMode[0].DisplayInfo.Width, m_CurrentDisplayMode[0].DisplayInfo.Height, m_CurrentDisplayMode[0].DisplayInfo.Pitch, m_CurrentDisplayMode[0].DisplayInfo.PhysicAddress.QuadPart);
 
         // If we failed to acquire the POST display we're probably not running a POST device, or we're pre WDDM 1.2.
         if(!NT_SUCCESS(acquirePostDisplayStatus))
         {
-            LOG_ERROR("HyMiniportDevice::LoadPostDisplayInfo: DxgkCbAcquirePostDisplayOwnership returned status 0x%08X, Width: %d.\n", acquirePostDisplayStatus, m_CurrentDisplayMode[0].DisplayInfo.Width);
+            LOG_ERROR("DxgkCbAcquirePostDisplayOwnership returned status 0x%08X, Width: %d.\n", acquirePostDisplayStatus, m_CurrentDisplayMode[0].DisplayInfo.Width);
             return acquirePostDisplayStatus;
         }
     }
@@ -432,7 +433,7 @@ NTSTATUS HyMiniportDevice::CheckDevicePrefix(bool* const gpuTypeFound) noexcept
     // Keep iterating until success if the failure is caused by too small of a buffer.
     do
     {
-        LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Attempting to get the DevicePropertyEnumeratorName.\n");
+        LOG_DEBUG("Attempting to get the DevicePropertyEnumeratorName.\n");
         // Get the length of the enumerator string.
         ULONG bufferLength;
         const NTSTATUS getEnumeratorLengthStatus = IoGetDeviceProperty(m_PhysicalDeviceObject, DevicePropertyEnumeratorName, 0, NULL, &bufferLength);
@@ -440,7 +441,7 @@ NTSTATUS HyMiniportDevice::CheckDevicePrefix(bool* const gpuTypeFound) noexcept
         // If we fail propagate errors, unless it is a positional argument error.
         if(!NT_SUCCESS(getEnumeratorLengthStatus) && getEnumeratorLengthStatus != STATUS_BUFFER_TOO_SMALL)
         {
-            LOG_ERROR("HyMiniportDevice::CheckDevicePrefix: Failed to get the length of DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorLengthStatus);
+            LOG_ERROR("Failed to get the length of DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorLengthStatus);
             // This seems to be causing a BugCheck (BSOD).
             // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
@@ -452,24 +453,24 @@ NTSTATUS HyMiniportDevice::CheckDevicePrefix(bool* const gpuTypeFound) noexcept
             return getEnumeratorLengthStatus;
         }
 
-        LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Buffer length: %u\n", bufferLength);
+        LOG_DEBUG("Buffer length: %u\n", bufferLength);
 
         // If the length is sufficiently small we'll just use static allocation.
         if(bufferLength <= 16)
         {
-            LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Using static buffer\n");
+            LOG_DEBUG("Using static buffer\n");
             enumerator = staticEnumeratorBuffer;
         }
         else
         {
-            LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Allocating buffer.\n");
+            LOG_DEBUG("Allocating buffer.\n");
             // Allocate the buffer for the enumerator name.
             enumerator = static_cast<wchar_t*>(HyAllocate(NonPagedPoolNx, bufferLength * sizeof(wchar_t), POOL_TAG_DEVICE_CONTEXT));
 
             // If the allocation fails report that we're out of memory.
             if(!enumerator)
             {
-                LOG_ERROR("HyMiniportDevice::CheckDevicePrefix: Failed to allocate PCI Device String Buffer.\n");
+                LOG_ERROR(" Failed to allocate PCI Device String Buffer.\n");
                 // This seems to be causing a BugCheck (BSOD).
                 // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
@@ -489,7 +490,7 @@ NTSTATUS HyMiniportDevice::CheckDevicePrefix(bool* const gpuTypeFound) noexcept
         // If we failed for a reason other than the buffer being too small, propagate errors, unless it is a positional argument error.
         if(getEnumeratorStatus != STATUS_BUFFER_TOO_SMALL)
         {
-            LOG_ERROR("HyMiniportDevice::CheckDevicePrefix: Failed to get DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorStatus);
+            LOG_ERROR("Failed to get DevicePropertyEnumeratorName: 0x%08X.\n", getEnumeratorStatus);
             // This seems to be causing a BugCheck (BSOD).
             // HY_FREE(deviceContext, POOL_TAG_DEVICE_CONTEXT);
 
@@ -532,7 +533,7 @@ NTSTATUS HyMiniportDevice::CheckDevicePrefix(bool* const gpuTypeFound) noexcept
         *gpuTypeFound = true;
     }
 
-    LOG_DEBUG("HyMiniportDevice::CheckDevicePrefix: Device ID Prefix: %ls\n", enumerator);
+    LOG_DEBUG("Device ID Prefix: %ls\n", enumerator);
 
     // Only free if it was dynamically allocated.
     if(enumerator != staticEnumeratorBuffer)
@@ -554,7 +555,7 @@ NTSTATUS HyMiniportDevice::StopDevice() noexcept
         SetDisplayState(0, false);
     }
 
-    m_Flags.IsStarted = FALSE;
+    m_Flags.IsStarted = false;
 
     (void) m_PresentManager.Close();
 
@@ -597,14 +598,14 @@ BOOLEAN HyMiniportDevice::InterruptRoutine(IN_ULONG MessageNumber) noexcept
         {
             if constexpr(false)
             {
-                LOG_DEBUG("HyMiniportDevice::InterruptRoutine: Handling Display-Only VSync, Target ID: %d\n", m_CurrentDisplayMode[0].VidPnTargetId);
+                LOG_DEBUG("Handling Display-Only VSync, Target ID: %d\n", m_CurrentDisplayMode[0].VidPnTargetId);
             }
 
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
             interruptData.InterruptType = DXGK_INTERRUPT_DISPLAYONLY_VSYNC;
             interruptData.DisplayOnlyVsync.VidPnTargetId = m_CurrentDisplayMode[0].VidPnTargetId;
 #else
-            LOG_WARN("HyMiniportDevice::InterruptRoutine: Driver needs to be compiled against DXGKDDI_INTERFACE_VERSION_WIN8 to use VSync Interrupts.\n");
+            LOG_WARN("Driver needs to be compiled against DXGKDDI_INTERFACE_VERSION_WIN8 to use VSync Interrupts.\n");
 #endif
         }
 
@@ -637,10 +638,10 @@ NTSTATUS HyMiniportDevice::QueryChildRelations(PDXGK_CHILD_DESCRIPTOR ChildRelat
     }
 
     ChildRelations[0].ChildDeviceType = TypeVideoOutput;
-    ChildRelations[0].ChildCapabilities.HpdAwareness = HpdAwarenessInterruptible;
     ChildRelations[0].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_OTHER;
     ChildRelations[0].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_NONE;
     ChildRelations[0].ChildCapabilities.Type.VideoOutput.SupportsSdtvModes = FALSE;
+    ChildRelations[0].ChildCapabilities.HpdAwareness = HpdAwarenessAlwaysConnected;
     ChildRelations[0].AcpiUid = 0;
     ChildRelations[0].ChildUid = 0;
 
@@ -660,7 +661,8 @@ NTSTATUS HyMiniportDevice::QueryChildStatus(INOUT_PDXGK_CHILD_STATUS ChildStatus
         case StatusConnection:
             // HpdAwarenessInterruptible was reported since HpdAwarenessNone is deprecated.
             // However, wae have no knowledge of HotPlug events, so just always return connected.
-            ChildStatus->HotPlug.Connected = static_cast<BOOLEAN>(m_Flags.IsStarted);
+            ChildStatus->HotPlug.Connected = TRUE; //static_cast<BOOLEAN>(m_Flags.IsStarted);
+            LOG_DEBUG("Device Connected: %d\n", ChildStatus->HotPlug.Connected);
             return STATUS_SUCCESS;
         case StatusRotation:
             // D3DKMDT_MOA_NONE was reported, so this should never be called
@@ -676,8 +678,18 @@ NTSTATUS HyMiniportDevice::QueryDeviceDescriptor(IN_ULONG ChildUid, INOUT_PDXGK_
 {
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyMiniportDevice::QueryDeviceDescriptor\n");
+    LOG_DEBUG(
+        "Child: %u, Offset: 0x%X (%u), Length: 0x%X (%u)\n", 
+        ChildUid, 
+        DeviceDescriptor->DescriptorOffset,
+        DeviceDescriptor->DescriptorOffset, 
+        DeviceDescriptor->DescriptorLength, 
+        DeviceDescriptor->DescriptorLength
+    );
 
+#if 0
+    return STATUS_MONITOR_NO_DESCRIPTOR;
+#else
     // We're only going to report our single display.
     if(ChildUid > 1)
     {
@@ -690,18 +702,29 @@ NTSTATUS HyMiniportDevice::QueryDeviceDescriptor(IN_ULONG ChildUid, INOUT_PDXGK_
     }
 
     const ULONG edidOffset = DeviceDescriptor->DescriptorOffset;
-    ULONG edidLength = 128;
+    ULONG edidLength = DeviceDescriptor->DescriptorLength;
 
-    if(edidLength - edidOffset > DeviceDescriptor->DescriptorLength)
+    if(edidLength > SIZE_REGISTER_EDID)
     {
-        edidLength = DeviceDescriptor->DescriptorLength;
+        edidLength = SIZE_REGISTER_EDID;
     }
 
-    const volatile UINT* const edidDisplay0 = GetDeviceConfigRegister(BASE_REGISTER_EDID + SIZE_REGISTER_EDID * 0 + edidOffset);
+    if(edidOffset + edidLength >= SIZE_REGISTER_EDID)
+    {
+        edidLength = SIZE_REGISTER_EDID - edidOffset;
+    }
+
+    const volatile UINT* const edidDisplay0 = GetDeviceConfigRegister(BASE_REGISTER_EDID + SIZE_REGISTER_EDID * ChildUid + edidOffset);
 
     RegisterMemCopyNV32(DeviceDescriptor->DescriptorBuffer, edidDisplay0, static_cast<int>(edidLength));
 
+    if(DeviceDescriptor->DescriptorOffset + DeviceDescriptor->DescriptorLength >= 128)
+    {
+        return STATUS_MONITOR_NO_MORE_DESCRIPTOR_DATA;
+    }
+
     return STATUS_SUCCESS;
+#endif
 }
 
 NTSTATUS HyMiniportDevice::SetPowerState(IN_ULONG DeviceUid, IN_DEVICE_POWER_STATE DevicePowerState, IN_POWER_ACTION ActionType) noexcept
@@ -762,22 +785,22 @@ NTSTATUS HyMiniportDevice::QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
 NTSTATUS HyMiniportDevice::CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevice) noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
-    LOG_DEBUG("HyMiniportDevice::CreateDevice: System Device: %d, GDI Device: %d\n", pCreateDevice->Flags.SystemDevice, pCreateDevice->Flags.GdiDevice);
+    LOG_DEBUG("System Device: %d, GDI Device: %d, pInfo: %p\n", pCreateDevice->Flags.SystemDevice, pCreateDevice->Flags.GdiDevice, pCreateDevice->pInfo);
 
-    GsGraphicsContext* graphicsContext = new GsGraphicsContext(
+    GsLogicalDevice* logicalDevice = new GsLogicalDevice(
         pCreateDevice->hDevice,            // dxgkHandle
         pCreateDevice->Flags.SystemDevice, // isSystemDevice
         pCreateDevice->Flags.GdiDevice     // isGdiDevice
     );
 
-    if(!graphicsContext)
+    if(!logicalDevice)
     {
-        LOG_WARN("HyMiniportDevice::CreateDevice: Failed to allocate Graphics Context.\n");
+        LOG_WARN("Failed to allocate Logical Device.\n");
         return STATUS_NO_MEMORY;
     }
 
-    pCreateDevice->hDevice = graphicsContext;
-    pCreateDevice->pInfo = &graphicsContext->DeviceInfo();
+    pCreateDevice->hDevice = logicalDevice;
+    pCreateDevice->pInfo = &logicalDevice->DeviceInfo();
 
     return STATUS_SUCCESS;
 }
@@ -875,17 +898,103 @@ NTSTATUS HyMiniportDevice::FillDriverCaps(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQu
     RtlZeroMemory(driverCaps, sizeof(*driverCaps));
 
     // driverCaps->HighestAcceptableAddress.QuadPart = (LONGLONG) (((UINT_PTR) deviceContext->VRamPointer) + HyGetDeviceVramSize(deviceContext));
-    driverCaps->HighestAcceptableAddress.QuadPart = -1;
-    // driverCaps->MaxPointerWidth = 256;
-    // driverCaps->MaxPointerHeight = 256;
-    // driverCaps->PointerCaps.Monochrome = TRUE;
-    // driverCaps->PointerCaps.Color = TRUE;
-    // driverCaps->PointerCaps.MaskedColor = FALSE;
-    // driverCaps->PointerCaps.Reserved = 0;
+    driverCaps->HighestAcceptableAddress.QuadPart = (1ull << 48) - 1;
+    driverCaps->MaxAllocationListSlotId = 64;
+    driverCaps->ApertureSegmentCommitLimit = GsMemoryManager::EnableApertureSegment ? m_MemoryManager.EmbeddedSegments()[0].CommitLimit : 0;
+    driverCaps->MaxPointerWidth = 256;
+    driverCaps->MaxPointerHeight = 256;
 
+    driverCaps->PointerCaps.Value = 0;
+    driverCaps->PointerCaps.Monochrome = TRUE;
+    driverCaps->PointerCaps.Color = TRUE;
+    driverCaps->PointerCaps.MaskedColor = FALSE;
+    driverCaps->PointerCaps.Reserved = 0;
+
+    driverCaps->InterruptMessageNumber = 0;
+    driverCaps->NumberOfSwizzlingRanges = 128;
+    driverCaps->MaxOverlays = 1;
+    driverCaps->GammaRampCaps.Gamma_Rgb256x3x16 = 1;
+
+    driverCaps->PresentationCaps.Value = 0;
+    driverCaps->PresentationCaps.NoScreenToScreenBlt = 0;
+    driverCaps->PresentationCaps.NoOverlapScreenBlt = 0;
+    driverCaps->PresentationCaps.SupportKernelModeCommandBuffer = 0;
+    driverCaps->PresentationCaps.NoSameBitmapAlphaBlend = 0;
+    driverCaps->PresentationCaps.NoSameBitmapStretchBlt = 0;
+    driverCaps->PresentationCaps.NoSameBitmapTransparentBlt = 0;
+    driverCaps->PresentationCaps.NoSameBitmapOverlappedAlphaBlend = 0;
+    driverCaps->PresentationCaps.NoSameBitmapOverlappedStretchBlt = 0;
+    driverCaps->PresentationCaps.DriverSupportsCddDwmInterop = 0;
+    driverCaps->PresentationCaps.Reserved0 = 0;
+    driverCaps->PresentationCaps.AlignmentShift = 2;
+    driverCaps->PresentationCaps.MaxTextureWidthShift = 2;
+    driverCaps->PresentationCaps.MaxTextureHeightShift = 2;
+    driverCaps->PresentationCaps.SupportAllBltRops = 0;
+    driverCaps->PresentationCaps.SupportMirrorStretchBlt = 0;
+    driverCaps->PresentationCaps.SupportMonoStretchBltModes = 0;
+    driverCaps->PresentationCaps.StagingRectStartPitchAligned = 0;
+    driverCaps->PresentationCaps.NoSameBitmapBitBlt = 0;
+    driverCaps->PresentationCaps.NoSameBitmapOverlappedBitBlt = 1;
+    driverCaps->PresentationCaps.Reserved1 = 0;
+    driverCaps->PresentationCaps.NoTempSurfaceForClearTypeBlend = 0;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
+    driverCaps->PresentationCaps.SupportSoftwareDeviceBitmaps = 0;
+    driverCaps->PresentationCaps.NoCacheCoherentApertureMemory = 0;
+    driverCaps->PresentationCaps.SupportLinearHeap = 1;
+    driverCaps->PresentationCaps.Reserved = 0;
+#else
+    driverCaps->PresentationCaps.Reserved = 0;
+#endif
+
+    driverCaps->MaxQueuedFlipOnVSync = 1;
+
+    driverCaps->FlipCaps.Value = 0;
+    driverCaps->FlipCaps.FlipOnVSyncWithNoWait = 1;
+    driverCaps->FlipCaps.FlipOnVSyncMmIo = 1;
+    driverCaps->FlipCaps.FlipInterval = 0;
+    driverCaps->FlipCaps.FlipImmediateMmIo = 1;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM1_3)
+    driverCaps->FlipCaps.FlipIndependent = 1;
+  #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+    driverCaps->FlipCaps.DdiPresentForIFlip = 1;
+    driverCaps->FlipCaps.FlipImmediateOnHSync = 0;
+    driverCaps->FlipCaps.Reserved = 0;
+  #else
+    driverCaps->FlipCaps.Reserved = 0;
+  #endif
+#else
+    driverCaps->FlipCaps.Reserved = 0;
+#endif
+
+    driverCaps->SchedulingCaps.Value = 0;
     driverCaps->SchedulingCaps.MultiEngineAware = 0;
     driverCaps->SchedulingCaps.VSyncPowerSaveAware = 1;
-    // driverCaps->MemoryManagementCaps.IoMmuSupported = TRUE;
+
+    driverCaps->MemoryManagementCaps.Value = 0;
+    driverCaps->MemoryManagementCaps.OutOfOrderLock = 1;
+#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
+    driverCaps->MemoryManagementCaps.DedicatedPagingEngine = 0;
+    driverCaps->MemoryManagementCaps.PagingEngineCanSwizzle = 0;
+    driverCaps->MemoryManagementCaps.SectionBackedPrimary = 0;
+  #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM1_3)
+    driverCaps->MemoryManagementCaps.CrossAdapterResource = 0;
+    #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0)
+    driverCaps->MemoryManagementCaps.VirtualAddressingSupported = 1;
+    driverCaps->MemoryManagementCaps.GpuMmuSupported = 1;
+    driverCaps->MemoryManagementCaps.IoMmuSupported = 0;
+    driverCaps->MemoryManagementCaps.ReplicateGdiContent = 0;
+    driverCaps->MemoryManagementCaps.NonCpuVisiblePrimary = 0;
+    #else
+    driverCaps->MemoryManagementCaps.Reserved = 0;
+    #endif
+  #else
+    driverCaps->MemoryManagementCaps.Reserved = 0;
+  #endif
+#else
+    driverCaps->MemoryManagementCaps.Reserved = 0;
+#endif
+
+    driverCaps->GpuEngineTopology.NbAsymetricProcessingNodes = 0;
 
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
     driverCaps->WDDMVersion = DXGKDDI_WDDMv1_2;
@@ -1114,7 +1223,7 @@ NTSTATUS HyMiniportDevice::CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pColl
         CHECK_IRQL(PASSIVE_LEVEL);
     }
 
-    LOG_WARN("HyMiniportDevice::CollectDbgInfo: Reason: 0x%X, Buffer: %p, Buffer Size: %zu (0x%zX), Extension: %p\n", pCollectDbgInfo->Reason, pCollectDbgInfo->pBuffer, pCollectDbgInfo->BufferSize, pCollectDbgInfo->BufferSize, pCollectDbgInfo->pExtension);
+    LOG_WARN("Reason: 0x%X, Buffer: %p, Buffer Size: %zu (0x%zX), Extension: %p\n", pCollectDbgInfo->Reason, pCollectDbgInfo->pBuffer, pCollectDbgInfo->BufferSize, pCollectDbgInfo->BufferSize, pCollectDbgInfo->pExtension);
 
     pCollectDbgInfo->pExtension->CurrentDmaBufferOffset = 0;
 
@@ -1126,14 +1235,94 @@ NTSTATUS HyMiniportDevice::CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pColl
     return STATUS_SUCCESS;
 }
 
+// Largely sourced from https://github.com/OpenXT/xc-windows/blob/master/xengfx/wddm/miniport/vidpn.c#L133
+static bool IsSupportedVpnPnPath(const D3DKMDT_VIDPN_PRESENT_PATH* const pVidPnPresentPath) noexcept
+{
+    // Bare minimum support to start with. OK with any of the uncommited states for transformations.
+    if(pVidPnPresentPath->ContentTransformation.Scaling != D3DKMDT_VPPS_UNINITIALIZED &&
+       pVidPnPresentPath->ContentTransformation.Scaling != D3DKMDT_VPPS_IDENTITY &&
+       pVidPnPresentPath->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED &&
+       pVidPnPresentPath->ContentTransformation.Scaling != D3DKMDT_VPPS_UNPINNED &&
+       pVidPnPresentPath->ContentTransformation.Scaling != D3DKMDT_VPPS_NOTSPECIFIED) {
+        LOG_DEBUG("Unsupported Scaling value: %d\n", pVidPnPresentPath->ContentTransformation.Scaling);
+        return false;
+    }
+
+    if(/*pVidPnPresentPath->ContentTransformation.ScalingSupport.Centered != 0 || */
+       pVidPnPresentPath->ContentTransformation.ScalingSupport.Stretched != 0) {
+        LOG_DEBUG("Unsupported ScalingSupport value: %d\n", *reinterpret_cast<const UINT*>(&pVidPnPresentPath->ContentTransformation.ScalingSupport));
+        return false;
+    }
+
+    if(pVidPnPresentPath->ContentTransformation.Rotation != D3DKMDT_VPPR_UNINITIALIZED &&
+       pVidPnPresentPath->ContentTransformation.Rotation != D3DKMDT_VPPR_IDENTITY &&
+       pVidPnPresentPath->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE90 &&
+       pVidPnPresentPath->ContentTransformation.Rotation != D3DKMDT_VPPR_UNPINNED &&
+       pVidPnPresentPath->ContentTransformation.Rotation != D3DKMDT_VPPR_NOTSPECIFIED) {
+        LOG_DEBUG("Unsupported Rotation value: %d\n", pVidPnPresentPath->ContentTransformation.Rotation);
+        return false;
+    }
+
+    if(/*pVidPnPresentPath->ContentTransformation.RotationSupport.Rotate90 != 0 ||*/
+       pVidPnPresentPath->ContentTransformation.RotationSupport.Rotate180 != 0 ||
+       pVidPnPresentPath->ContentTransformation.RotationSupport.Rotate270 != 0) {
+        LOG_DEBUG("Unsupported RotationSupport value: %d\n", *reinterpret_cast<const UINT*>(&pVidPnPresentPath->ContentTransformation.RotationSupport));
+        return false;
+    }
+
+    if(pVidPnPresentPath->VisibleFromActiveTLOffset.cx != 0 ||
+       pVidPnPresentPath->VisibleFromActiveTLOffset.cy != 0 ||
+       pVidPnPresentPath->VisibleFromActiveBROffset.cx != 0 ||
+       pVidPnPresentPath->VisibleFromActiveBROffset.cy != 0) {
+        LOG_DEBUG("TL/BR offsets are not supported.\n");
+        return false;
+    }
+
+    if(pVidPnPresentPath->VidPnTargetColorBasis != D3DKMDT_CB_SRGB &&
+       pVidPnPresentPath->VidPnTargetColorBasis != D3DKMDT_CB_SCRGB &&
+       pVidPnPresentPath->VidPnTargetColorBasis != D3DKMDT_CB_UNINITIALIZED) {
+        LOG_DEBUG("Unsupported ColorBasis: %d.\n", pVidPnPresentPath->VidPnTargetColorBasis);
+        return false;
+    }
+
+    if(pVidPnPresentPath->Content != D3DKMDT_VPPC_UNINITIALIZED &&
+       pVidPnPresentPath->Content != D3DKMDT_VPPC_GRAPHICS &&
+       pVidPnPresentPath->Content != D3DKMDT_VPPC_VIDEO &&
+       pVidPnPresentPath->Content != D3DKMDT_VPPC_NOTSPECIFIED) {
+        LOG_DEBUG("Unsupported Content: %d.\n", pVidPnPresentPath->Content);
+        return false;
+    }
+
+    if(pVidPnPresentPath->CopyProtection.CopyProtectionType != D3DKMDT_VPPMT_NOPROTECTION &&
+       pVidPnPresentPath->CopyProtection.CopyProtectionType != D3DKMDT_VPPMT_UNINITIALIZED) {
+        LOG_DEBUG("CopyProtection is not supported.\n");
+        return false;
+    }
+
+    if(pVidPnPresentPath->GammaRamp.Type != D3DDDI_GAMMARAMP_DEFAULT &&
+       pVidPnPresentPath->GammaRamp.Type != D3DDDI_GAMMARAMP_UNINITIALIZED) {
+        LOG_DEBUG("Non-default gamma ramp is not supported.\n");
+        return false;
+    }
+
+    return true;
+}
+
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L22
 // Thus it is subject to the Microsoft Public License.
 NTSTATUS HyMiniportDevice::IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsSupportedVidPn) noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    if(pIsSupportedVidPn->hDesiredVidPn == 0)
+    constexpr bool VerboseLogging = true;
+
+    if(pIsSupportedVidPn->hDesiredVidPn == nullptr)
     {
+        if constexpr(VerboseLogging)
+        {
+            LOG_DEBUG("Desired video present network was null. This is always supported\n");
+        }
+
         // A null desired VidPn is supported
         pIsSupportedVidPn->IsVidPnSupported = TRUE;
         return STATUS_SUCCESS;
@@ -1147,8 +1336,8 @@ NTSTATUS HyMiniportDevice::IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsS
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::IsSupportedVidPn: Failed to get VidPn Interface: 0x%08X, hDesiredVidPn: 0x%I64X\n", status, pIsSupportedVidPn->hDesiredVidPn);
-        return status;
+        LOG_ERROR("Failed to get VidPn Interface: 0x%08X, hDesiredVidPn: 0x%I64X\n", status, pIsSupportedVidPn->hDesiredVidPn);
+        return VAGUE_STATUS(status, STATUS_NO_MEMORY);
     }
 
     D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
@@ -1158,31 +1347,184 @@ NTSTATUS HyMiniportDevice::IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsS
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::IsSupportedVidPn: Failed to get VidPnTopology Interface: 0x%08X, hDesiredVidPn: 0x%I64X\n", status, pIsSupportedVidPn->hDesiredVidPn);
-        return status;
+        LOG_ERROR("Failed to get VidPnTopology Interface: 0x%08X, hDesiredVidPn: 0x%I64X\n", status, pIsSupportedVidPn->hDesiredVidPn);
+        return VAGUE_STATUS(status, STATUS_NO_MEMORY);
+    }
+
+    SIZE_T numPaths;
+    status = pVidPnTopologyInterface->pfnGetNumPaths(hVidPnTopology, &numPaths);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to query number of paths in VidPN. hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+        return VAGUE_STATUS(status, STATUS_NO_MEMORY);
+    }
+
+    if constexpr(VerboseLogging)
+    {
+        LOG_DEBUG("MaxViews: %u, NumPaths: %zu\n", MaxViews, numPaths);
+    }
+
+    if(numPaths > static_cast<SIZE_T>(MaxViews))
+    {
+        LOG_ERROR("VidPN had more paths than we can handle. MaxViews: %u, NumPaths: %zu\n", MaxViews, numPaths);
+        // This VidPn is not supported, which has already been set as the default
+        return STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY;
     }
 
     // For every source in this topology, make sure they don't have more paths than there are targets
-    for(D3DDDI_VIDEO_PRESENT_SOURCE_ID sourceId = 0; sourceId < MaxViews; ++sourceId)
+    for(D3DDDI_VIDEO_PRESENT_SOURCE_ID sourceId = 0; sourceId < numPaths; ++sourceId)
     {
         SIZE_T numPathsFromSource;
         status = pVidPnTopologyInterface->pfnGetNumPathsFromSource(hVidPnTopology, sourceId, &numPathsFromSource);
 
         if(status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY)
         {
+            if constexpr(VerboseLogging)
+            {
+                LOG_DEBUG("Source not in topology. SourceId: %u\n", sourceId);
+            }
+
             continue;
         }
-        else if(!NT_SUCCESS(status))
+
+        if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::IsSupportedVidPn: Failed to get number of paths from source: 0x%08X, hDesiredVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pIsSupportedVidPn->hDesiredVidPn, sourceId);
-            return status;
+            LOG_ERROR("Failed to get number of paths from source: 0x%08X, hDesiredVidPn: 0x%I64X, SourceId: 0x%X\n", status, pIsSupportedVidPn->hDesiredVidPn, sourceId);
+            return VAGUE_STATUS(status, STATUS_NO_MEMORY);
         }
-        else if(numPathsFromSource > MaxChildren)
+
+        if constexpr(VerboseLogging)
         {
-            LOG_DEBUG("HyMiniportDevice::IsSupportedVidPn: VidPN is not supported.\n");
+            LOG_DEBUG("Number of Paths from Source: %zu\n", numPathsFromSource);
+        }
+
+        if(numPathsFromSource > MaxChildren)
+        {
+            LOG_DEBUG("VidPN is not supported.\n");
             // This VidPn is not supported, which has already been set as the default
+            // return STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY;
             return STATUS_SUCCESS;
         }
+    }
+
+    const D3DKMDT_VIDPN_PRESENT_PATH* pCurrVidPnPresentPathInfo;
+    status = pVidPnTopologyInterface->pfnAcquireFirstPathInfo(hVidPnTopology, &pCurrVidPnPresentPathInfo);
+
+    if(status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+    {
+        if constexpr(VerboseLogging)
+        {
+            LOG_DEBUG("No paths in topology.\n");
+        }
+
+        pIsSupportedVidPn->IsVidPnSupported = TRUE;
+        return STATUS_SUCCESS;
+    }
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed acquire first path info: 0x%08X hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+        return VAGUE_STATUS(status, STATUS_NO_MEMORY);
+    }
+
+    if constexpr(VerboseLogging)
+    {
+        LOG_DEBUG("Acquired first topology path. SourceId: %u, TargetId: %u\n", pCurrVidPnPresentPathInfo->VidPnSourceId, pCurrVidPnPresentPathInfo->VidPnTargetId);
+    }
+
+    while(true)
+    {
+        if(pCurrVidPnPresentPathInfo->VidPnSourceId > MaxViews)
+        {
+            LOG_ERROR("SourceId %u was greater than the MaxViews %u.\n", pCurrVidPnPresentPathInfo->VidPnSourceId, MaxViews);
+
+            (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pCurrVidPnPresentPathInfo);
+            return STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY;
+        }
+
+        if(!IsSupportedVpnPnPath(pCurrVidPnPresentPathInfo))
+        {
+            (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pCurrVidPnPresentPathInfo);
+            return STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY;
+        }
+
+        if(pCurrVidPnPresentPathInfo->VidPnTargetId > MaxChildren)
+        {
+            LOG_ERROR("TargetId %u was greater than the MaxChildren %u.\n", pCurrVidPnPresentPathInfo->VidPnTargetId, MaxChildren);
+
+            (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pCurrVidPnPresentPathInfo);
+            return STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY;
+        }
+
+        {
+            D3DKMDT_HVIDPNTARGETMODESET hVidPnTargetModeSet;
+            const DXGK_VIDPNTARGETMODESET_INTERFACE* pVidPnTargetModeSetInterface;
+            status = pVidPnInterface->pfnAcquireTargetModeSet(
+                pIsSupportedVidPn->hDesiredVidPn,
+                pCurrVidPnPresentPathInfo->VidPnTargetId,
+                &hVidPnTargetModeSet,
+                &pVidPnTargetModeSetInterface
+            );
+
+            if(!NT_SUCCESS(status))
+            {
+                LOG_ERROR("Failed acquire target mode set: 0x%08X TargetMode: %u\n", status, pCurrVidPnPresentPathInfo->VidPnTargetId);
+                (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pCurrVidPnPresentPathInfo);
+                return VAGUE_STATUS(status, STATUS_NO_MEMORY);
+            }
+
+            (void) pVidPnInterface->pfnReleaseTargetModeSet(pIsSupportedVidPn->hDesiredVidPn, hVidPnTargetModeSet);
+        }
+
+        {
+            D3DKMDT_HVIDPNSOURCEMODESET hVidPnSourceModeSet;
+            const DXGK_VIDPNSOURCEMODESET_INTERFACE* pVidPnSourceModeSetInterface;
+            status = pVidPnInterface->pfnAcquireSourceModeSet(
+                pIsSupportedVidPn->hDesiredVidPn,
+                pCurrVidPnPresentPathInfo->VidPnTargetId,
+                &hVidPnSourceModeSet,
+                &pVidPnSourceModeSetInterface
+            );
+
+            if(!NT_SUCCESS(status))
+            {
+                LOG_ERROR("Failed acquire source mode set: 0x%08X TargetMode: %u\n", status, pCurrVidPnPresentPathInfo->VidPnTargetId);
+                (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pCurrVidPnPresentPathInfo);
+                return VAGUE_STATUS(status, STATUS_NO_MEMORY);
+            }
+
+            (void) pVidPnInterface->pfnReleaseSourceModeSet(pIsSupportedVidPn->hDesiredVidPn, hVidPnSourceModeSet);
+        }
+
+        {
+            const D3DKMDT_VIDPN_PRESENT_PATH* const prevPath = pCurrVidPnPresentPathInfo;
+            status = pVidPnTopologyInterface->pfnAcquireNextPathInfo(hVidPnTopology, prevPath, &pCurrVidPnPresentPathInfo);
+
+            (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, prevPath);
+        }
+
+        if(status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+        {
+            pCurrVidPnPresentPathInfo = nullptr;
+            break;
+        }
+
+        if(!NT_SUCCESS(status))
+        {
+            LOG_ERROR("Failed acquire next path info: 0x%08X hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+            return VAGUE_STATUS(status, STATUS_NO_MEMORY);
+        }
+
+        if constexpr(VerboseLogging)
+        {
+            LOG_DEBUG("Acquired next topology path. SourceId: %u, TargetId: %u\n", pCurrVidPnPresentPathInfo->VidPnSourceId, pCurrVidPnPresentPathInfo->VidPnTargetId);
+        }
+    }
+
+    if(pCurrVidPnPresentPathInfo)
+    {
+        (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pCurrVidPnPresentPathInfo);
     }
 
     // All sources succeeded so this VidPn is supported
@@ -1206,13 +1548,15 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 {
     CHECK_IRQL(PASSIVE_LEVEL);
 
+    constexpr bool VerboseLogging = true;
+
     const DXGK_VIDPN_INTERFACE* pVidPnInterface;
     // Get the VidPn Interface so we can get the 'Source Mode Set', 'Target Mode Set' and 'VidPn Topology' interfaces.
     NTSTATUS status = m_DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModality->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to get VidPn Interface: 0x%08X, hConstrainingVidPn: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn);
+        LOG_ERROR("Failed to get VidPn Interface: 0x%08X, hConstrainingVidPn: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn);
         return status;
     }
 
@@ -1223,7 +1567,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to get VidPnTopology Interface: 0x%08X, hConstrainingVidPn: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn);
+        LOG_ERROR("Failed to get VidPnTopology Interface: 0x%08X, hConstrainingVidPn: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn);
         return status;
     }
 
@@ -1233,14 +1577,14 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to get first present path: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+        LOG_ERROR("Failed to get first present path: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
         return status;
     }
 
-    D3DKMDT_HVIDPNSOURCEMODESET hVidPnSourceModeSet = 0;
+    D3DKMDT_HVIDPNSOURCEMODESET hVidPnSourceModeSet = nullptr;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE* pVidPnSourceModeSetInterface = nullptr;
     const D3DKMDT_VIDPN_SOURCE_MODE* pVidPnPinnedSourceModeInfo = nullptr;
-    D3DKMDT_HVIDPNTARGETMODESET hVidPnTargetModeSet = 0;
+    D3DKMDT_HVIDPNTARGETMODESET hVidPnTargetModeSet = nullptr;
     const DXGK_VIDPNTARGETMODESET_INTERFACE* pVidPnTargetModeSetInterface = nullptr;
     const D3DKMDT_VIDPN_TARGET_MODE* pVidPnPinnedTargetModeInfo = nullptr;
     const D3DKMDT_VIDPN_PRESENT_PATH* pVidPnPresentPathTemp = nullptr;
@@ -1248,6 +1592,11 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
     // Loop through all available paths.
     while(status != STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
     {
+        if constexpr(VerboseLogging)
+        {
+            LOG_DEBUG("Looping\n");
+        }
+
         status = pVidPnInterface->pfnAcquireSourceModeSet(
             pEnumCofuncModality->hConstrainingVidPn,
             pVidPnPresentPath->VidPnSourceId,
@@ -1257,7 +1606,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
         if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to acquire Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnSourceId);
+            LOG_ERROR("Failed to acquire Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnSourceId);
             break;
         }
 
@@ -1265,7 +1614,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
         if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to acquire pinned Source Mode Info: 0x%08X, hSourceModeSet: 0x%I64X\n", status, hVidPnSourceModeSet);
+            LOG_ERROR("Failed to acquire pinned Source Mode Info: 0x%08X, hSourceModeSet: 0x%I64X\n", status, hVidPnSourceModeSet);
             break;
         }
 
@@ -1275,16 +1624,21 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
             // If there's no pinned source add possible modes (otherwise they've already been added)
             if(!pVidPnPinnedSourceModeInfo)
             {
+                if constexpr(VerboseLogging)
+                {
+                    LOG_DEBUG("Adding modes to unpinned source.\n");
+                }
+
                 // Release the acquired source mode set, since going to create a new one to put all modes in
                 status = pVidPnInterface->pfnReleaseSourceModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnSourceModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
+                    LOG_ERROR("Failed to release Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnSourceModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
                     break;
                 }
                 // We successfully released it.
-                hVidPnSourceModeSet = 0;
+                hVidPnSourceModeSet = nullptr;
 
                 status = pVidPnInterface->pfnCreateNewSourceModeSet(
                     pEnumCofuncModality->hConstrainingVidPn,
@@ -1295,7 +1649,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to create new Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnSourceId);
+                    LOG_ERROR("Failed to create new Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnSourceId);
                     break;
                 }
 
@@ -1312,17 +1666,17 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to assign new Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, SourceId: 0x%I64X, hVidPnSourceModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnSourceId, hVidPnSourceModeSet);
+                    LOG_ERROR("Failed to assign new Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, SourceId: 0x%I64X, hVidPnSourceModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnSourceId, hVidPnSourceModeSet);
                     break;
                 }
 
                 // We successfully assigned.
-                hVidPnSourceModeSet = 0;
+                hVidPnSourceModeSet = nullptr;
             }
         }
 
         // If this target mode isn't the pivot point, do work on the target mode set
-        if(pEnumCofuncModality->EnumPivotType != D3DKMDT_EPT_VIDPNTARGET || pEnumCofuncModality->EnumPivot.VidPnTargetId == pVidPnPresentPath->VidPnTargetId)
+        if(pEnumCofuncModality->EnumPivotType != D3DKMDT_EPT_VIDPNTARGET || pEnumCofuncModality->EnumPivot.VidPnTargetId != pVidPnPresentPath->VidPnTargetId)
         {
             status = pVidPnInterface->pfnAcquireTargetModeSet(
                 pEnumCofuncModality->hConstrainingVidPn,
@@ -1333,7 +1687,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
             if(!NT_SUCCESS(status))
             {
-                LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to acquire Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, TargetId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnTargetId);
+                LOG_ERROR("Failed to acquire Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, TargetId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnTargetId);
                 break;
             }
 
@@ -1341,24 +1695,29 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
             if(!NT_SUCCESS(status))
             {
-                LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to acquire pinned Target Mode Set: 0x%08X, hVidPnTargetModeSet: 0x%I64X\n", status, hVidPnTargetModeSet);
+                LOG_ERROR("Failed to acquire pinned Target Mode Set: 0x%08X, hVidPnTargetModeSet: 0x%I64X\n", status, hVidPnTargetModeSet);
                 break;
             }
 
             // If there's no pinned target add possible modes, otherwise they've already been added.
             if(!pVidPnPinnedTargetModeInfo)
             {
+                if constexpr(VerboseLogging)
+                {
+                    LOG_DEBUG("Adding modes to unpinned target.\n");
+                }
+
                 // Release the acquired target mode set, since going to create a new one to put all modes in
                 status = pVidPnInterface->pfnReleaseTargetModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnTargetModeSet);
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnTargetModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, hVidPnTargetModeSet);
+                    LOG_ERROR("Failed to release Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnTargetModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, hVidPnTargetModeSet);
                     break;
                 }
 
                 // We successfully released it.
-                hVidPnTargetModeSet = 0;
+                hVidPnTargetModeSet = nullptr;
 
                 // Create a new target mode set which will be added to the constraining VidPn with all the possible modes
                 status = pVidPnInterface->pfnCreateNewTargetModeSet(
@@ -1370,7 +1729,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to create new Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, TargetId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnTargetId);
+                    LOG_ERROR("Failed to create new Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, TargetId: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnTargetId);
                     break;
                 }
 
@@ -1386,81 +1745,98 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to assign new Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, TargetId: 0x%I64X, hVidPnTargetModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnTargetId, hVidPnTargetModeSet);
+                    LOG_ERROR("Failed to assign new Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, TargetId: 0x%I64X, hVidPnTargetModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, pVidPnPresentPath->VidPnTargetId, hVidPnTargetModeSet);
                     break;
                 }
 
                 // We successfully assigned it.
-                hVidPnTargetModeSet = 0;
+                hVidPnTargetModeSet = nullptr;
             }
             else
             {
+                if constexpr(VerboseLogging)
+                {
+                    LOG_DEBUG("No modes added to unpinned source.\n");
+                }
+
                 // Release the pinned target as there's no other work to do
                 status = pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hVidPnTargetModeSet, pVidPnPinnedTargetModeInfo);
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release Target Mode Info: 0x%08X, hVidPnTargetModeSet: 0x%I64X, pVidPnPinnedTargetModeInfo: 0x%I64X\n", status, hVidPnTargetModeSet, pVidPnPinnedTargetModeInfo);
+                    LOG_ERROR("Failed to release Target Mode Info: 0x%08X, hVidPnTargetModeSet: 0x%I64X, pVidPnPinnedTargetModeInfo: 0x%I64X\n", status, hVidPnTargetModeSet, pVidPnPinnedTargetModeInfo);
                     break;
                 }
 
                 // We successfully released it.
-                pVidPnPinnedTargetModeInfo = 0;
+                pVidPnPinnedTargetModeInfo = nullptr;
 
                 // Release the acquired target mode set, since it is no longer needed
                 status = pVidPnInterface->pfnReleaseTargetModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnTargetModeSet);
 
                 if(!NT_SUCCESS(status))
                 {
-                    LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnTargetModeSet: 0x%I64X\n", status, pVidPnPresentPath->VidPnTargetId, hVidPnTargetModeSet);
+                    LOG_ERROR("Failed to release Target Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnTargetModeSet: 0x%I64X\n", status, pVidPnPresentPath->VidPnTargetId, hVidPnTargetModeSet);
                     break;
                 }
 
                 // We successfully released it.
-                hVidPnTargetModeSet = 0;
+                hVidPnTargetModeSet = nullptr;
             }
         }
 
         // Nothing else needs the pinned source mode so release it
         if(pVidPnPinnedSourceModeInfo)
         {
+            if constexpr(VerboseLogging)
+            {
+                LOG_DEBUG("Nothing else pinned.\n");
+            }
+
             status = pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hVidPnSourceModeSet, pVidPnPinnedSourceModeInfo);
 
             if(!NT_SUCCESS(status))
             {
-                LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release Source Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X, pVidPnPinnedSourceModeInfo: 0x%I64X\n", status, hVidPnSourceModeSet, pVidPnPinnedSourceModeInfo);
+                LOG_ERROR("Failed to release Source Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X, pVidPnPinnedSourceModeInfo: 0x%I64X\n", status, hVidPnSourceModeSet, pVidPnPinnedSourceModeInfo);
                 break;
             }
 
             // We successfully released it.
-            pVidPnPinnedSourceModeInfo = 0;
+            pVidPnPinnedSourceModeInfo = nullptr;
         }
 
         // With the pinned source mode now released, if the source mode set hasn't been released, release that as well
-        if(hVidPnSourceModeSet != 0)
+        if(hVidPnSourceModeSet != nullptr)
         {
             status = pVidPnInterface->pfnReleaseSourceModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
 
             if(!NT_SUCCESS(status))
             {
-                LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnSourceModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
+                LOG_ERROR("Failed to release Source Mode Set: 0x%08X, hConstrainingVidPn: 0x%I64X, hVidPnSourceModeSet: 0x%I64X\n", status, pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
                 break;
             }
 
             // We successfully released it.
-            hVidPnSourceModeSet = 0;
+            hVidPnSourceModeSet = nullptr;
         }
 
         // If modifying support fields, need to modify a local version of a path structure since the retrieved one is const
         D3DKMDT_VIDPN_PRESENT_PATH localVidPnPresentPath = *pVidPnPresentPath;
         bool supportFieldsModified = false;
 
+        // SCALING: If this path's scaling isn't the pivot point, do work on the scaling support
         if(pEnumCofuncModality->EnumPivotType != D3DKMDT_EPT_SCALING || 
            pEnumCofuncModality->EnumPivot.VidPnSourceId != pVidPnPresentPath->VidPnSourceId || 
            pEnumCofuncModality->EnumPivot.VidPnTargetId != pVidPnPresentPath->VidPnTargetId)
         {
+            // If the scaling is unpinned, then modify the scaling support field
             if(pVidPnPresentPath->ContentTransformation.Scaling == D3DKMDT_VPPS_UNPINNED)
             {
+                if constexpr(VerboseLogging)
+                {
+                    LOG_DEBUG("VPPS_UNPINNED\n");
+                }
+
                 // Identity and centered scaling are supported, but not any stretch modes
                 RtlZeroMemory(&localVidPnPresentPath.ContentTransformation.ScalingSupport, sizeof(D3DKMDT_VIDPN_PRESENT_PATH_SCALING_SUPPORT));
                 localVidPnPresentPath.ContentTransformation.ScalingSupport.Identity = 1;
@@ -1468,13 +1844,20 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
                 supportFieldsModified = true;
             }
         }
-        
+
+        // ROTATION: If this path's rotation isn't the pivot point, do work on the rotation support
         if(pEnumCofuncModality->EnumPivotType != D3DKMDT_EPT_ROTATION || 
            pEnumCofuncModality->EnumPivot.VidPnSourceId != pVidPnPresentPath->VidPnSourceId || 
            pEnumCofuncModality->EnumPivot.VidPnTargetId != pVidPnPresentPath->VidPnTargetId)
         {
+            // If the rotation is unpinned, then modify the rotation support field
             if(pVidPnPresentPath->ContentTransformation.Rotation == D3DKMDT_VPPR_UNPINNED)
             {
+                if constexpr(VerboseLogging)
+                {
+                    LOG_DEBUG("VPPR_UNPINNED\n");
+                }
+
                 localVidPnPresentPath.ContentTransformation.RotationSupport.Identity = 1;
                 // Sample supports only Rotate90
                 localVidPnPresentPath.ContentTransformation.RotationSupport.Rotate90 = 1;
@@ -1495,11 +1878,16 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
         if(supportFieldsModified)
         {
+            if constexpr(VerboseLogging)
+            {
+                LOG_DEBUG("Updating support info.\n");
+            }
+
             status = pVidPnTopologyInterface->pfnUpdatePathSupportInfo(hVidPnTopology, &localVidPnPresentPath);
 
             if(!NT_SUCCESS(status))
             {
-                LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to update Path Support Info : 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+                LOG_ERROR("Failed to update Path Support Info : 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
                 break;
             }
         }
@@ -1511,7 +1899,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
         if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to acquire next Path Info : 0x%08X, hVidPnTopology: 0x%I64X, pVidPnPresentPathTemp: 0x%I64X\n", status, hVidPnTopology, pVidPnPresentPathTemp);
+            LOG_ERROR("Failed to acquire next Path Info : 0x%08X, hVidPnTopology: 0x%I64X, pVidPnPresentPathTemp: 0x%I64X\n", status, hVidPnTopology, pVidPnPresentPathTemp);
             break;
         }
 
@@ -1520,7 +1908,7 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
 
         if(!NT_SUCCESS(tempStatus))
         {
-            LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: Failed to release last Path Info : 0x%08X, hVidPnTopology: 0x%I64X, pVidPnPresentPathTemp: 0x%I64X\n", status, hVidPnTopology, pVidPnPresentPathTemp);
+            LOG_ERROR("Failed to release last Path Info : 0x%08X, hVidPnTopology: 0x%I64X, pVidPnPresentPathTemp: 0x%I64X\n", status, hVidPnTopology, pVidPnPresentPathTemp);
             status = tempStatus;
             break;
         }
@@ -1537,52 +1925,88 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
     // Release any resources hanging around because the loop was quit early.
     // Since in normal execution everything should be released by this point, TempStatus is initialized to a bogus error to be used as an
     //  assertion that if anything had to be released now (TempStatus changing) Status isn't successful.
-    NTSTATUS tempStatus = STATUS_NOT_FOUND;
+    NTSTATUS tempStatus = STATUS_SUCCESS;
 
     if(pVidPnSourceModeSetInterface && pVidPnPinnedSourceModeInfo)
     {
         tempStatus = pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hVidPnSourceModeSet, pVidPnPinnedSourceModeInfo);
+        if(!NT_SUCCESS(tempStatus))
+        {
+            LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up pVidPnPinnedSourceModeInfo.\n", tempStatus);
+        }
     }
 
     if(pVidPnTargetModeSetInterface && pVidPnPinnedTargetModeInfo)
     {
         tempStatus = pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hVidPnTargetModeSet, pVidPnPinnedTargetModeInfo);
+        if(!NT_SUCCESS(tempStatus))
+        {
+            LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up pVidPnPinnedTargetModeInfo.\n", tempStatus);
+        }
     }
 
     if(pVidPnPresentPath)
     {
         tempStatus = pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pVidPnPresentPath);
+        if(!NT_SUCCESS(tempStatus))
+        {
+            LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up pVidPnPresentPath.\n", tempStatus);
+        }
     }
 
     if(pVidPnPresentPathTemp)
     {
         tempStatus = pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pVidPnPresentPathTemp);
+        if(!NT_SUCCESS(tempStatus))
+        {
+            LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up pVidPnPresentPathTemp.\n", tempStatus);
+        }
     }
 
-    if(hVidPnSourceModeSet != 0)
+    if(hVidPnSourceModeSet != nullptr)
     {
         tempStatus = pVidPnInterface->pfnReleaseSourceModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnSourceModeSet);
+        if(!NT_SUCCESS(tempStatus))
+        {
+            LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up hVidPnSourceModeSet.\n", tempStatus);
+        }
     }
 
-    if(hVidPnTargetModeSet != 0)
+    if(hVidPnTargetModeSet != nullptr)
     {
         tempStatus = pVidPnInterface->pfnReleaseTargetModeSet(pEnumCofuncModality->hConstrainingVidPn, hVidPnTargetModeSet);
-    }
-
-    if(!NT_SUCCESS(tempStatus))
-    {
-        //LOG_ERROR("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up resources.\n", tempStatus);
+        if(!NT_SUCCESS(tempStatus))
+        {
+            LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up hVidPnTargetModeSet.\n", tempStatus);
+        }
     }
 
     return status;
 }
+
+#pragma code_seg(push)
+#pragma code_seg("_KTEXT")
+NTSTATUS HyMiniportDevice::SetVidPnSourceAddress(IN_CONST_PDXGKARG_SETVIDPNSOURCEADDRESS pSetVidPnSourceAddress) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    LOG_DEBUG(
+        "Setting source address for %u to %u:0x%016llX, Context Count: %u\n", 
+        pSetVidPnSourceAddress->VidPnSourceId, 
+        pSetVidPnSourceAddress->PrimarySegment, 
+        pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
+        pSetVidPnSourceAddress->ContextCount
+    );
+
+    return STATUS_SUCCESS;
+}
+#pragma code_seg(pop)
 
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L469
 // Thus it is subject to the Microsoft Public License.
 NTSTATUS HyMiniportDevice::SetVidPnSourceVisibility(IN_CONST_PDXGKARG_SETVIDPNSOURCEVISIBILITY pSetVidPnSourceVisibility) noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
-
 
     const UINT StartVidPnSourceId = (pSetVidPnSourceVisibility->VidPnSourceId == D3DDDI_ID_ALL) ? 0 : pSetVidPnSourceVisibility->VidPnSourceId;
     const UINT MaxVidPnSourceId = (pSetVidPnSourceVisibility->VidPnSourceId == D3DDDI_ID_ALL) ? MaxViews : pSetVidPnSourceVisibility->VidPnSourceId + 1;
@@ -1658,7 +2082,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get VidPn Interface: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
+        LOG_ERROR("Failed to get VidPn Interface: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
         cleanupHandler();
         return status;
     }
@@ -1668,7 +2092,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get VidPnTopology Interface: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
+        LOG_ERROR("Failed to get VidPnTopology Interface: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
         cleanupHandler();
         return status;
     }
@@ -1678,7 +2102,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get number of paths: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+        LOG_ERROR("Failed to get number of paths: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
         cleanupHandler();
         return status;
     }
@@ -1695,7 +2119,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
 
         if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to acquire Source Mode Set: 0x%08X, hFunctionalVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn, pCommitVidPn->AffectedVidPnSourceId);
+            LOG_ERROR("Failed to acquire Source Mode Set: 0x%08X, hFunctionalVidPn: 0x%I64X, SourceId: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn, pCommitVidPn->AffectedVidPnSourceId);
             cleanupHandler();
             return status;
         }
@@ -1705,7 +2129,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
 
         if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to acquire Pinned Mode Set: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
+            LOG_ERROR("Failed to acquire Pinned Mode Set: 0x%08X, hFunctionalVidPn: 0x%I64X\n", status, pCommitVidPn->hFunctionalVidPn);
             cleanupHandler();
             return status;
         }
@@ -1752,7 +2176,7 @@ NTSTATUS HyMiniportDevice::CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pComm
     status = pVidPnTopologyInterface->pfnGetNumPathsFromSource(hVidPnTopology, pCommitVidPn->AffectedVidPnSourceId, &numPathsFromSource);
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::CommitVidPn: Failed to get number of paths from source: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
+        LOG_ERROR("Failed to get number of paths from source: 0x%08X, hVidPnTopology: 0x%I64X\n", status, hVidPnTopology);
         cleanupHandler();
         return status;
     }
@@ -1830,6 +2254,55 @@ NTSTATUS HyMiniportDevice::UpdateActiveVidPnPresentPath(IN_CONST_PDXGKARG_UPDATE
     return STATUS_SUCCESS;
 }
 
+NTSTATUS HyMiniportDevice::RecommendMonitorModes(IN_CONST_PDXGKARG_RECOMMENDMONITORMODES_CONST pRecommendMonitorModes) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+    LOG_DEBUG(
+        "Target: %u\n",
+        pRecommendMonitorModes->VideoPresentTargetId
+    );
+
+    SIZE_T numModes;
+    NTSTATUS status = pRecommendMonitorModes->pMonitorSourceModeSetInterface->pfnGetNumModes(pRecommendMonitorModes->hMonitorSourceModeSet, &numModes);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to query number of modes. 0x%08X\n", status);
+        return status;
+    }
+
+    LOG_DEBUG("Num Modes: %zu\n", numModes);
+
+    const D3DKMDT_MONITOR_SOURCE_MODE* sourceMode;
+    status = pRecommendMonitorModes->pMonitorSourceModeSetInterface->pfnAcquirePreferredModeInfo(pRecommendMonitorModes->hMonitorSourceModeSet, &sourceMode);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to query preferred mode. 0x%08X\n", status);
+        return status;
+    }
+
+    if(status != STATUS_GRAPHICS_NO_PREFERRED_MODE)
+    {
+        LOG_DEBUG("Preferred Mode Found.\n");
+    }
+
+    // This doesn't actually cause any real problems if we pass null to ReleaseModeInfo,
+    // But it does trigger a WatchDog Error (not a real watchdog, just an error logger for dxgkrnl.sys)
+    if(sourceMode)
+    {
+        status = pRecommendMonitorModes->pMonitorSourceModeSetInterface->pfnReleaseModeInfo(pRecommendMonitorModes->hMonitorSourceModeSet, sourceMode);
+    }
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to release preferred mode. 0x%08X\n", status);
+        return status;
+    }
+
+    return STATUS_SUCCESS;
+}
+
 NTSTATUS HyMiniportDevice::GetScanLine(INOUT_PDXGKARG_GETSCANLINE pGetScanLine) noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
@@ -1877,7 +2350,7 @@ NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYO
 
     if(pPresentDisplayOnly->BytesPerPixel != 4)
     {
-        LOG_ERROR("HyMiniportDevice::PresentDisplayOnly: pPresentDisplayOnly->BytesPerPixel != 4.\n");
+        LOG_ERROR("pPresentDisplayOnly->BytesPerPixel != 4.\n");
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -1886,14 +2359,14 @@ NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYO
     // If it is in monitor off state or source is not supposed to be visible, don't present anything to the screen
     if(currentMode.PowerState > PowerDeviceD0 || currentMode.Flags.SourceNotVisible)
     {
-        LOG_DEBUG("HyMiniportDevice::PresentDisplayOnly: Display is in a low power state or source is not visible.\n");
+        LOG_DEBUG("Display is in a low power state or source is not visible.\n");
         return STATUS_SUCCESS;
     }
 
     // Present is only valid if the target is actively connected to this source
     if(!currentMode.Flags.FrameBufferIsActive)
     {
-        LOG_DEBUG("HyMiniportDevice::PresentDisplayOnly: Framebuffer is not active.\n");
+        LOG_DEBUG("Framebuffer is not active.\n");
         return STATUS_SUCCESS;
     }
 
@@ -1916,7 +2389,7 @@ NTSTATUS HyMiniportDevice::PresentDisplayOnly(IN_CONST_PDXGKARG_PRESENT_DISPLAYO
     PMDL mdl;
 
     {
-        LOG_DEBUG("HyMiniportDevice::PresentDisplayOnly: Getting MDL. Framebuffer: 0x%I64X.\n", dest);
+        LOG_DEBUG("Getting MDL. Framebuffer: 0x%I64X.\n", dest);
 
         // Map Source into kernel space, as Blt will be executed by system worker thread
         const UINT sizeToMap = pPresentDisplayOnly->BytesPerPixel * currentMode.SrcModeWidth * currentMode.SrcModeHeight;
@@ -1998,23 +2471,23 @@ NTSTATUS HyMiniportDevice::ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE Interru
     {
         if(!EnableInterrupt)
         {
-            LOG_DEBUG("HyMiniportDevice::ControlInterrupt: VSync Disabled for Display 0.\n");
+            LOG_DEBUG("VSync Disabled for Display 0.\n");
             m_CurrentDisplayMode[0].Flags.VSyncEnabled = 0;
         }
         else if(InterruptType == DXGK_INTERRUPT_CRTC_VSYNC)
         {
-            LOG_DEBUG("HyMiniportDevice::ControlInterrupt: CRTC VSync Enabled for Display 0.\n");
+            LOG_DEBUG("CRTC VSync Enabled for Display 0.\n");
             m_CurrentDisplayMode[0].Flags.VSyncEnabled = 1;
         }
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
         else if(InterruptType == DXGK_INTERRUPT_DISPLAYONLY_VSYNC)
         {
-            LOG_DEBUG("HyMiniportDevice::ControlInterrupt: Display-Only VSync Enabled for Display 0.\n");
+            LOG_DEBUG("Display-Only VSync Enabled for Display 0.\n");
             m_CurrentDisplayMode[0].Flags.VSyncEnabled = 2;
         }
 #endif
 
-        LOG_DEBUG("HyMiniportDevice::ControlInterrupt: %sabling VSync Interrupts for Display 0.\n", EnableInterrupt ? "En" : "Dis");
+        LOG_DEBUG("%sabling VSync Interrupts for Display 0.\n", EnableInterrupt ? "En" : "Dis");
 
         volatile UINT* const displayVSyncEnable = GetDeviceConfigRegister(BASE_REGISTER_DI + SIZE_REGISTER_DI * 0 + OFFSET_REGISTER_DI_VSYNC_ENABLE);
 
@@ -2026,6 +2499,7 @@ NTSTATUS HyMiniportDevice::ControlInterrupt(IN_CONST_DXGK_INTERRUPT_TYPE Interru
     return STATUS_NOT_IMPLEMENTED;
 }
 
+#pragma code_seg(push)
 #pragma code_seg("_KTEXT")
 // This function cannot be paged.
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/blthw.cxx#L21
@@ -2046,7 +2520,7 @@ BOOLEAN HyMiniportDevice::SynchronizeVidSchNotifyInterrupt(PVOID Params) noexcep
 
     return TRUE;
 }
-#pragma code_seg("PAGE")
+#pragma code_seg(pop)
 
 // Fakes an interrupt for present progress.
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/blthw.cxx#L395
@@ -2060,7 +2534,7 @@ void HyMiniportDevice::ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidP
 
     if constexpr(false)
     {
-        LOG_DEBUG("HyMiniportDevice::ReportPresentProgress\n");
+        TRACE_ENTRYPOINT();
     }
 
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
@@ -2085,14 +2559,72 @@ void HyMiniportDevice::ReportPresentProgress(D3DDDI_VIDEO_PRESENT_SOURCE_ID VidP
 
     if(!ret)
     {
-        LOG_WARN("HyMiniportDevice::ReportPresentProgress: Synchronization Routine returned false.\n");
+        LOG_WARN("Synchronization Routine returned false.\n");
     }
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::ReportPresentProgress: Failed to synchronize execution.\n");
+        LOG_ERROR("Failed to synchronize execution.\n");
     }
 #endif
+}
+
+bool HyMiniportDevice::ObtainLogLock(const bool ReturnOnFailure) noexcept
+{
+    volatile UINT* logLockRegister = GetDeviceConfigRegister(REGISTER_DEBUG_LOG_LOCK);
+
+    LONG lockValue = InterlockedIncrement(&m_CurrentLogLockValue);
+
+    // If we've experienced a integer overflow, then we should re-increment.
+    if(lockValue == VALUE_DEBUG_LOG_LOCK_UNLOCKED)
+    {
+        lockValue = InterlockedIncrement(&m_CurrentLogLockValue);
+
+        // If re-incrementing failed, then we should just return.
+        if(lockValue == VALUE_DEBUG_LOG_LOCK_UNLOCKED)
+        {
+            return false;
+        }
+    }
+
+    do
+    {
+        *logLockRegister = static_cast<UINT>(lockValue);
+        const UINT storedLockValue = *logLockRegister;
+
+        if(storedLockValue == static_cast<UINT>(lockValue))
+        {
+            return true;
+        }
+    }
+    while(!ReturnOnFailure);
+
+    return false;
+}
+
+void HyMiniportDevice::ReleaseLogLock() noexcept
+{
+    *GetDeviceConfigRegister(REGISTER_DEBUG_LOG_LOCK) = VALUE_DEBUG_LOG_LOCK_UNLOCKED;
+}
+
+void HyMiniportDevice::DebugLog(const char* String, const SIZE_T Length, const bool Lock) noexcept
+{
+    if(Lock && !ObtainLogLock(false))
+    {
+        return;
+    }
+
+    volatile UINT* debugLogMultiRegister = GetDeviceConfigRegister(REGISTER_DEBUG_LOG_MULTI);
+
+    for(SIZE_T i = 0; i < Length; ++i)
+    {
+        *debugLogMultiRegister = String[i];
+    }
+
+    if(Lock)
+    {
+        ReleaseLogLock();
+    }
 }
 
 // This implementation is largely sourced from https://github.com/microsoft/Windows-driver-samples/blob/main/video/KMDOD/bdd_dmm.cxx#L711
@@ -2259,19 +2791,13 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
 
         if(!NT_SUCCESS(status))
         {
-            LOG_ERROR("HyMiniportDevice::AddSingleSourceMode: Failed to create new Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X\n", status, hVidPnSourceModeSet);
+            LOG_ERROR("Failed to create new Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X\n", status, hVidPnSourceModeSet);
             return status;
         }
 
         // Populate mode info with values from current mode and hard-coded values
         // Always report 32 bpp format, this will be color converted during the present if the mode is < 32bpp
         pVidPnSourceModeInfo->Type = D3DKMDT_RMT_GRAPHICS;
-
-        /////////////////////////////////////////////////////////////////////////////
-        // Width and Height are probably still 0, causing a failure in pfnAddMode. //
-        /////////////////////////////////////////////////////////////////////////////
-
-
         pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = m_CurrentDisplayMode[SourceId].DisplayInfo.Width;
         pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy = m_CurrentDisplayMode[SourceId].DisplayInfo.Height;
         pVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
@@ -2290,7 +2816,7 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
 
             if(status != STATUS_GRAPHICS_MODE_ALREADY_IN_MODESET)
             {
-                LOG_ERROR("HyMiniportDevice::AddSingleSourceMode: Failed to add Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X, pVidPnSourceModeInfo: 0x%I64X\n", status, hVidPnSourceModeSet, pVidPnSourceModeInfo);
+                LOG_ERROR("Failed to add Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X, pVidPnSourceModeInfo: 0x%I64X\n", status, hVidPnSourceModeSet, pVidPnSourceModeInfo);
                 return status;
             }
         }
@@ -2320,7 +2846,7 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
 
             if(!NT_SUCCESS(status))
             {
-                LOG_ERROR("HyMiniportDevice::AddSingleSourceMode: Failed to create new Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X\n", status, hVidPnSourceModeSet);
+                LOG_ERROR("Failed to create new Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X\n", status, hVidPnSourceModeSet);
                 return status;
             }
 
@@ -2330,7 +2856,7 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
             pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = mVbeEstablishedEdidTiming[modeIndex].Width;
             pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy = mVbeEstablishedEdidTiming[modeIndex].Height;
             pVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
-            pVidPnSourceModeInfo->Format.Graphics.Stride = mVbeEstablishedEdidTiming[modeIndex].Width;
+            pVidPnSourceModeInfo->Format.Graphics.Stride = 4 * mVbeEstablishedEdidTiming[modeIndex].Width;
             pVidPnSourceModeInfo->Format.Graphics.PixelFormat = gPixelFormats[pelFmtIndex];
             pVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SCRGB;
             pVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_DIRECT;
@@ -2345,7 +2871,7 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
 
                 if(status != STATUS_GRAPHICS_MODE_ALREADY_IN_MODESET)
                 {
-                    LOG_ERROR("HyMiniportDevice::AddSingleSourceMode: Failed to add Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X, pVidPnSourceModeInfo: 0x%I64X\n", status, hVidPnSourceModeSet, pVidPnSourceModeInfo);
+                    LOG_ERROR("Failed to add Mode Info: 0x%08X, hVidPnSourceModeSet: 0x%I64X, pVidPnSourceModeInfo: 0x%I64X\n", status, hVidPnSourceModeSet, pVidPnSourceModeInfo);
                 }
             }
         }
@@ -2365,10 +2891,9 @@ NTSTATUS HyMiniportDevice::AddSingleTargetMode(const DXGK_VIDPNTARGETMODESET_INT
 
     if(!NT_SUCCESS(status))
     {
-        LOG_ERROR("HyMiniportDevice::AddSingleTargetMode: Failed to create new Mode Info: 0x%08X, hVidPnTargetModeSet: 0x%I64X\n", status, hVidPnTargetModeSet);
+        LOG_ERROR("Failed to create new Mode Info: 0x%08X, hVidPnTargetModeSet: 0x%I64X\n", status, hVidPnTargetModeSet);
         return status;
     }
-
 
     pVidPnTargetModeInfo->VideoSignalInfo.VideoStandard = D3DKMDT_VSS_OTHER;
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx = m_CurrentDisplayMode[SourceId].DisplayInfo.Width;
@@ -2403,7 +2928,7 @@ NTSTATUS HyMiniportDevice::AddSingleTargetMode(const DXGK_VIDPNTARGETMODESET_INT
     {
         if(status != STATUS_GRAPHICS_MODE_ALREADY_IN_MODESET)
         {
-            LOG_ERROR("HyMiniportDevice::AddSingleTargetMode: Failed to add new Mode Info: 0x%08X, hVidPnTargetModeSet: 0x%I64X, pVidPnTargetModeInfo = 0x%I64X\n", status, hVidPnTargetModeSet, pVidPnTargetModeInfo);
+            LOG_ERROR("Failed to add new Mode Info: 0x%08X, hVidPnTargetModeSet: 0x%I64X, pVidPnTargetModeInfo = 0x%I64X\n", status, hVidPnTargetModeSet, pVidPnTargetModeInfo);
         }
         else
         {
@@ -2422,7 +2947,7 @@ NTSTATUS HyMiniportDevice::AddSingleTargetMode(const DXGK_VIDPNTARGETMODESET_INT
 
 static NTSTATUS MapFrameBuffer(PHYSICAL_ADDRESS PhysicalAddress, ULONG Length, void** VirtualAddress) noexcept
 {
-    LOG_DEBUG("MapFrameBuffer, Address: 0x%I64X, Length: 0x%X\n", PhysicalAddress.QuadPart, Length);
+    TRACE_ENTRYPOINT_ARG("Address: 0x%I64X, Length: 0x%X\n", PhysicalAddress.QuadPart, Length);
 
     if(PhysicalAddress.QuadPart == 0)
     {
@@ -2461,7 +2986,7 @@ static NTSTATUS MapFrameBuffer(PHYSICAL_ADDRESS PhysicalAddress, ULONG Length, v
 
         if(*VirtualAddress == nullptr)
         {
-            LOG_ERROR("HyCommitVidPn: MmMapIoSpace failed to allocate a bufffer of 0x%I64X bytes.\n", Length);
+            LOG_ERROR("MmMapIoSpace failed to allocate a bufffer of 0x%I64X bytes.\n", Length);
             return STATUS_NO_MEMORY;
         }
     }
@@ -2469,9 +2994,9 @@ static NTSTATUS MapFrameBuffer(PHYSICAL_ADDRESS PhysicalAddress, ULONG Length, v
     return STATUS_SUCCESS;
 }
 
-NTSTATUS HyMiniportDevice::UnmapFrameBuffer(void* VirtualAddress, ULONG Length) noexcept
+NTSTATUS HyMiniportDevice::UnmapFrameBuffer(void* const VirtualAddress, const ULONG Length) noexcept
 {
-    LOG_DEBUG("UnmapFrameBuffer\n");
+    TRACE_ENTRYPOINT();
 
     if(!VirtualAddress && Length == 0)
     {
@@ -2481,13 +3006,13 @@ NTSTATUS HyMiniportDevice::UnmapFrameBuffer(void* VirtualAddress, ULONG Length) 
 
     if(!VirtualAddress)
     {
-        LOG_ERROR("Invalid Parameter to UnmapFrameBuffer: VirtualAddress\n");
+        LOG_ERROR("Invalid Parameter: VirtualAddress\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
     if(Length == 0)
     {
-        LOG_ERROR("Invalid Parameter to UnmapFrameBuffer: Length\n");
+        LOG_ERROR("Invalid Parameter: Length\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 

@@ -13,18 +13,18 @@ NTSTATUS HyGetScanLine(IN_CONST_HANDLE hAdapter, INOUT_PDXGKARG_GETSCANLINE pGet
 
     if constexpr(true)
     {
-        LOG_DEBUG("HyGetScanLine\n");
+        TRACE_ENTRYPOINT();
     }
 
     // If hAdapter is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyGetScanLine: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->GetScanLine(pGetScanLine);
 }

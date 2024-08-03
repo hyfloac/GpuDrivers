@@ -13,7 +13,7 @@ NTSTATUS HyFilterUnload(const FLT_FILTER_UNLOAD_FLAGS Flags)
 
     PAGED_CODE();
 
-    LOG_DEBUG("HyFilterUnload\n");
+    TRACE_ENTRYPOINT();
 
     // The filter can be unloaded.
     return STATUS_SUCCESS;

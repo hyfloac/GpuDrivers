@@ -15,13 +15,13 @@ NTSTATUS HyNotifyAcpiEvent(IN_CONST_PVOID MiniportDeviceContext, IN_DXGK_EVENT_T
 
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyNotifyAcpiEvent\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyNotifyAcpiEvent: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 

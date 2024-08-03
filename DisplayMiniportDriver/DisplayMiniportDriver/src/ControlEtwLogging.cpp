@@ -14,5 +14,5 @@ void HyControlEtwLogging(IN_BOOLEAN Enable, IN_ULONG Flags, IN_UCHAR Level)
 
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyControlEtwLogging\n");
+    TRACE_ENTRYPOINT();
 }

@@ -13,8 +13,10 @@
         EXTERN_C const GUID DECLSPEC_SELECTANY name \
                 = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 
-DEFINE_GUID(GUID_FUCKY, 0xE922004D, 0xEB9C, 0x4DE1, 0x92, 0x24, 0xA9, 0xCE, 0xAA, 0x95, 0x9B, 0xCE);
-#define FUCKY_VERSION (1)  // NOLINT(modernize-macro-to-enum)
+// Likely WDDM 3.0 on Vibranium - the codename for the Windows 10 20H1 May 2020 Update
+DEFINE_GUID(GUID_DEVINTERFACE_WDDM3_ON_VB, 0xE922004D, 0xEB9C, 0x4DE1, 0x92, 0x24, 0xA9, 0xCE, 0xAA, 0x95, 0x9B, 0xCE);
+DEFINE_GUID(GUID_DEVINTERFACE_INDIRECT_DISP_KMD, 0x6BA41A33, 0x0FD2, 0x4B3D, 0xBC, 0x27, 0xC4, 0x47, 0xCC, 0xAC, 0x76, 0x93);
+#define WDDM3_ON_VB_VERSION (1)  // NOLINT(modernize-macro-to-enum)
 
 typedef
 _Function_class_DXGK_(DXGKDDI_OPM_GET_CERTIFICATE_SIZE)
@@ -23,7 +25,7 @@ NTSTATUS
 (*DX_FUCKY_FUNC)(
     _In_ void* MiniportDeviceContext);
 
-typedef struct DX_FUCKY_INTERFACE
+typedef struct WDDM3_ON_VB_INTERFACE
 {
     USHORT Size;
     USHORT Version;
@@ -34,40 +36,40 @@ typedef struct DX_FUCKY_INTERFACE
     DX_FUCKY_FUNC Func0;
     DX_FUCKY_FUNC Func1;
     DX_FUCKY_FUNC Func2;
-} DX_FUCKY_INTERFACE;
+} WDDM3_ON_VB_INTERFACE;
 
-static_assert(sizeof(DX_FUCKY_INTERFACE) == 56, "FUCKY Interface was not 56 bytes.");
+static_assert(sizeof(WDDM3_ON_VB_INTERFACE) == 56, "FUCKY Interface was not 56 bytes.");
 
 static void FuckyReferenceThunk(void* const MiniportDeviceContext)
 {
     (void) MiniportDeviceContext;
-    LOG_WARN("FuckyReferenceThunk");
+    TRACE_ENTRYPOINT();
 }
 
 static void FuckyDereferenceThunk(void* const MiniportDeviceContext)
 {
     (void) MiniportDeviceContext;
-    LOG_WARN("FuckyDereferenceThunk");
+    TRACE_ENTRYPOINT();
 }
 
 static NTSTATUS FuckyThunk0(void* const MiniportDeviceContext)
 {
     (void) MiniportDeviceContext;
-    LOG_WARN("FuckyThunk0");
+    TRACE_ENTRYPOINT();
     return STATUS_NOT_IMPLEMENTED;
 }
 
 static NTSTATUS FuckyThunk1(void* const MiniportDeviceContext)
 {
     (void) MiniportDeviceContext;
-    LOG_WARN("FuckyThunk1");
+    TRACE_ENTRYPOINT();
     return STATUS_NOT_IMPLEMENTED;
 }
 
 static NTSTATUS FuckyThunk2(void* const MiniportDeviceContext)
 {
     (void) MiniportDeviceContext;
-    LOG_WARN("FuckyThunk2");
+    TRACE_ENTRYPOINT();
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -89,7 +91,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryInterface: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -97,11 +99,11 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
     // This should probably never happen.
     if(!QueryInterface)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryInterface: QueryInterface\n");
+        LOG_ERROR("Invalid Parameter: QueryInterface\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
-    LOG_DEBUG("HyQueryInterface: IID: {%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}, Size: %d, Version: %d\n",
+    TRACE_ENTRYPOINT_ARG("IID: {%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}, Size: %d, Version: %d\n",
         QueryInterface->InterfaceType->Data1,
         QueryInterface->InterfaceType->Data2,
         QueryInterface->InterfaceType->Data3,
@@ -119,7 +121,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 
     if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM))
     {
-        LOG_DEBUG("HyQueryInterface: Querying OPM\n");
+        LOG_DEBUG("Querying OPM\n");
 
         if constexpr(false)
         {
@@ -139,7 +141,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 #if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_0
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM_2))
     {
-        LOG_DEBUG("HyQueryInterface: Querying OPM 2\n");
+        LOG_DEBUG("Querying OPM 2\n");
 
         if constexpr(false)
         {
@@ -158,7 +160,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
     }
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM_2_JTP))
     {
-        LOG_DEBUG("HyQueryInterface: Querying OPM 2 JTP\n");
+        LOG_DEBUG("Querying OPM 2 JTP\n");
 
         if constexpr(false)
         {
@@ -179,7 +181,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 #if DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM2_3
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_OPM_3))
     {
-        LOG_DEBUG("HyQueryInterface: Querying OPM 3\n");
+        LOG_DEBUG("Querying OPM 3\n");
 
         if constexpr(false)
         {
@@ -199,7 +201,7 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
 #endif
     else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_I2C))
     {
-        LOG_DEBUG("HyQueryInterface: Querying I2C\n");
+        LOG_DEBUG("Querying I2C\n");
 
         if(QueryInterface->Size == sizeof(DXGK_I2C_INTERFACE) && QueryInterface->Version == DXGK_I2C_INTERFACE_VERSION_1)
         {
@@ -216,16 +218,16 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
             return STATUS_SUCCESS;
         }
     }
-    else if(GuidEqual(QueryInterface->InterfaceType, &GUID_FUCKY))
+    else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_WDDM3_ON_VB))
     {
-        LOG_DEBUG("HyQueryInterface: Querying Fucky Interface\n");
+        LOG_DEBUG("Querying WDDM 3 on VB Interface\n");
 
-        if(QueryInterface->Size == sizeof(DX_FUCKY_INTERFACE) && QueryInterface->Version == FUCKY_VERSION)
+        if(QueryInterface->Size == sizeof(WDDM3_ON_VB_INTERFACE) && QueryInterface->Version == WDDM3_ON_VB_VERSION)
         {
-            DX_FUCKY_INTERFACE* pFuckyInterface = reinterpret_cast<DX_FUCKY_INTERFACE*>(QueryInterface->Interface);
+            WDDM3_ON_VB_INTERFACE* pFuckyInterface = reinterpret_cast<WDDM3_ON_VB_INTERFACE*>(QueryInterface->Interface);
 
-            pFuckyInterface->Size = sizeof(DX_FUCKY_INTERFACE);
-            pFuckyInterface->Version = FUCKY_VERSION;
+            pFuckyInterface->Size = sizeof(WDDM3_ON_VB_INTERFACE);
+            pFuckyInterface->Version = WDDM3_ON_VB_VERSION;
             pFuckyInterface->Context = MiniportDeviceContext;
             pFuckyInterface->InterfaceReference = FuckyReferenceThunk;
             pFuckyInterface->InterfaceDereference = FuckyDereferenceThunk;
@@ -233,14 +235,18 @@ NTSTATUS HyQueryInterface(IN_CONST_PVOID MiniportDeviceContext, IN_PQUERY_INTERF
             pFuckyInterface->Func1 = FuckyThunk1;
             pFuckyInterface->Func2 = FuckyThunk2;
 
-            LOG_DEBUG("HyQueryInterface: Fucky interface version and sized matches.\n");
+            LOG_DEBUG("WDDM 3 on VB interface version and sized matches.\n");
 
             return STATUS_SUCCESS;
         }
         else
         {
-            LOG_ERROR("HyQueryInterface: That special fucky interface didn't have the right size or version.\n");
+            LOG_ERROR("WDDM 3 on VB interface didn't have the right size or version.\n");
         }
+    }
+    else if(GuidEqual(QueryInterface->InterfaceType, &GUID_DEVINTERFACE_INDIRECT_DISP_KMD))
+    {
+        LOG_DEBUG("Querying Indirect Display Kernel Mode Driver\n");
     }
 
     return STATUS_NOT_SUPPORTED;

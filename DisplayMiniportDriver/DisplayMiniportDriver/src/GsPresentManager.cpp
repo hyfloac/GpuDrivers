@@ -7,9 +7,24 @@
 #include "XStdDefPolyFill.h"
 #include <new>
 
-void* GsPresentManager::operator new(const SIZE_T count)  // NOLINT(misc-new-delete-overloads)
+void* GsPresentData::operator new(const SIZE_T count)
 {
     return HyAllocate(PagedPool, count, POOL_TAG_PRESENT);
+}
+
+void GsPresentData::operator delete(void* const ptr)
+{
+    HyDeallocate(ptr, POOL_TAG_PRESENT);
+}
+
+void* GsPresentManager::operator new(const SIZE_T count)
+{
+    return HyAllocate(PagedPool, count, POOL_TAG_PRESENT);
+}
+
+void GsPresentManager::operator delete(void* const ptr)
+{
+    HyDeallocate(ptr, POOL_TAG_PRESENT);
 }
 
 GsPresentManager::GsPresentManager(HyMiniportDevice* const deviceContext) noexcept
@@ -25,7 +40,7 @@ GsPresentManager::GsPresentManager(HyMiniportDevice* const deviceContext) noexce
 
 NTSTATUS GsPresentManager::Init() noexcept
 {
-    LOG_DEBUG("GsPresentManager::Init\n");
+    TRACE_ENTRYPOINT();
 
     //
     // Initialize everything for the present queue.
@@ -33,7 +48,7 @@ NTSTATUS GsPresentManager::Init() noexcept
 
     // Used by the Cancel-Safe Queue to serialize access.
     KeInitializeSpinLock(&m_PresentQueueLock);
-    // Used to wake-up the present thread when there are frames to present.
+    // Used to wake up the present thread when there are frames to present.
     KeInitializeSemaphore(&m_PresentQueueSemaphore, 0, MAXLONG);
     // The list of frame to present.
     InitializeListHead(&m_PendingPresentQueue);
@@ -47,7 +62,7 @@ NTSTATUS GsPresentManager::Init() noexcept
         OBJECT_ATTRIBUTES ObjectAttributes;
         InitializeObjectAttributes(&ObjectAttributes, nullptr, OBJ_KERNEL_HANDLE, nullptr, nullptr);
 
-        // Create and start the present thread.s
+        // Create and start the present thread.
         const NTSTATUS createThreadStatus = PsCreateSystemThread(
             &threadHandle,     // ThreadHandle
             THREAD_ALL_ACCESS, // DesiredAccess
@@ -60,7 +75,7 @@ NTSTATUS GsPresentManager::Init() noexcept
 
         if(!NT_SUCCESS(createThreadStatus))
         {
-            LOG_ERROR("GsPresentManager::Init: Failed to create present thread: 0x%08X\n", createThreadStatus);
+            LOG_ERROR("Failed to create present thread: 0x%08X\n", createThreadStatus);
             return createThreadStatus;
         }
     }
@@ -71,17 +86,17 @@ NTSTATUS GsPresentManager::Init() noexcept
         // itself. Then close the handle.
         //
         const NTSTATUS referenceObjectStatus = ObReferenceObjectByHandle(
-            threadHandle, // Handle
-            THREAD_ALL_ACCESS, // DesiredAccess
-            nullptr, // ObjectType
-            KernelMode, // AccessMode
+            threadHandle,                                     // Handle
+            THREAD_ALL_ACCESS,                                // DesiredAccess
+            nullptr,                                          // ObjectType
+            KernelMode,                                       // AccessMode
             reinterpret_cast<void**>(&m_PresentThreadObject), // Object
-            nullptr // HandleInformation
+            nullptr                                           // HandleInformation
         );
 
         if(!NT_SUCCESS(referenceObjectStatus))
         {
-            LOG_ERROR("GsPresentManager::Init: Failed to thread handle into thread object: 0x%08X\n", referenceObjectStatus);
+            LOG_ERROR("Failed to thread handle into thread object: 0x%08X\n", referenceObjectStatus);
             return referenceObjectStatus;
         }
     }
@@ -92,7 +107,7 @@ NTSTATUS GsPresentManager::Init() noexcept
 
         if(!NT_SUCCESS(closeThreadStatus))
         {
-            LOG_WARN("GsPresentManager::Init: Failed to close thread handle: 0x%08X\n", closeThreadStatus);
+            LOG_WARN(" Failed to close thread handle: 0x%08X\n", closeThreadStatus);
         }
     }
 
@@ -103,7 +118,7 @@ NTSTATUS GsPresentManager::Init() noexcept
 
 NTSTATUS GsPresentManager::Close() noexcept
 {
-    LOG_DEBUG("GsPresentManager::Close\n");
+    TRACE_ENTRYPOINT();
 
     if(!m_Started)
     {
@@ -127,7 +142,7 @@ NTSTATUS GsPresentManager::Close() noexcept
         m_PresentThreadObject = nullptr;
     }
 
-    LOG_DEBUG("GsPresentManager::Close: Thread stopped, clearing %d packets.\n", m_QueuedPresentCount);
+    LOG_DEBUG("Thread stopped, clearing %d packets.\n", m_QueuedPresentCount);
 
     // Free all the queued presents.
     GsPresentData* presentData = nullptr;
@@ -140,7 +155,7 @@ NTSTATUS GsPresentManager::Close() noexcept
             break;
         }
 
-        // Unmap unmap and unlock the pages.
+        // Unmap and unlock the pages.
         if(presentData->Mdl)
         {
             MmUnlockPages(presentData->Mdl);
@@ -148,21 +163,21 @@ NTSTATUS GsPresentManager::Close() noexcept
         }
 
         // Free the packet now that we're done with it.
-        HY_FREE(presentData, POOL_TAG_PRESENT);
+        delete presentData;
     } while(presentData);
 
-    LOG_DEBUG("GsPresentManager::Close: Cleared packets.\n");
+    LOG_DEBUG("Cleared packets.\n");
 
     return STATUS_SUCCESS;
 }
 
 void GsPresentManager::FlushPipeline() noexcept
 {
-    LOG_DEBUG("GsPresentManager::FlushPipeline\n");
+    TRACE_ENTRYPOINT();
 
     // This is probably terrible, but it should clear the pipeline.
-    Close();
-    Init();
+    (void) Close();
+    (void) Init();
 
     // // Free all the queued presents.
     // GsPresentData* presentData = nullptr;
@@ -207,7 +222,7 @@ void GsPresentManager::InsertPresent(
     CHECK_IRQL(DISPATCH_LEVEL);
     if constexpr(false)
     {
-        LOG_DEBUG("GsPresentManager::InsertPresent\n");
+        TRACE_ENTRYPOINT();
     }
 
 
@@ -218,8 +233,9 @@ void GsPresentManager::InsertPresent(
     const SIZE_T rectsSize = pPresentDisplayOnly->NumDirtyRects * sizeof(RECT);
     const SIZE_T size = sizeof(GsPresentData) + movesSize + rectsSize;
 
-    void* placement = HyAllocateZeroed(PagedPool, size, POOL_TAG_PRESENT);
-    GsPresentData* presentData = ::new(placement) GsPresentData;
+    void* presentPlacement = HyAllocate(PagedPool, size, POOL_TAG_PRESENT);
+
+    GsPresentData* presentData = ::new(presentPlacement) GsPresentData;
 
     presentData->Mdl = Mdl;
     presentData->NumMoves = pPresentDisplayOnly->NumMoves;
@@ -264,7 +280,7 @@ GsPresentData* GsPresentManager::PopPresent(const bool force) noexcept
         // If the stored present count is less than 0, then we'll just set it back to 0.
         if(presentCount < 0)
         {
-            LOG_ERROR("GsPresentManager::PopPresent: Queued Present Count was negative: %d\n", presentCount);
+            LOG_ERROR("Queued Present Count was negative: %d\n", presentCount);
 
             // Safely set the queue to a min value of 0.
             // If the value has already changed, don't touch it.
@@ -281,7 +297,7 @@ GsPresentData* GsPresentManager::PopPresent(const bool force) noexcept
     {
         if(!force)
         {
-            LOG_ERROR("GsPresentManager::PopPresent: Present Queue was empty, despite a Queued Present Count of %d.\n", presentCount);
+            LOG_ERROR("Present Queue was empty, despite a Queued Present Count of %d.\n", presentCount);
         }
         return nullptr;
     }
@@ -312,14 +328,14 @@ void GsPresentManager::WakeThread() noexcept
 {
     if constexpr(false)
     {
-        LOG_DEBUG("GsPresentManager::WakeThread\n");
+        TRACE_ENTRYPOINT();
     }
 
     (void) KeReleaseSemaphore(
         &m_PresentQueueSemaphore, // Semaphore
-        1, // Increment, ~~No priority boost~~
-        1, // Adjustment
-        FALSE // Wait
+        1,                        // Increment
+        1,                        // Adjustment
+        FALSE                     // Wait
     );
 }
 
@@ -370,7 +386,7 @@ void GsPresentManager::Present(const GsPresentData& data) noexcept
         srcBltInfo.Height = dstBltInfo.Height;
     }
 
-    LOG_DEBUG("GsPresentManager::Present: Performing Block Transfer. Moves: %d, Dirty: %d.\n", data.NumMoves, data.NumDirtyRects);
+    LOG_DEBUG("Performing Block Transfer. Moves: %d, Dirty: %d.\n", data.NumMoves, data.NumDirtyRects);
 
 
     // Copy all the scroll rects from source image to video frame buffer.
@@ -410,7 +426,7 @@ void GsPresentManager::Present(const GsPresentData& data) noexcept
         }
     }
 
-    // Unmap unmap and unlock the pages.
+    // Unmap and unlock the pages.
     if(data.Mdl)
     {
         MmUnlockPages(data.Mdl);
@@ -423,35 +439,35 @@ void GsPresentManager::Present(const GsPresentData& data) noexcept
 
 void GsPresentManager::ThreadFunc() noexcept
 {
-    LOG_DEBUG("GsPresentManager::ThreadFunc\n");
+    TRACE_ENTRYPOINT();
 
     while(!IsCloseRequested())
     {
         if constexpr(false)
         {
-            LOG_DEBUG("GsPresentManager::ThreadFunc: Awaiting\n");
+            LOG_DEBUG("Awaiting\n");
         }
 
         // Wait for a present request to come in.
         // If one is already in the queue this will return immediately.
         (void) KeWaitForSingleObject(
             &m_PresentQueueSemaphore, // Object
-            Executive, // WaitReason
-            KernelMode, // WaitMode
-            FALSE, // Alertable
-            nullptr // Timeout
+            Executive,                // WaitReason
+            KernelMode,               // WaitMode
+            FALSE,                    // Alertable
+            nullptr                   // Timeout
         );
 
         if constexpr(false)
         {
-            LOG_DEBUG("GsPresentManager::ThreadFunc: Awoken\n");
+            LOG_DEBUG("Awoken\n");
         }
 
         // Check if we're being told to close.
         // We can either be woken because there is a packet to process, or because we're exiting.
         if(IsCloseRequested())
         {
-            LOG_DEBUG("GsPresentManager::ThreadFunc: Close Requested.\n");
+            LOG_DEBUG("Close Requested.\n");
 
             return;
         }
@@ -468,14 +484,14 @@ void GsPresentManager::ThreadFunc() noexcept
         Present(*presentData);
 
         // Free the packet now that we're done with it.
-        HY_FREE(presentData, POOL_TAG_PRESENT);
+        delete presentData;
     }
 
-    LOG_DEBUG("GsPresentManager::ThreadFunc: Close from loop.\n");
+    LOG_DEBUG("Close from loop.\n");
 }
 
 void GsPresentManager::StaticThreadFunc(HANDLE Context) noexcept
 {
-    GsPresentManager* presentManager = reinterpret_cast<GsPresentManager*>(Context);
+    GsPresentManager* const presentManager = reinterpret_cast<GsPresentManager*>(Context);
     presentManager->ThreadFunc();
 }

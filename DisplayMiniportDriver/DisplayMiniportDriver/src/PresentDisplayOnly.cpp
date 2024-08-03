@@ -13,13 +13,13 @@ NTSTATUS HyPresentDisplayOnly(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_PRESEN
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyPresentDisplayOnly\n");
+    TRACE_ENTRYPOINT();
 
     // If hAdapter is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyPresentDisplayOnly: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -27,12 +27,12 @@ NTSTATUS HyPresentDisplayOnly(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_PRESEN
     // This should probably never happen.
     if(!pPresentDisplayOnly)
     {
-        LOG_ERROR("Invalid Parameter to HyPresentDisplayOnly: pPresentDisplayOnly\n");
+        LOG_ERROR("Invalid Parameter: pPresentDisplayOnly\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
     // Get our context structure.
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->PresentDisplayOnly(pPresentDisplayOnly);
 }

@@ -26,7 +26,7 @@ NTSTATUS HyInitFilterDevices(void)
 {
     PAGED_CODE();
 
-    LOG_DEBUG("HyInitFilterDevices\n");
+    TRACE_ENTRYPOINT();
 
     for(int i = 0; i < HY_FILTER_PORT_COUNT - 1; ++i)
     {
@@ -40,7 +40,7 @@ NTSTATUS HyRegisterFilterClient(PFLT_PORT ClientPort, PVOID* ConnectionPortCooki
 {
     PAGED_CODE();
 
-    LOG_DEBUG("HyRegisterFilterClient\n");
+    TRACE_ENTRYPOINT();
 
     // Ensure that we can return the handle.
     if(!ConnectionPortCookie)
@@ -71,7 +71,7 @@ NTSTATUS HyGetFilterClient(PVOID ConnectionPortCookie, PFLT_PORT* ClientPort)
 {
     PAGED_CODE();
 
-    LOG_DEBUG("HyGetFilterClient\n");
+    TRACE_ENTRYPOINT();
 
     // Ensure we have a valid pointer to a port.
     if(!ConnectionPortCookie)
@@ -97,7 +97,7 @@ NTSTATUS HyUnregisterFilterClient(PVOID ConnectionPortCookie)
 {
     PAGED_CODE();
 
-    LOG_DEBUG("HyUnregisterFilterClient\n");
+    TRACE_ENTRYPOINT();
 
     // Ensure we have a valid pointer to a port.
     if(!ConnectionPortCookie)

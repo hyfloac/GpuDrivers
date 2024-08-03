@@ -1,12 +1,12 @@
-// See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_createdevice
+// See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmddi/nc-d3dkmddi-dxgkddi_setvidpnsourceaddress
 #include "Common.h"
 #include "HyDevice.hpp"
-#include "CreateDevice.hpp"
+#include "SetVidPnSourceAddress.hpp"
 #include "Logging.h"
 
 #pragma code_seg("PAGE")
 
-NTSTATUS HyCreateDevice(IN_CONST_HANDLE hAdapter, INOUT_PDXGKARG_CREATEDEVICE pCreateDevice)
+NTSTATUS GsSetVidPnSourceAddress(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_SETVIDPNSOURCEADDRESS pSetVidPnSourceAddress)
 {
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
@@ -21,16 +21,16 @@ NTSTATUS HyCreateDevice(IN_CONST_HANDLE hAdapter, INOUT_PDXGKARG_CREATEDEVICE pC
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    // If pCreateDevice is null inform the kernel that the second parameter was invalid.
+    // If pSetVidPnSourceAddress is null inform the kernel that the second parameter was invalid.
     // This should probably never happen.
-    if(!pCreateDevice)
+    if(!pSetVidPnSourceAddress)
     {
-        LOG_ERROR("Invalid Parameter: pCreateDevice\n");
+        LOG_ERROR("Invalid Parameter: pSetVidPnSourceAddress\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
     // Get our context structure.
     HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
-    return deviceContext->CreateDevice(pCreateDevice);
+    return deviceContext->SetVidPnSourceAddress(pSetVidPnSourceAddress);
 }

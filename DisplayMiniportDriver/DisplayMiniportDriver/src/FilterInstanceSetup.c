@@ -15,7 +15,7 @@ NTSTATUS HyFilterInstanceSetup(const PCFLT_RELATED_OBJECTS FltObjects, const FLT
 
     PAGED_CODE();
 
-    LOG_DEBUG("HyFilterInstanceSetup\n");
+    TRACE_ENTRYPOINT();
 
     // We're only going to accept manual connections.
     if((Flags & FLTFL_INSTANCE_SETUP_MANUAL_ATTACHMENT) == 0)

@@ -4,8 +4,7 @@
 extern "C" {
 #endif
 
-#include <ntddk.h>
-#include <dispmprt.h>
+#include "Common.h"
 
 void HyI2CInterfaceReference(PVOID Context);
 void HyI2CInterfaceDereference(PVOID Context);

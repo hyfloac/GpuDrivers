@@ -117,6 +117,9 @@ public:
     static inline constexpr UINT32 SIZE_REGISTER_EDID              = 128;
 
     static inline constexpr UINT32 REGISTER_DEBUG_PRINT            = 0x8000;
+    static inline constexpr UINT32 REGISTER_DEBUG_LOG_LOCK         = 0x8004;
+    static inline constexpr UINT32 VALUE_DEBUG_LOG_LOCK_UNLOCKED   = 0x00000000;
+    static inline constexpr UINT32 REGISTER_DEBUG_LOG_MULTI        = 0x8008;
 
     static inline constexpr UINT MaxViews    = 1;
     static inline constexpr UINT MaxChildren = 1;
@@ -157,11 +160,12 @@ public:
     NTSTATUS IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsSupportedVidPn) noexcept;
     NTSTATUS RecommendFunctionalVidPn(IN_CONST_PDXGKARG_RECOMMENDFUNCTIONALVIDPN_CONST pRecommendFunctionalVidPn) noexcept;
     NTSTATUS EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCOFUNCMODALITY_CONST pEnumCofuncModality) noexcept;
-
+    NTSTATUS SetVidPnSourceAddress(IN_CONST_PDXGKARG_SETVIDPNSOURCEADDRESS pSetVidPnSourceAddress) noexcept;
     NTSTATUS SetVidPnSourceVisibility(IN_CONST_PDXGKARG_SETVIDPNSOURCEVISIBILITY pSetVidPnSourceVisibility) noexcept;
     
     NTSTATUS CommitVidPn(IN_CONST_PDXGKARG_COMMITVIDPN_CONST pCommitVidPn) noexcept;
     NTSTATUS UpdateActiveVidPnPresentPath(IN_CONST_PDXGKARG_UPDATEACTIVEVIDPNPRESENTPATH_CONST pUpdateActiveVidPnPresentPath) noexcept;
+    NTSTATUS RecommendMonitorModes(IN_CONST_PDXGKARG_RECOMMENDMONITORMODES_CONST pRecommendMonitorModes) noexcept;
 
     NTSTATUS GetScanLine(INOUT_PDXGKARG_GETSCANLINE pGetScanLine) noexcept;
 
@@ -200,6 +204,11 @@ public:
         // Disable Display
         *displayEnable = enable ? 1 : 0;
     }
+
+    bool ObtainLogLock(const bool ReturnOnFailure) noexcept;
+    void ReleaseLogLock() noexcept;
+
+    void DebugLog(const char* String, const SIZE_T Length, const bool Lock = true) noexcept;
 private:
     NTSTATUS CheckDevice() noexcept;
     NTSTATUS LoadPostDisplayInfo() noexcept;
@@ -250,6 +259,8 @@ private:
 
     // Current adapter power state
     DEVICE_POWER_STATE m_AdapterPowerState;
+
+    volatile LONG m_CurrentLogLockValue;
 
     GsPresentManager m_PresentManager;
     GsMemoryManager m_MemoryManager;

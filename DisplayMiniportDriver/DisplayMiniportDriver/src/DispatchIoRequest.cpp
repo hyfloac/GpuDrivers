@@ -13,13 +13,13 @@ NTSTATUS HyDispatchIoRequest(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG VidP
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyDispatchIoRequest\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyDispatchIoRequest: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -27,7 +27,7 @@ NTSTATUS HyDispatchIoRequest(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG VidP
     // This should probably never happen.
     if(!VideoRequestPacket)
     {
-        LOG_ERROR("Invalid Parameter to HyDispatchIoRequest: VideoRequestPacket\n");
+        LOG_ERROR("Invalid Parameter: VideoRequestPacket\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 

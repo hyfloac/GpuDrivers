@@ -15,17 +15,17 @@ NTSTATUS HyControlInterrupt(IN_CONST_HANDLE hAdapter, IN_CONST_DXGK_INTERRUPT_TY
 
     CHECK_IRQL(PASSIVE_LEVEL); // HIGH_LEVEL is the best approximation of DIRQL
 
-    LOG_DEBUG("HyControlInterrupt: %sable %d\n", EnableInterrupt ? "En" : "Dis", InterruptType);
+    TRACE_ENTRYPOINT_ARG("%sable %d\n", EnableInterrupt ? "En" : "Dis", InterruptType);
 
     // If hAdapter is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyControlInterrupt: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->ControlInterrupt(InterruptType, EnableInterrupt);
 }

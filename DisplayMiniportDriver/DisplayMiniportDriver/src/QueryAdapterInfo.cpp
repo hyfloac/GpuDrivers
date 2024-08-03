@@ -11,13 +11,13 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyQueryAdapterInfo\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext (hAdapter) is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryAdapterInfo: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -25,13 +25,13 @@ NTSTATUS HyQueryAdapterInfo(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_QUERYADA
     // This should probably never happen.
     if(!pQueryAdapterInfo)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryAdapterInfo: pQueryAdapterInfo\n");
+        LOG_ERROR("Invalid Parameter: pQueryAdapterInfo\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
     LOG_DEBUG("Querying Type %u, Input Size: %u, Output Size %u\n", pQueryAdapterInfo->Type, pQueryAdapterInfo->InputDataSize, pQueryAdapterInfo->OutputDataSize);
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->QueryAdapterInfo(pQueryAdapterInfo);
 }

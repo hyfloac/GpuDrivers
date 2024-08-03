@@ -12,13 +12,13 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
 {
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyStartDevice\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyStartDevice: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -26,7 +26,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
     // This should probably never happen.
     if(!DxgkStartInfo)
     {
-        LOG_ERROR("Invalid Parameter to HyStartDevice: DxgkStartInfo\n");
+        LOG_ERROR("Invalid Parameter: DxgkStartInfo\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
@@ -34,7 +34,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
     // This should probably never happen.
     if(!DxgkInterface)
     {
-        LOG_ERROR("Invalid Parameter to HyStartDevice: DxgkInterface\n");
+        LOG_ERROR("Invalid Parameter: DxgkInterface\n");
         return STATUS_INVALID_PARAMETER_3;
     }
 
@@ -42,7 +42,7 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
     // This should probably never happen.
     if(!NumberOfVideoPresentSurfaces)
     {
-        LOG_ERROR("Invalid Parameter to HyStartDevice: NumberOfVideoPresentSurfaces\n");
+        LOG_ERROR("Invalid Parameter: NumberOfVideoPresentSurfaces\n");
         return STATUS_INVALID_PARAMETER_4;
     }
 
@@ -50,12 +50,12 @@ NTSTATUS HyStartDevice(IN_CONST_PVOID MiniportDeviceContext, IN_PDXGK_START_INFO
     // This should probably never happen.
     if(!NumberOfChildren)
     {
-        LOG_ERROR("Invalid Parameter to HyStartDevice: NumberOfChildren\n");
+        LOG_ERROR("Invalid Parameter: NumberOfChildren\n");
         return STATUS_INVALID_PARAMETER_5;
     }
 
     // Get our context structure.
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     return deviceContext->StartDevice(DxgkStartInfo, DxgkInterface, NumberOfVideoPresentSurfaces, NumberOfChildren);
 }

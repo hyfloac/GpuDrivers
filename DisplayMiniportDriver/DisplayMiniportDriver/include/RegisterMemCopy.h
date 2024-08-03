@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

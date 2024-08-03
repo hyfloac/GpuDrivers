@@ -4,11 +4,32 @@
 #include "MemoryAllocator.h"
 #include "Logging.h"
 
-static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, const char* const level, const size_t levelLength, const void* const address, const char* const fmt, va_list args)
+static NTSTATUS HyPrintBuffer(
+    char* const logBuffer, 
+    const size_t bufferSize, 
+    const char* const level, 
+    const size_t levelLength,
+    const void* const address, 
+    const char* const functionName,
+    const size_t functionNameLength,
+    const char* const fileName,
+    const size_t fileNameLength,
+    const size_t line, 
+    const char* const fmt,
+    va_list args
+)
 {
-    (void) memcpy(logBuffer + 1, level, levelLength);
+    (void) fileName;
+    (void) fileNameLength;
 
-    size_t index = levelLength + 1;
+    if(1 + (levelLength - 1) + 2 + 2 + (functionNameLength - 1) + 1 + 2 >= bufferSize)
+    {
+        return STATUS_BUFFER_OVERFLOW;
+    }
+
+    (void) memcpy(logBuffer + 1, level, levelLength - 1);
+
+    size_t index = levelLength;
 
     logBuffer[0] = '[';
     logBuffer[index++] = ']';
@@ -36,6 +57,34 @@ static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, co
     }
 
     logBuffer[index++] = ')';
+    logBuffer[index++] = ' ';
+
+    (void) memcpy(logBuffer + index, functionName, functionNameLength - 1);
+    index += functionNameLength - 1;
+
+    logBuffer[index++] = ':';
+
+    {
+        // Insert the call site address.
+        const NTSTATUS formatAddressStatus = RtlStringCbPrintfA(logBuffer + index, bufferSize - index, "%zu", line);
+
+        if(!NT_SUCCESS(formatAddressStatus))
+        {
+            return formatAddressStatus;
+        }
+
+        // Adjust index to the end of the address string.
+        const NTSTATUS lengthStatus = RtlStringCbLengthA(logBuffer, bufferSize, &index);
+
+        if(!NT_SUCCESS(lengthStatus))
+        {
+            // Ensure there is a null terminator just in case.
+            logBuffer[bufferSize - 1] = '\0';
+
+            return STATUS_SUCCESS;
+        }
+    }
+
     logBuffer[index++] = ':';
     logBuffer[index++] = ' ';
 
@@ -48,9 +97,22 @@ static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, co
 
     // Ensure there is a null terminator just in case.
     logBuffer[bufferSize - 1] = '\0';
-    if(logBuffer[bufferSize - 3] != '\n')
+
+    // Adjust index to the end of the address string.
+    const NTSTATUS lengthStatus = RtlStringCbLengthA(logBuffer, bufferSize, &index);
+
+    if(!NT_SUCCESS(lengthStatus))
     {
-        logBuffer[bufferSize - 2] = '\n';
+        return STATUS_SUCCESS;
+    }
+
+    if(logBuffer[index - 1] != '\n')
+    {
+        if(index < bufferSize)
+        {
+            logBuffer[index++] = '\n';
+            logBuffer[index++] = '\0';
+        }
     }
     else
     {
@@ -60,7 +122,19 @@ static NTSTATUS HyPrintBuffer(char* const logBuffer, const size_t bufferSize, co
     return STATUS_SUCCESS;
 }
 
-static void HyLogAlloc(const char* const level, const size_t levelLength, const ULONG filterLevel, const void* const address, const char* const fmt, va_list args)
+static void HyLogAlloc(
+    const char* const level,
+    const size_t levelLength, 
+    const ULONG filterLevel, 
+    const void* const address, 
+    const char* const functionName,
+    const size_t functionNameLength,
+    const char* const fileName,
+    const size_t fileNameLength,
+    const size_t line, 
+    const char* const fmt, 
+    va_list args
+)
 {
     const size_t bufferLength = 8192 * sizeof(char);
 
@@ -69,7 +143,7 @@ static void HyLogAlloc(const char* const level, const size_t levelLength, const 
     (void) memset(logBuffer, '\0', bufferLength);
 
     {
-        const NTSTATUS printResult = HyPrintBuffer(logBuffer, bufferLength, level, levelLength, address, fmt, args);
+        const NTSTATUS printResult = HyPrintBuffer(logBuffer, bufferLength, level, levelLength, address, functionName, functionNameLength, fileName, fileNameLength, line, fmt, args);
         if(!NT_SUCCESS(printResult)) // Just print whatever was formatted.
         {
             // return;
@@ -81,17 +155,29 @@ static void HyLogAlloc(const char* const level, const size_t levelLength, const 
     HyDeallocate(logBuffer, POOL_TAG_LOGGING);
 }
 
-void HyLog(const char* const level, const size_t levelLength, const ULONG filterLevel, const void* const address, const char* const fmt, va_list args)
+void HyLog(
+    const char* const level,
+    const size_t levelLength,
+    const ULONG filterLevel,
+    const void* const address,
+    const char* const functionName,
+    const size_t functionNameLength,
+    const char* const fileName,
+    const size_t fileNameLength,
+    const size_t line,
+    const char* fmt,
+    va_list args
+)
 {
     char logBuffer[384];
 
     (void) memset(logBuffer, '\0', sizeof(logBuffer));
 
     {
-        const NTSTATUS printResult = HyPrintBuffer(logBuffer, sizeof(logBuffer), level, levelLength, address, fmt, args);
+        const NTSTATUS printResult = HyPrintBuffer(logBuffer, sizeof(logBuffer), level, levelLength, address, functionName, functionNameLength, fileName, fileNameLength, line, fmt, args);
         if(printResult == STATUS_BUFFER_OVERFLOW)
         {
-            HyLogAlloc(level, levelLength, filterLevel, address, fmt, args);
+            HyLogAlloc(level, levelLength, filterLevel, address, functionName, functionNameLength, fileName, fileNameLength, line, fmt, args);
             return;
         }
 

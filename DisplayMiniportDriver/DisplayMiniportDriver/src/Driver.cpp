@@ -41,20 +41,17 @@ extern "C" {
 #include "QueryAdapterInfo.hpp"
 #include "CreateDevice.hpp"
 
-#include "RecommendFunctionalVidPn.hpp"
-#include "EnumVidPnCofuncModality.hpp"
 
 #include "CollectDbgInfo.hpp"
 #include "IsSupportedVidPn.hpp"
-
+#include "RecommendFunctionalVidPn.hpp"
+#include "EnumVidPnCofuncModality.hpp"
+#include "SetVidPnSourceAddress.hpp"
 #include "SetVidPnSourceVisibility.hpp"
 
 #include "CommitVidPn.hpp"
-
-#if HY_BUILD_AS_KMDOD
 #include "UpdateActiveVidPnPresentPath.hpp"
-#endif
-
+#include "RecommendMonitorModes.hpp"
 #include "GetScanLine.hpp"
 
 #if HY_BUILD_AS_KMDOD
@@ -63,6 +60,9 @@ extern "C" {
 
 #include "ControlInterrupt.hpp"
 #include "DestroyDevice.hpp"
+
+#include "CreateContext.hpp"
+#include "DestroyContext.hpp"
 
 #include "StopDeviceAndReleasePostDisplayOwnership.hpp"
 
@@ -190,7 +190,7 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
 
     driverInitializationData.DxgkDdiCommitVidPn = HyCommitVidPn;
     driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = HyUpdateActiveVidPnPresentPath;
-    driverInitializationData.DxgkDdiRecommendMonitorModes = ThunkHyRecommendMonitorModes;
+    driverInitializationData.DxgkDdiRecommendMonitorModes = HyRecommendMonitorModes;
 #if HY_KMDOD_ENABLE_VSYNC_INTERRUPTS
     driverInitializationData.DxgkDdiGetScanLine = HyGetScanLine;
 #else
@@ -279,11 +279,11 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiIsSupportedVidPn = HyIsSupportedVidPn;
     driverInitializationData.DxgkDdiRecommendFunctionalVidPn = HyRecommendFunctionalVidPn;
     driverInitializationData.DxgkDdiEnumVidPnCofuncModality = HyEnumVidPnCofuncModality;
-    // driverInitializationData.DxgkDdiSetVidPnSourceAddress = (PDXGKDDI_SETVIDPNSOURCEADDRESS) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiSetVidPnSourceAddress = GsSetVidPnSourceAddress;
     driverInitializationData.DxgkDdiSetVidPnSourceVisibility = HySetVidPnSourceVisibility;
     driverInitializationData.DxgkDdiCommitVidPn = HyCommitVidPn;
-    // driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = (PDXGKDDI_UPDATEACTIVEVIDPNPRESENTPATH) DdiNoOpNTSTATUS;
-    // driverInitializationData.DxgkDdiRecommendMonitorModes = (PDXGKDDI_RECOMMENDMONITORMODES) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = HyUpdateActiveVidPnPresentPath;
+    driverInitializationData.DxgkDdiRecommendMonitorModes = HyRecommendMonitorModes;
     // driverInitializationData.DxgkDdiRecommendVidPnTopology = (PDXGKDDI_RECOMMENDVIDPNTOPOLOGY) DdiNoOpNTSTATUS;
     driverInitializationData.DxgkDdiGetScanLine = HyGetScanLine;
     // driverInitializationData.DxgkDdiStopCapture = (PDXGKDDI_STOPCAPTURE) DdiNoOpNTSTATUS;
@@ -300,8 +300,8 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     // driverInitializationData.DxgkDdiFlipOverlay = (PDXGKDDI_FLIPOVERLAY) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiDestroyOverlay = (PDXGKDDI_DESTROYOVERLAY) DdiNoOpNTSTATUS;
     //
-    // driverInitializationData.DxgkDdiCreateContext = (PDXGKDDI_CREATECONTEXT) DdiNoOpNTSTATUS;
-    // driverInitializationData.DxgkDdiDestroyContext = (PDXGKDDI_DESTROYCONTEXT) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCreateContext = GsCreateContext;
+    driverInitializationData.DxgkDdiDestroyContext = GsDestroyContext;
 
     // driverInitializationData.DxgkDdiLinkDevice = (PDXGKDDI_LINK_DEVICE) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiSetDisplayPrivateDriverFormat = (PDXGKDDI_SETDISPLAYPRIVATEDRIVERFORMAT) DdiNoOpNTSTATUS;

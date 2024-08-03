@@ -1,9 +1,10 @@
 #include "Common.h"
 #include "GsMemoryManager.hpp"
+#include "Logging.h"
 
 NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& deviceInfo, const DXGKRNL_INTERFACE& dxgkInterface) noexcept
 {
-    LOG_DEBUG("GsMemoryManager::Init\n");
+    TRACE_ENTRYPOINT();
 
     // Save the Device ID
     m_DeviceId = deviceId;
@@ -14,7 +15,7 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
 
     if(!NT_SUCCESS(loadBarMapStatus))
     {
-        LOG_ERROR("GsMemoryManager::Init: Error loading bar map for device 0x%04X: 0x%08X.\n", deviceId, loadBarMapStatus);
+        LOG_ERROR("Error loading bar map for device 0x%04X: 0x%08X.\n", deviceId, loadBarMapStatus);
         return loadBarMapStatus;
     }
 
@@ -22,7 +23,7 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
 
     if constexpr(EnableExtensiveLogging)
     {
-        LOG_DEBUG("GsMemoryManager::Init: CM_FULL_RESOURCE_DESCRIPTOR: 0x%p.\n", list);
+        LOG_DEBUG("CM_FULL_RESOURCE_DESCRIPTOR: 0x%p.\n", list);
     }
 
     UINT regionIndex = 0;
@@ -31,21 +32,21 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
     {
         if constexpr(EnableExtensiveLogging)
         {
-            LOG_DEBUG("GsMemoryManager::Init: Resource List: %u.\n", i);
+            LOG_DEBUG("Resource List: %u.\n", i);
         }
 
         for(UINT j = 0; j < list->PartialResourceList.Count; ++j)
         {
             if constexpr(EnableExtensiveLogging)
             {
-                LOG_DEBUG("GsMemoryManager::Init: Partial Resource List: %u.\n", j);
+                LOG_DEBUG("Partial Resource List: %u.\n", j);
             }
 
             CM_PARTIAL_RESOURCE_DESCRIPTOR* const desc = &list->PartialResourceList.PartialDescriptors[j];
 
             if constexpr(EnableExtensiveLogging)
             {
-                LOG_DEBUG("GsMemoryManager::Init: Partial Resource List Desc: 0x%p, Type: %d, m_Flags: 0x%04X.\n", desc, desc->Type, desc->Flags);
+                LOG_DEBUG("Partial Resource List Desc: 0x%p, Type: %d, m_Flags: 0x%04X.\n", desc, desc->Type, desc->Flags);
             }
 
             switch(desc->Type)
@@ -57,18 +58,18 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
                     {
                         if(desc->Type == CmResourceTypeMemory)
                         {
-                            LOG_DEBUG("GsMemoryManager::Init: Handling CmResourceTypeMemory.\n");
+                            LOG_DEBUG("Handling CmResourceTypeMemory.\n");
                         }
                         else if(desc->Type == CmResourceTypeMemoryLarge)
                         {
-                            LOG_DEBUG("GsMemoryManager::Init: Handling CmResourceTypeMemoryLarge.\n");
+                            LOG_DEBUG("Handling CmResourceTypeMemoryLarge.\n");
                         }
                     }
 
                     const NTSTATUS loadBarStatus = LoadBar(*desc, regionIndex, dxgkInterface);
                     if(!NT_SUCCESS(loadBarStatus))
                     {
-                        LOG_ERROR("GsMemoryManager::Init: Error loading Region %d: 0x%08X.\n", regionIndex, loadBarStatus);
+                        LOG_ERROR("Error loading Region %d: 0x%08X.\n", regionIndex, loadBarStatus);
                         if(loadBarStatus == STATUS_INVALID_PARAMETER_1 || loadBarStatus == STATUS_INVALID_PARAMETER_2)
                         {
                             return STATUS_INVALID_PARAMETER;
@@ -95,7 +96,9 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
 
 NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
 {
-    const UINT64 cpuInvisibleVramSize = vramSize - m_MappedBarMap.Region1.Length;
+    const UINT64 cpuVisibleVramSize = 4 * vramSize;
+
+    LOG_DEBUG("cpuVisibleVramSize: 0x%016llX, vramSize: 0x%016llX, Region1 Length: 0x%016llX\n", cpuVisibleVramSize, vramSize, m_MappedBarMap.Region1.Length);
 
     m_ActiveSegments = 0;
 
@@ -103,73 +106,74 @@ NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
     {
         GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
 
-        constexpr SIZE_T size = static_cast<SIZE_T>(32) * 1024u * 1024u;
+        const SIZE_T size = static_cast<SIZE_T>(4) * vramSize;
 
-        // Aperature Segment
+        // Aperture Segment
         descriptor.BaseAddress.QuadPart = 0;
         descriptor.CpuTranslatedAddress.QuadPart = 0;
         descriptor.Size = size;
-        descriptor.CommitLimit = (size / 16) * 4096;
+        descriptor.CommitLimit = size;
 
         descriptor.Flags.Value = 0;
         descriptor.Flags.Bits.Aperture = 1;
         descriptor.Flags.Bits.Agp = 0;
         descriptor.Flags.Bits.CpuVisible = 0;
         descriptor.Flags.Bits.UseBanking = 0;
-        descriptor.Flags.Bits.CacheCoherent = 0;
+        descriptor.Flags.Bits.CacheCoherent = 1;
         descriptor.Flags.Bits.PitchAlignment = 0;
         descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
         descriptor.Flags.Bits.PreservedDuringStandby = 1;
         descriptor.Flags.Bits.PreservedDuringHibernate = 1;
         descriptor.Flags.Bits.DirectFlip = 0;
-        descriptor.Flags.Bits.Use64KBPages = 1;
+        descriptor.Flags.Bits.Use64KBPages = 0;
     }
 
+    {
+        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+
+        // CPU Invisible Segment
+        descriptor.BaseAddress.QuadPart = 0;
+        descriptor.CpuTranslatedAddress.QuadPart = static_cast<LONGLONG>(m_MappedBarMap.Region1.Start);
+        descriptor.Size = min(m_MappedBarMap.Region1.Length, vramSize);
+        descriptor.CommitLimit = descriptor.Size;
+
+        descriptor.Flags.Value = 0;
+        descriptor.Flags.Bits.Aperture = 0;
+        descriptor.Flags.Bits.Agp = 0;
+        descriptor.Flags.Bits.CpuVisible = 0;
+        descriptor.Flags.Bits.UseBanking = 0;
+        descriptor.Flags.Bits.CacheCoherent = 1;
+        descriptor.Flags.Bits.PitchAlignment = 0;
+        descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
+        descriptor.Flags.Bits.PreservedDuringStandby = 0;
+        descriptor.Flags.Bits.PreservedDuringHibernate = 0;
+        descriptor.Flags.Bits.DirectFlip = 1;
+        descriptor.Flags.Bits.Use64KBPages = 1;
+        descriptor.Flags.Bits.SupportsCpuHostAperture = 1;
+    }
+
+    if(cpuVisibleVramSize != 0)
     {
         GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
 
         // CPU Visible Segment
         descriptor.BaseAddress.QuadPart = 0;
         descriptor.CpuTranslatedAddress.QuadPart = 0;
-        descriptor.Size = m_MappedBarMap.Region1.Length;
-        descriptor.CommitLimit = 0;
+        descriptor.Size = cpuVisibleVramSize;
+        descriptor.CommitLimit = 0xFFFFFFFFFFFFFFFF;
 
         descriptor.Flags.Value = 0;
         descriptor.Flags.Bits.Aperture = 0;
         descriptor.Flags.Bits.Agp = 0;
         descriptor.Flags.Bits.CpuVisible = 1;
         descriptor.Flags.Bits.UseBanking = 0;
-        descriptor.Flags.Bits.CacheCoherent = 0;
+        descriptor.Flags.Bits.CacheCoherent = 1;
         descriptor.Flags.Bits.PitchAlignment = 0;
         descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
         descriptor.Flags.Bits.PreservedDuringStandby = 1;
         descriptor.Flags.Bits.PreservedDuringHibernate = 1;
-        descriptor.Flags.Bits.DirectFlip = 1;
-        descriptor.Flags.Bits.Use64KBPages = 1;
-    }
-
-    if(cpuInvisibleVramSize != 0)
-    {
-        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
-
-        // CPU Invisible Segment
-        descriptor.BaseAddress.QuadPart = 0;
-        descriptor.CpuTranslatedAddress.QuadPart = 0;
-        descriptor.Size = cpuInvisibleVramSize;
-        descriptor.CommitLimit = 0;
-
-        descriptor.Flags.Value = 0;
-        descriptor.Flags.Bits.Aperture = 0;
-        descriptor.Flags.Bits.Agp = 0;
-        descriptor.Flags.Bits.CpuVisible = 1;
-        descriptor.Flags.Bits.UseBanking = 0;
-        descriptor.Flags.Bits.CacheCoherent = 0;
-        descriptor.Flags.Bits.PitchAlignment = 0;
-        descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
-        descriptor.Flags.Bits.PreservedDuringStandby = 1;
-        descriptor.Flags.Bits.PreservedDuringHibernate = 1;
-        descriptor.Flags.Bits.DirectFlip = 1;
-        descriptor.Flags.Bits.Use64KBPages = 1;
+        descriptor.Flags.Bits.DirectFlip = 0;
+        descriptor.Flags.Bits.Use64KBPages = 0;
     }
 
     m_PagingBufferSegmentId = 0;
@@ -314,7 +318,7 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
     // We don't use IO ports.
     if((desc.Flags & CM_RESOURCE_PORT_MEMORY) != CM_RESOURCE_PORT_MEMORY)
     {
-        LOG_ERROR("GsMemoryManager::LoadBar: CmResourceTypeMemory must be of type CM_RESOURCE_PORT_MEMORY.\n");
+        LOG_ERROR("CmResourceTypeMemory must be of type CM_RESOURCE_PORT_MEMORY.\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -406,7 +410,7 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
     {
         if((desc.Flags & CM_RESOURCE_MEMORY_READ_WRITE) != CM_RESOURCE_MEMORY_READ_WRITE)
         {
-            LOG_ERROR("GsMemoryManager::LoadBar: BAR %d was not Read/Write.\n", region.Bar);
+            LOG_ERROR("BAR %d was not Read/Write.\n", region.Bar);
             return STATUS_MEMORY_NOT_ALLOCATED;
         }
     }
@@ -414,7 +418,7 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
     {
         if((desc.Flags & CM_RESOURCE_MEMORY_READ_WRITE) == CM_RESOURCE_MEMORY_READ_WRITE)
         {
-            LOG_ERROR("GsMemoryManager::LoadBar: BAR %d was Read/Write.\n", region.Bar);
+            LOG_ERROR("BAR %d was Read/Write.\n", region.Bar);
             return STATUS_MEMORY_NOT_ALLOCATED;
         }
     }
@@ -440,13 +444,13 @@ NTSTATUS GsMemoryManager::LoadBar(CM_PARTIAL_RESOURCE_DESCRIPTOR& desc, const UI
 
     if constexpr(EnableExtensiveLogging)
     {
-        LOG_DEBUG("GsMemoryManager::LoadBar: Memory Start: 0x%016llX, Length: 0x%016llX.\n", mappedRegion->Start, mappedRegion->Length);
+        LOG_DEBUG("Memory Start: 0x%016llX, Length: 0x%016llX.\n", mappedRegion->Start, mappedRegion->Length);
     }
 
     // Report any error with memory mapping.
     if(!NT_SUCCESS(mapStatus))
     {
-        LOG_ERROR("GsMemoryManager::LoadBar: Failed to map BAR %d: 0x%08X.\n", region.Bar, mapStatus);
+        LOG_ERROR("Failed to map BAR %d: 0x%08X.\n", region.Bar, mapStatus);
         return mapStatus;
     }
 

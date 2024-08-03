@@ -14,19 +14,19 @@ NTSTATUS HyQueryChildRelations(IN_CONST_PVOID MiniportDeviceContext, PDXGK_CHILD
 
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyQueryChildRelations\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryChildRelations: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
     if(ChildRelationsSize == 0)
     {
-        LOG_DEBUG("HyQueryChildRelations: ChildRelationsSize was 0.\n");
+        LOG_DEBUG("ChildRelationsSize was 0.\n");
         return STATUS_SUCCESS;
     }
 
@@ -34,11 +34,11 @@ NTSTATUS HyQueryChildRelations(IN_CONST_PVOID MiniportDeviceContext, PDXGK_CHILD
     // This should probably never happen.
     if(!ChildRelations)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryChildRelations: ChildRelations\n");
+        LOG_ERROR("Invalid Parameter: ChildRelations\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     NTSTATUS status = deviceContext->QueryChildRelations(ChildRelations, ChildRelationsSize);
 

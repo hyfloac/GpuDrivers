@@ -10,13 +10,13 @@ NTSTATUS HyQueryChildStatus(IN_CONST_PVOID MiniportDeviceContext, INOUT_PDXGK_CH
 {
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyQueryChildStatus\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryChildStatus: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -24,11 +24,11 @@ NTSTATUS HyQueryChildStatus(IN_CONST_PVOID MiniportDeviceContext, INOUT_PDXGK_CH
     // This should probably never happen.
     if(!ChildStatus)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryChildStatus: ChildStatus\n");
+        LOG_ERROR("Invalid Parameter: ChildStatus\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     return deviceContext->QueryChildStatus(ChildStatus, NonDestructiveOnly);
 }

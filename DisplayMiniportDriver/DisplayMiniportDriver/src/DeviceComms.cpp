@@ -37,7 +37,7 @@ NTSTATUS InitDeviceComms(IN PDRIVER_OBJECT DriverObject)
 
     PAGED_CODE();
 
-    LOG_DEBUG("InitDeviceComms\n");
+    TRACE_ENTRYPOINT();
 
 #if HY_USE_EMULATION
     // Init the filter port linked list.

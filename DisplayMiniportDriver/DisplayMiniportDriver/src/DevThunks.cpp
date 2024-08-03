@@ -10,7 +10,7 @@ NTSTATUS ThunkHySetPalette(
 {
     (void) hAdapter;
     (void) pSetPalette;
-    LOG_DEBUG("ThunkHySetPalette\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -21,7 +21,7 @@ NTSTATUS ThunkHySetPointerPosition(
 {
     (void) hAdapter;
     (void) pSetPointerPosition;
-    LOG_DEBUG("ThunkHySetPointerPosition\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -32,7 +32,7 @@ NTSTATUS ThunkHySetPointerShape(
 {
     (void) hAdapter;
     (void) pSetPointerShape;
-    LOG_DEBUG("ThunkHySetPointerShape\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -43,7 +43,7 @@ NTSTATUS ThunkHyEscape(
 {
     (void) hAdapter;
     (void) pEscape;
-    LOG_DEBUG("ThunkHyEscape\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -54,7 +54,7 @@ NTSTATUS ThunkHyCollectDbgInfo(
 {
     (void) hAdapter;
     (void) pCollectDbgInfo;
-    LOG_DEBUG("ThunkHyCollectDbgInfo, Reason: 0x%08X\n", pCollectDbgInfo->Reason);
+    TRACE_ENTRYPOINT_ARG("Reason: 0x%08X\n", pCollectDbgInfo->Reason);
 
     return STATUS_SUCCESS;
 }
@@ -66,7 +66,7 @@ NTSTATUS ThunkHyRecommendMonitorModes(
 {
     (void) hAdapter;
     (void) pRecommendMonitorModes;
-    LOG_DEBUG("ThunkHyRecommendMonitorModes\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -77,7 +77,7 @@ NTSTATUS ThunkHyGetScanLine(
 {
     (void) hAdapter;
     (void) pGetScanLine;
-    LOG_DEBUG("ThunkHyGetScanLine\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -89,7 +89,7 @@ NTSTATUS ThunkHyQueryVidPnCapability(
 {
     (void) hAdapter;
     (void) pVidPnHWCaps;
-    LOG_DEBUG("ThunkHyQueryVidPnCapability\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 #endif
@@ -110,7 +110,7 @@ NTSTATUS ThunkHySystemDisplayEnable(
     (void) Width;
     (void) Height;
     (void) ColorFormat;
-    LOG_DEBUG("ThunkHySystemDisplayEnable\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 #endif
@@ -132,7 +132,7 @@ void ThunkHySystemDisplayWrite(
     (void) SourceStride;
     (void) PositionX;
     (void) PositionY;
-    LOG_DEBUG("ThunkHySystemDisplayWrite\n");
+    TRACE_ENTRYPOINT();
 }
 
 #if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8)
@@ -145,7 +145,7 @@ NTSTATUS ThunkHyGetChildContainerId(
     (void) MiniportDeviceContext;
     (void) ChildUid;
     (void) ContainerId;
-    LOG_DEBUG("ThunkHyGetChildContainerId\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 #endif
@@ -159,7 +159,7 @@ NTSTATUS ThunkHyControlInterrupt(
     (void) hAdapter;
     (void) InterruptType;
     (void) EnableInterrupt;
-    LOG_DEBUG("ThunkHyControlInterrupt, Type: %d, Enable: %d\n", InterruptType, EnableInterrupt);
+    TRACE_ENTRYPOINT_ARG("Type: %d, Enable: %d\n", InterruptType, EnableInterrupt);
     //return STATUS_SUCCESS;
     return STATUS_NOT_IMPLEMENTED;
 }
@@ -173,7 +173,7 @@ NTSTATUS ThunkHySetPowerComponentFState(
     (void) DriverContext;
     (void) ComponentIndex;
     (void) FState;
-    LOG_DEBUG("ThunkHySetPowerComponentFState\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -194,7 +194,7 @@ NTSTATUS ThunkHyPowerRuntimeControlRequest(
     (void) OutBuffer;
     (void) OutBufferSize;
     (void) BytesReturned;
-    LOG_DEBUG("ThunkHyPowerRuntimeControlRequest\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 
@@ -206,7 +206,7 @@ NTSTATUS ThunkHyNotifySurpriseRemoval(
 {
     (void) MiniportDeviceContext;
     (void) RemovalType;
-    LOG_DEBUG("ThunkHyNotifySurpriseRemoval\n");
+    TRACE_ENTRYPOINT();
     return STATUS_SUCCESS;
 }
 #endif

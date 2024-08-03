@@ -15,13 +15,16 @@ NTSTATUS HyQueryDeviceDescriptor(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG 
 
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HyQueryDeviceDescriptor\n");
+    if constexpr(false)
+    {
+        TRACE_ENTRYPOINT();
+    }
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!MiniportDeviceContext)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryDeviceDescriptor: MiniportDeviceContext\n");
+        LOG_ERROR("Invalid Parameter: MiniportDeviceContext\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -29,12 +32,12 @@ NTSTATUS HyQueryDeviceDescriptor(IN_CONST_PVOID MiniportDeviceContext, IN_ULONG 
     // This should probably never happen.
     if(!DeviceDescriptor)
     {
-        LOG_ERROR("Invalid Parameter to HyQueryDeviceDescriptor: DeviceDescriptor\n");
+        LOG_ERROR("Invalid Parameter: DeviceDescriptor\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
     // Get our context structure.
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(MiniportDeviceContext);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(MiniportDeviceContext);
 
     return deviceContext->QueryDeviceDescriptor(ChildUid, DeviceDescriptor);
 }

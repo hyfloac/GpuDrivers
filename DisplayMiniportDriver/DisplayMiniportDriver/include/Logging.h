@@ -1,8 +1,10 @@
 #pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "Config.h"
 #include <stdarg.h>
 #include <ntddk.h>
 
@@ -14,16 +16,28 @@ static void __declspec(noinline) HyGetCallAddress(void** address)
 }
 #pragma warning(pop)
 
-void HyLog(const char* level, size_t levelLength, ULONG filterLevel, const void* address, const char* fmt, va_list args);
+void HyLog(
+    const char* const level, 
+    const size_t levelLength, 
+    const ULONG filterLevel, 
+    const void* const address, 
+    const char* const functionName,
+    const size_t functionNameLength,
+    const char* const fileName,
+    const size_t fileNameLength,
+    const size_t line, 
+    const char* fmt, 
+    va_list args
+);
 
 const char* GetFileDeviceString(DEVICE_TYPE deviceType);
 
 #define DECL_LOG(NAME, FILTER_LEVEL) \
-    inline void HyLog##NAME(const void* address, const char* fmt, ...) \
+    inline void HyLog##NAME(const void* address, const char* const functionName, const size_t functionNameLength, const char* const fileName, const size_t fileNameLength, const size_t line, const char* fmt, ...) \
     {                                                                  \
         va_list args;                                                  \
         va_start(args, fmt);                                           \
-        HyLog(#NAME, sizeof(#NAME), FILTER_LEVEL, address, fmt, args); \
+        HyLog(#NAME, sizeof(#NAME), FILTER_LEVEL, address, functionName, functionNameLength, fileName, fileNameLength, line, fmt, args); \
         va_end(args);                                                  \
     }
 
@@ -32,21 +46,30 @@ DECL_LOG(Info, DPFLTR_INFO_LEVEL);
 DECL_LOG(Warn, DPFLTR_WARNING_LEVEL);
 DECL_LOG(Error, DPFLTR_ERROR_LEVEL);
 
-#define internal_LOG(LEVEL, FMT, ...) \
+#define internal_LOG(LEVEL, FUNCTION, FILE, LINE, FMT, ...) \
     do {                                                    \
         void* logFuncAddress;                               \
         HyGetCallAddress(&logFuncAddress);                  \
-        HyLog##LEVEL(logFuncAddress, FMT , ## __VA_ARGS__); \
+        HyLog##LEVEL(logFuncAddress, FUNCTION, sizeof(FUNCTION), FILE, sizeof(FILE), LINE, FMT , ## __VA_ARGS__); \
     }  while(0)
 
 #if defined(DEBUG) && DEBUG
-  #define LOG_DEBUG(FMT, ...) internal_LOG(Debug, FMT , ## __VA_ARGS__)
+  #define LOG_DEBUG(FMT, ...) internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__, FMT , ## __VA_ARGS__)
 #else
   #define LOG_DEBUG(FMT, ...) do { } while(0)
 #endif
-#define LOG_INFO(FMT, ...) internal_LOG(Info, FMT , ## __VA_ARGS__)
-#define LOG_WARN(FMT, ...) internal_LOG(Warn, FMT , ## __VA_ARGS__)
-#define LOG_ERROR(FMT, ...) internal_LOG(Error, FMT , ## __VA_ARGS__)
+
+#if GS_ENABLE_ENTRYPOINT_TRACING
+  #define TRACE_ENTRYPOINT() internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__, "\n")
+  #define TRACE_ENTRYPOINT_ARG(FMT, ...) internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__, FMT , ## __VA_ARGS__)
+#else 
+  #define TRACE_ENTRYPOINT()
+  #define TRACE_ENTRYPOINT_ARG(FMT, ...)
+#endif
+
+#define LOG_INFO(FMT, ...) internal_LOG(Info, __FUNCTION__, __FILE__, __LINE__, FMT , ## __VA_ARGS__)
+#define LOG_WARN(FMT, ...) internal_LOG(Warn, __FUNCTION__, __FILE__, __LINE__, FMT , ## __VA_ARGS__)
+#define LOG_ERROR(FMT, ...) internal_LOG(Error, __FUNCTION__, __FILE__, __LINE__, FMT , ## __VA_ARGS__)
 
 #if DEBUG
   #define CHECK_IRQL(IRQL)                                                                                                \

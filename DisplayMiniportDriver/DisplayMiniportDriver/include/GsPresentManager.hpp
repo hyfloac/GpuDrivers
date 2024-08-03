@@ -23,13 +23,17 @@ struct GsPresentData final
     UINT DestWidth;
     UINT DestHeight;
     D3DDDI_VIDEO_PRESENT_SOURCE_ID SourceId;
+public:
+    void* operator new(SIZE_T count);
+    void operator delete(void* const ptr);
 };
 
 class GsPresentManager final
 {
     DELETE_CM(GsPresentManager);
 public:
-    void* operator new(SIZE_T count); // NOLINT(misc-new-delete-overloads)
+    void* operator new(SIZE_T count);
+    void operator delete(void* const ptr);
 public:
     GsPresentManager(HyMiniportDevice* const deviceContext) noexcept;
 

@@ -1,5 +1,4 @@
 #include "GsGraphicsContext.hpp"
-#include "HyDevice.hpp"
 #include "Logging.h"
 #include "MemoryAllocator.h"
 
@@ -16,25 +15,32 @@ void GsGraphicsContext::operator delete(void* ptr)
 }
 
 GsGraphicsContext::GsGraphicsContext(
-    HANDLE dxgkHandle,
-    const bool isSystemDevice,
-    const bool isGdiDevice
+    const UINT nodeOrdinal,
+    const UINT engineAffinity,
+    const bool isSystemContext,
+    const bool isGdiContext,
+    const bool isVirtualAddressing,
+    const bool isSystemProtectedContext,
+    const bool isHwQueueSupported,
+    const bool isTestContext
 ) noexcept
-    : m_DxgkHandle(dxgkHandle)
-    , m_IsSystemDevice(isSystemDevice)
-    , m_IsGdiDevice(isGdiDevice)
+    : m_NodeOrdinal(nodeOrdinal)
+    , m_EngineAffinity(engineAffinity)
+    , m_IsSystemContext(isSystemContext)
+    , m_IsGdiContext(isGdiContext)
+    , m_IsVirtualAddressing(isVirtualAddressing)
+    , m_IsSystemProtectedContext(isSystemProtectedContext)
+    , m_IsHwQueueSupported(isHwQueueSupported)
+    , m_IsTestContext(isTestContext)
     , m_Pad0(0)
-    , m_DeviceInfo()
+    , m_ContextInfo()
 {
-    m_DeviceInfo.DmaBufferSize = 4096;
+    m_ContextInfo.DmaBufferSize = 4096;
     // Not sure what to set here
-    m_DeviceInfo.DmaBufferSegmentSet = 1;
-    m_DeviceInfo.DmaBufferPrivateDataSize = 0;
-    m_DeviceInfo.AllocationListSize = 1;
-    m_DeviceInfo.PatchLocationListSize = 1;
-    m_DeviceInfo.Flags.GuaranteedDmaBufferContract = true;
+    m_ContextInfo.DmaBufferSegmentSet = 1;
+    m_ContextInfo.DmaBufferPrivateDataSize = 0;
+    m_ContextInfo.AllocationListSize = 1;
+    m_ContextInfo.PatchLocationListSize = 1;
 }
 
 #pragma code_seg()
-
-

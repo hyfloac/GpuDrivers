@@ -14,7 +14,7 @@ NTSTATUS HyFilterInstanceQueryTeardown(PCFLT_RELATED_OBJECTS FltObjects, FLT_INS
 
     PAGED_CODE();
 
-    LOG_DEBUG("HyFilterInstanceQueryTeardown\n");
+    TRACE_ENTRYPOINT();
 
     // The user application is allowed to manually detach.
     return STATUS_SUCCESS;

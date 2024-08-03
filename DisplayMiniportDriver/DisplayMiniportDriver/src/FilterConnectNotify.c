@@ -16,7 +16,7 @@ NTSTATUS HyFilterConnectNotify(PFLT_PORT ClientPort, PVOID ServerPortCookie, PVO
 
     PAGED_CODE();
 
-    LOG_DEBUG("HyFilterConnectNotify\n");
+    TRACE_ENTRYPOINT();
 
     // Store the ClientPort and return the cookie.
     const NTSTATUS registerClientStatus = HyRegisterFilterClient(ClientPort, ConnectionPortCookie);

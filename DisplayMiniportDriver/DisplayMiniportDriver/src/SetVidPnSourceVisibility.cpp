@@ -11,13 +11,13 @@ NTSTATUS HySetVidPnSourceVisibility(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     PAGED_CODE();
     CHECK_IRQL(PASSIVE_LEVEL);
 
-    LOG_DEBUG("HySetVidPnSourceVisibility\n");
+    TRACE_ENTRYPOINT();
 
     // If MiniportDeviceContext is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
     {
-        LOG_ERROR("Invalid Parameter to HySetVidPnSourceVisibility: hAdapter\n");
+        LOG_ERROR("Invalid Parameter: hAdapter\n");
         return STATUS_INVALID_PARAMETER_1;
     }
 
@@ -25,12 +25,12 @@ NTSTATUS HySetVidPnSourceVisibility(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_
     // This should probably never happen.
     if(!pSetVidPnSourceVisibility)
     {
-        LOG_ERROR("Invalid Parameter to HySetVidPnSourceVisibility: pSetVidPnSourceVisibility\n");
+        LOG_ERROR("Invalid Parameter: pSetVidPnSourceVisibility\n");
         return STATUS_INVALID_PARAMETER_2;
     }
 
     // Get our context structure.
-    HyMiniportDevice* const deviceContext = HY_MINIPORT_DEVICE_FROM_HANDLE(hAdapter);
+    HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);
 
     return deviceContext->SetVidPnSourceVisibility(pSetVidPnSourceVisibility);
 }

@@ -17,6 +17,7 @@ void PrintHelp(int argCount, char* args[]) noexcept
     ConPrinter::PrintLn(u8"  --help:");
     ConPrinter::PrintLn(u8"  -h: Print this message.");
     ConPrinter::PrintLn(u8"  --debug: Enables debug mode for D3D.");
+    ConPrinter::PrintLn(u8"  --d3d9: Run in D3D9 mode.");
 }
 
 // From https://learn.microsoft.com/en-us/windows/win32/seccrypto/retrieving-error-messages
@@ -108,7 +109,7 @@ int main(int argCount, char* args[])
     displayDevice.cb = sizeof(DISPLAY_DEVICEA);
     for(UINT i = 0; EnumDisplayDevicesA(nullptr, i, &displayDevice, 0); ++i)
     {
-        ConPrinter::PrintLn("Device {} - {}", i, displayDevice.DeviceString);
+        ConPrinter::PrintLn("Device {} - {}, Flags: {}", i, displayDevice.DeviceString, displayDevice.StateFlags);
     }
 
     if(d3dVersion == 9)
