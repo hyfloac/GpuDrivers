@@ -4,7 +4,7 @@
 #include "SetVidPnSourceAddress.hpp"
 #include "Logging.h"
 
-#pragma code_seg("PAGE")
+#pragma code_seg("_KTEXT")
 
 NTSTATUS GsSetVidPnSourceAddress(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_SETVIDPNSOURCEADDRESS pSetVidPnSourceAddress)
 {

@@ -523,7 +523,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\I2CInterface.c" />
     <ClCompile Include="src\InterruptRoutine.cpp" />
     <ClCompile Include="src\IsSupportedVidPn.cpp" />
-    <ClCompile Include="src\Logging.c" />
+    <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\MemoryAllocator.c" />
     <ClCompile Include="src\NotifyAcpiEvent.cpp" />
     <ClCompile Include="src\PresentDisplayOnly.cpp" />

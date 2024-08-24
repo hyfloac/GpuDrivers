@@ -78,7 +78,7 @@
     <ClCompile Include="src\SetVidPnSourceVisibility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Logging.c">
+    <ClCompile Include="src\Logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResetDevice.cpp">

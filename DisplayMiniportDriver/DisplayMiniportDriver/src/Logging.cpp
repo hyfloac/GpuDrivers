@@ -4,6 +4,8 @@
 #include "MemoryAllocator.h"
 #include "Logging.h"
 
+#pragma code_seg("_KTEXT")
+
 static NTSTATUS HyPrintBuffer(
     char* const logBuffer, 
     const size_t bufferSize, 
@@ -136,21 +138,45 @@ static void HyLogAlloc(
     va_list args
 )
 {
-    const size_t bufferLength = 8192 * sizeof(char);
+    size_t bufferLength = 8192 * sizeof(char);
 
-    char* logBuffer = HyAllocateZeroed(PagedPoolCacheAligned, bufferLength, POOL_TAG_LOGGING);
+    char* logBuffer = static_cast<char*>(HyAllocateZeroed(PagedPoolCacheAligned, bufferLength, POOL_TAG_LOGGING));
 
-    (void) memset(logBuffer, '\0', bufferLength);
-
+    do
     {
         const NTSTATUS printResult = HyPrintBuffer(logBuffer, bufferLength, level, levelLength, address, functionName, functionNameLength, fileName, fileNameLength, line, fmt, args);
         if(!NT_SUCCESS(printResult)) // Just print whatever was formatted.
         {
             // return;
         }
+
+        if(printResult == STATUS_BUFFER_OVERFLOW)
+        {
+            bufferLength <<= 1;
+            HyDeallocate(logBuffer, POOL_TAG_LOGGING);
+            logBuffer = static_cast<char*>(HyAllocateZeroed(PagedPoolCacheAligned, bufferLength, POOL_TAG_LOGGING));
+        }
+        else
+        {
+            break;
+        }
+    } while(true);
+
+    size_t dataLen = strlen(logBuffer);
+
+    char* logBufferMoving = logBuffer;
+
+    while(dataLen > 512)
+    {
+        const char tmp = logBufferMoving[511];
+        logBufferMoving[511] = '\0';
+        DbgPrintEx(DPFLTR_IHVVIDEO_ID, filterLevel, "%s", logBufferMoving);
+        logBufferMoving[511] = tmp;
+        dataLen -= 511;
+        logBufferMoving += 511;
     }
 
-    DbgPrintEx(DPFLTR_DEFAULT_ID, filterLevel, "%s", logBuffer);
+    DbgPrintEx(DPFLTR_IHVVIDEO_ID, filterLevel, "%s", logBufferMoving);
 
     HyDeallocate(logBuffer, POOL_TAG_LOGGING);
 }
@@ -169,7 +195,7 @@ void HyLog(
     va_list args
 )
 {
-    char logBuffer[384];
+    char logBuffer[512];
 
     (void) memset(logBuffer, '\0', sizeof(logBuffer));
 
@@ -186,7 +212,7 @@ void HyLog(
             // return;
         }
     }
-    
+
     DbgPrintEx(DPFLTR_IHVVIDEO_ID, filterLevel, "%s", logBuffer);
 }
 

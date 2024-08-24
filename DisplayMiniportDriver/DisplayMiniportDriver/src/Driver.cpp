@@ -370,7 +370,7 @@ static void PrefillDriverInitializationData(DRIVER_INITIALIZATION_DATA& driverIn
 
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiQueryCurrentFence);
 
-    GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiSetVidPnSourceAddress);
+    // GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiSetVidPnSourceAddress);
 
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath);
 

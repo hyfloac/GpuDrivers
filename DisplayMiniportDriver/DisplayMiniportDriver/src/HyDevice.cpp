@@ -5,6 +5,7 @@ extern "C" {
 #include "Common.h"
 #include <wdmguid.h>
 #include "RegisterMemCopy.h"
+#include <ntstrsafe.h>
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -1235,6 +1236,383 @@ NTSTATUS HyMiniportDevice::CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pColl
     return STATUS_SUCCESS;
 }
 
+static NTSTATUS AppendLogVidPn(size_t& currentLength, char*& messageBuffer, size_t& currentIndex, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    NTSTATUS status = RtlStringCbVPrintfA(messageBuffer + currentIndex, currentLength - currentIndex, fmt, args);
+
+    if(status == STATUS_BUFFER_OVERFLOW)
+    {
+        currentLength <<= 1;
+        char* newBuffer = static_cast<char*>(HyAllocateZeroed(PagedPool, currentLength * sizeof(char), POOL_TAG_LOGGING));
+        (void) memcpy(newBuffer, messageBuffer, currentIndex);
+        HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+        messageBuffer = newBuffer;
+
+        va_start(args, fmt);
+
+        status = RtlStringCbVPrintfA(messageBuffer + currentIndex, currentLength - currentIndex, fmt, args);
+    }
+
+    va_end(args);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to format vidpn, 0x%08X\n", status);
+        HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+        messageBuffer = nullptr;
+        return status;
+    }
+
+    // Check only the new part of the string.
+    currentIndex += strlen(messageBuffer + currentIndex);
+
+    return STATUS_SUCCESS;
+}
+
+void HyMiniportDevice::LogVidPn(D3DKMDT_HVIDPN hVidPn) noexcept
+{
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface;
+    NTSTATUS status = m_DxgkInterface.DxgkCbQueryVidPnInterface(hVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to get vidpn interface.\n");
+        return;
+    }
+
+    const DXGK_MONITOR_INTERFACE* pMonitorInterface;
+    status = m_DxgkInterface.DxgkCbQueryMonitorInterface(m_DxgkInterface.DeviceHandle, DXGK_MONITOR_INTERFACE_VERSION_V1, &pMonitorInterface);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to get monitor interface, 0x%08X.\n", status);
+        pMonitorInterface = nullptr;
+        // return;
+    }
+
+    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+    const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+    status = pVidPnInterface->pfnGetTopology(hVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to get topology.\n");
+        return;
+    }
+
+    size_t currentLength = 4096;
+    char* messageBuffer = static_cast<char*>(HyAllocateZeroed(PagedPool, currentLength * sizeof(char), POOL_TAG_LOGGING));
+    size_t currentIndex = 0;
+
+    status = AppendLogVidPn(currentLength, messageBuffer, currentIndex, "V:0x%I64X::;", hVidPn);
+
+    if(!NT_SUCCESS(status))
+    {
+        return;
+    }
+
+    const D3DKMDT_VIDPN_PRESENT_PATH* pPresentPath;
+    status = pVidPnTopologyInterface->pfnAcquireFirstPathInfo(hVidPnTopology, &pPresentPath);
+
+    if(!NT_SUCCESS(status))
+    {
+        LOG_ERROR("Failed to acquire first path.\n");
+        HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+        return;
+    }
+
+    while(status != STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET && pPresentPath)
+    {
+        status = AppendLogVidPn(currentLength, messageBuffer, currentIndex, "S:0x%08X:0x%I64X:;", pPresentPath->VidPnSourceId, hVidPn);
+
+        if(!NT_SUCCESS(status))
+        {
+            return;
+        }
+
+        {
+            D3DKMDT_HVIDPNSOURCEMODESET hSourceModeSet;
+            const DXGK_VIDPNSOURCEMODESET_INTERFACE* pSourceModeSetInterface;
+            status = pVidPnInterface->pfnAcquireSourceModeSet(hVidPn, pPresentPath->VidPnSourceId, &hSourceModeSet, &pSourceModeSetInterface);
+
+            if(!NT_SUCCESS(status))
+            {
+                LOG_ERROR("Failed to acquire source mode set.\n");
+                HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                return;
+            }
+
+            const D3DKMDT_VIDPN_SOURCE_MODE* pSourceMode;
+            status = pSourceModeSetInterface->pfnAcquireFirstModeInfo(hSourceModeSet, &pSourceMode);
+
+            if(!NT_SUCCESS(status))
+            {
+                (void) pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hSourceModeSet);
+                hSourceModeSet = nullptr;
+
+                LOG_ERROR("Failed to acquire first source mode.\n");
+                HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                return;
+            }
+
+            while(status != STATUS_GRAPHICS_DATASET_IS_EMPTY && pSourceMode)
+            {
+                if(pSourceMode->Type == D3DKMDT_RMT_GRAPHICS)
+                {
+                    status = AppendLogVidPn(
+                        currentLength, 
+                        messageBuffer, 
+                        currentIndex, 
+                        "SM:0x%08X:0x%08X:%ux%u,%ux%u,%u,%u,%u,%u;", 
+                        pSourceMode->Id, 
+                        pPresentPath->VidPnSourceId,
+                        pSourceMode->Format.Graphics.PrimSurfSize.cx,
+                        pSourceMode->Format.Graphics.PrimSurfSize.cy,
+                        pSourceMode->Format.Graphics.VisibleRegionSize.cx,
+                        pSourceMode->Format.Graphics.VisibleRegionSize.cy,
+                        pSourceMode->Format.Graphics.Stride,
+                        pSourceMode->Format.Graphics.PixelFormat,
+                        pSourceMode->Format.Graphics.ColorBasis,
+                        pSourceMode->Format.Graphics.PixelValueAccessMode
+                    );
+                }
+                else
+                {
+                    status = AppendLogVidPn(currentLength, messageBuffer, currentIndex, "SM:0x%08X:0x%08X:unknown_type;", pSourceMode->Id, pPresentPath->VidPnSourceId);
+                }
+
+                if(!NT_SUCCESS(status))
+                {
+                    return;
+                }
+
+                const D3DKMDT_VIDPN_SOURCE_MODE* pPrevSourceMode = pSourceMode;
+                status = pSourceModeSetInterface->pfnAcquireNextModeInfo(hSourceModeSet, pPrevSourceMode, &pSourceMode);
+                (void) pSourceModeSetInterface->pfnReleaseModeInfo(hSourceModeSet, pPrevSourceMode);
+
+                if(!NT_SUCCESS(status))
+                {
+                    (void) pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hSourceModeSet);
+                    hSourceModeSet = nullptr;
+
+                    LOG_ERROR("Failed to acquire next source mode.\n");
+                    HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                    return;
+                }
+            }
+
+
+            (void) pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hSourceModeSet);
+            hSourceModeSet = nullptr;
+        }
+
+        status = AppendLogVidPn(
+            currentLength, 
+            messageBuffer, 
+            currentIndex, 
+            "T:0x%08X:0x%08X:%u,%u,0x%08X,%u,0x%08X,%ux%u,%ux%u,%u,%u.%u.%u.%u,%u,%u,%u,0x%08X,%u,0x%I64X;", 
+            pPresentPath->VidPnTargetId, 
+            pPresentPath->VidPnSourceId,
+            pPresentPath->ImportanceOrdinal,
+            pPresentPath->ContentTransformation.Scaling,
+            pPresentPath->ContentTransformation.ScalingSupport,
+            pPresentPath->ContentTransformation.Rotation,
+            pPresentPath->ContentTransformation.RotationSupport,
+            pPresentPath->VisibleFromActiveTLOffset.cx,
+            pPresentPath->VisibleFromActiveTLOffset.cy,
+            pPresentPath->VisibleFromActiveBROffset.cx,
+            pPresentPath->VisibleFromActiveBROffset.cy,
+            pPresentPath->VidPnTargetColorBasis,
+            pPresentPath->VidPnTargetColorCoeffDynamicRanges.FirstChannel,
+            pPresentPath->VidPnTargetColorCoeffDynamicRanges.SecondChannel,
+            pPresentPath->VidPnTargetColorCoeffDynamicRanges.ThirdChannel,
+            pPresentPath->VidPnTargetColorCoeffDynamicRanges.FourthChannel,
+            pPresentPath->Content,
+            pPresentPath->CopyProtection.CopyProtectionType,
+            pPresentPath->CopyProtection.APSTriggerBits,
+            pPresentPath->CopyProtection.CopyProtectionSupport,
+            pPresentPath->GammaRamp.Type,
+            pPresentPath->GammaRamp.DataSize
+        );
+
+        if(!NT_SUCCESS(status))
+        {
+            return;
+        }
+
+        {
+            D3DKMDT_HVIDPNTARGETMODESET hTargetModeSet;
+            const DXGK_VIDPNTARGETMODESET_INTERFACE* pTargetModeSetInterface;
+            status = pVidPnInterface->pfnAcquireTargetModeSet(hVidPn, pPresentPath->VidPnTargetId, &hTargetModeSet, &pTargetModeSetInterface);
+
+            if(!NT_SUCCESS(status))
+            {
+                LOG_ERROR("Failed to acquire target mode set.\n");
+                HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                return;
+            }
+
+            const D3DKMDT_VIDPN_TARGET_MODE* pTargetMode;
+            status = pTargetModeSetInterface->pfnAcquireFirstModeInfo(hTargetModeSet, &pTargetMode);
+
+            if(!NT_SUCCESS(status))
+            {
+                (void) pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hTargetModeSet);
+                hTargetModeSet = nullptr;
+
+                LOG_ERROR("Failed to acquire first target mode.\n");
+                HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                return;
+            }
+
+            while(status != STATUS_GRAPHICS_DATASET_IS_EMPTY && pTargetMode)
+            {
+                status = AppendLogVidPn(
+                    currentLength, 
+                    messageBuffer, 
+                    currentIndex, 
+                    "TM:0x%08X:0x%08X:%u,%ux%u,%ux%u,%u/%u,%u/%u,%llu,%u,%u;", 
+                    pTargetMode->Id, 
+                    pPresentPath->VidPnTargetId,
+                    pTargetMode->VideoSignalInfo.VideoStandard,
+                    pTargetMode->VideoSignalInfo.TotalSize.cx,
+                    pTargetMode->VideoSignalInfo.TotalSize.cy,
+                    pTargetMode->VideoSignalInfo.ActiveSize.cx,
+                    pTargetMode->VideoSignalInfo.ActiveSize.cy,
+                    pTargetMode->VideoSignalInfo.VSyncFreq.Numerator,
+                    pTargetMode->VideoSignalInfo.VSyncFreq.Denominator,
+                    pTargetMode->VideoSignalInfo.HSyncFreq.Numerator,
+                    pTargetMode->VideoSignalInfo.HSyncFreq.Denominator,
+                    pTargetMode->VideoSignalInfo.PixelRate,
+                    pTargetMode->VideoSignalInfo.ScanLineOrdering,
+                    pTargetMode->Preference
+                );
+
+                if(!NT_SUCCESS(status))
+                {
+                    return;
+                }
+
+                const D3DKMDT_VIDPN_TARGET_MODE* pPrevTargetMode = pTargetMode;
+                status = pTargetModeSetInterface->pfnAcquireNextModeInfo(hTargetModeSet, pPrevTargetMode, &pTargetMode);
+                (void) pTargetModeSetInterface->pfnReleaseModeInfo(hTargetModeSet, pPrevTargetMode);
+
+                if(!NT_SUCCESS(status))
+                {
+                    (void) pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hTargetModeSet);
+                    hTargetModeSet = nullptr;
+
+                    LOG_ERROR("Failed to acquire next target mode.\n");
+                    HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                    return;
+                }
+            }
+
+            (void) pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hTargetModeSet);
+            hTargetModeSet = nullptr;
+        }
+
+        if(pMonitorInterface)
+        {
+            D3DKMDT_HMONITORSOURCEMODESET hMonitorSourceModeSet;
+            const DXGK_MONITORSOURCEMODESET_INTERFACE* pMonitorSourceModeSetInterface;
+            status = pMonitorInterface->pfnAcquireMonitorSourceModeSet(m_DxgkInterface.DeviceHandle, pPresentPath->VidPnTargetId, &hMonitorSourceModeSet, &pMonitorSourceModeSetInterface);
+
+            if(!NT_SUCCESS(status))
+            {
+                LOG_ERROR("Failed to acquire monitor mode set.\n");
+                HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                return;
+            }
+
+            const D3DKMDT_MONITOR_SOURCE_MODE* pMonitorSourceMode;
+            status = pMonitorSourceModeSetInterface->pfnAcquireFirstModeInfo(hMonitorSourceModeSet, &pMonitorSourceMode);
+
+            if(!NT_SUCCESS(status))
+            {
+                (void) pMonitorInterface->pfnReleaseMonitorSourceModeSet(m_DxgkInterface.DeviceHandle, hMonitorSourceModeSet);
+                hMonitorSourceModeSet = nullptr;
+
+                LOG_ERROR("Failed to acquire first monitor source mode.\n");
+                HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                return;
+            }
+
+            while(status != STATUS_GRAPHICS_DATASET_IS_EMPTY && pMonitorSourceMode)
+            {
+                status = AppendLogVidPn(
+                    currentLength,
+                    messageBuffer,
+                    currentIndex,
+                    "MM:0x%08X:0x%08X:%u,%ux%u,%ux%u,%u/%u,%u/%u,%llu,%u,%u,%u.%u.%u.%u,%u,%u;",
+                    pMonitorSourceMode->Id,
+                    pPresentPath->VidPnTargetId,
+                    pMonitorSourceMode->VideoSignalInfo.VideoStandard,
+                    pMonitorSourceMode->VideoSignalInfo.TotalSize.cx,
+                    pMonitorSourceMode->VideoSignalInfo.TotalSize.cy,
+                    pMonitorSourceMode->VideoSignalInfo.ActiveSize.cx,
+                    pMonitorSourceMode->VideoSignalInfo.ActiveSize.cy,
+                    pMonitorSourceMode->VideoSignalInfo.VSyncFreq.Numerator,
+                    pMonitorSourceMode->VideoSignalInfo.VSyncFreq.Denominator,
+                    pMonitorSourceMode->VideoSignalInfo.HSyncFreq.Numerator,
+                    pMonitorSourceMode->VideoSignalInfo.HSyncFreq.Denominator,
+                    pMonitorSourceMode->VideoSignalInfo.PixelRate,
+                    pMonitorSourceMode->VideoSignalInfo.ScanLineOrdering,
+                    pMonitorSourceMode->ColorBasis,
+                    pMonitorSourceMode->ColorCoeffDynamicRanges.FirstChannel,
+                    pMonitorSourceMode->ColorCoeffDynamicRanges.SecondChannel,
+                    pMonitorSourceMode->ColorCoeffDynamicRanges.ThirdChannel,
+                    pMonitorSourceMode->ColorCoeffDynamicRanges.FourthChannel,
+                    pMonitorSourceMode->Origin,
+                    pMonitorSourceMode->Preference
+                );
+
+                if(!NT_SUCCESS(status))
+                {
+                    return;
+                }
+
+                const D3DKMDT_MONITOR_SOURCE_MODE* pPrevMonitorSourceMode = pMonitorSourceMode;
+                status = pMonitorSourceModeSetInterface->pfnAcquireNextModeInfo(hMonitorSourceModeSet, pPrevMonitorSourceMode, &pMonitorSourceMode);
+                (void) pMonitorSourceModeSetInterface->pfnReleaseModeInfo(hMonitorSourceModeSet, pPrevMonitorSourceMode);
+
+                if(!NT_SUCCESS(status))
+                {
+                    (void) pMonitorInterface->pfnReleaseMonitorSourceModeSet(m_DxgkInterface.DeviceHandle, hMonitorSourceModeSet);
+                    hMonitorSourceModeSet = nullptr;
+
+                    LOG_ERROR("Failed to acquire next monitor source mode.\n");
+                    HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+                    return;
+                }
+            }
+
+            (void) pMonitorInterface->pfnReleaseMonitorSourceModeSet(m_DxgkInterface.DeviceHandle, hMonitorSourceModeSet);
+            hMonitorSourceModeSet = nullptr;
+        }
+
+        const D3DKMDT_VIDPN_PRESENT_PATH* pPrevPresentPath = pPresentPath;
+        status = pVidPnTopologyInterface->pfnAcquireNextPathInfo(hVidPnTopology, pPrevPresentPath, &pPresentPath);
+        (void) pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pPrevPresentPath);
+
+        if(!NT_SUCCESS(status))
+        {
+            LOG_ERROR("Failed to acquire next path.\n");
+            HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+            return;
+        }
+    }
+
+    LOG_DEBUG("VidPn: %s\n", messageBuffer);
+    // DebugLog(messageBuffer, currentIndex, false);
+    // DebugLog("\n", 1, false);
+
+    HyDeallocate(messageBuffer, POOL_TAG_LOGGING);
+}
+
 // Largely sourced from https://github.com/OpenXT/xc-windows/blob/master/xengfx/wddm/miniport/vidpn.c#L133
 static bool IsSupportedVpnPnPath(const D3DKMDT_VIDPN_PRESENT_PATH* const pVidPnPresentPath) noexcept
 {
@@ -1315,6 +1693,11 @@ NTSTATUS HyMiniportDevice::IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsS
     CHECK_IRQL(PASSIVE_LEVEL);
 
     constexpr bool VerboseLogging = true;
+
+    if constexpr(VerboseLogging)
+    {
+        LogVidPn(pIsSupportedVidPn->hDesiredVidPn);
+    }
 
     if(pIsSupportedVidPn->hDesiredVidPn == nullptr)
     {
@@ -1549,6 +1932,11 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
     CHECK_IRQL(PASSIVE_LEVEL);
 
     constexpr bool VerboseLogging = true;
+
+    if constexpr(VerboseLogging)
+    {
+        LogVidPn(pEnumCofuncModality->hConstrainingVidPn);
+    }
 
     const DXGK_VIDPN_INTERFACE* pVidPnInterface;
     // Get the VidPn Interface so we can get the 'Source Mode Set', 'Target Mode Set' and 'VidPn Topology' interfaces.
@@ -1979,6 +2367,11 @@ NTSTATUS HyMiniportDevice::EnumVidPnCofuncModality(IN_CONST_PDXGKARG_ENUMVIDPNCO
         {
             LOG_WARN("HyMiniportDevice::EnumVidPnCofuncModality: TEMP Status was 0x%08X when trying to clean up hVidPnTargetModeSet.\n", tempStatus);
         }
+    }
+
+    if constexpr(VerboseLogging)
+    {
+        LogVidPn(pEnumCofuncModality->hConstrainingVidPn);
     }
 
     return status;
@@ -2803,7 +3196,7 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
         pVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
         pVidPnSourceModeInfo->Format.Graphics.Stride = m_CurrentDisplayMode[SourceId].DisplayInfo.Pitch;
         pVidPnSourceModeInfo->Format.Graphics.PixelFormat = gPixelFormats[pelFmtIndex];
-        pVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SCRGB;
+        pVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SRGB;
         pVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_DIRECT;
 
         // Add the mode to the source mode set
@@ -2858,7 +3251,7 @@ NTSTATUS HyMiniportDevice::AddSingleSourceMode(const DXGK_VIDPNSOURCEMODESET_INT
             pVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
             pVidPnSourceModeInfo->Format.Graphics.Stride = 4 * mVbeEstablishedEdidTiming[modeIndex].Width;
             pVidPnSourceModeInfo->Format.Graphics.PixelFormat = gPixelFormats[pelFmtIndex];
-            pVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SCRGB;
+            pVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SRGB;
             pVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_DIRECT;
 
             // Add the mode to the source mode set
@@ -2895,16 +3288,18 @@ NTSTATUS HyMiniportDevice::AddSingleTargetMode(const DXGK_VIDPNTARGETMODESET_INT
         return status;
     }
 
-    pVidPnTargetModeInfo->VideoSignalInfo.VideoStandard = D3DKMDT_VSS_OTHER;
+    pVidPnTargetModeInfo->VideoSignalInfo.VideoStandard = D3DKMDT_VSS_VESA_GTF;
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx = m_CurrentDisplayMode[SourceId].DisplayInfo.Width;
     pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy = m_CurrentDisplayMode[SourceId].DisplayInfo.Height;
     pVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
+    pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx = 1344;
+    pVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy = 795;
 #if HY_KMDOD_ENABLE_VSYNC_INTERRUPTS
     pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60;
     pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1;
-    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = 100000;
-    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
-    pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 4000000;
+    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = 476999999;
+    pVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 10000;
+    pVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 64108800;
 #else
     pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = D3DKMDT_FREQUENCY_NOTSPECIFIED;
     pVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = D3DKMDT_FREQUENCY_NOTSPECIFIED;

@@ -10,10 +10,13 @@ extern "C" {
 
 #pragma warning(push)
 #pragma warning(disable: 4505)
+#pragma code_seg(push)
+#pragma code_seg("_KTEXT")
 static void __declspec(noinline) HyGetCallAddress(void** address)
 {
     *address = _ReturnAddress();
 }
+#pragma code_seg(pop)
 #pragma warning(pop)
 
 void HyLog(
@@ -41,10 +44,13 @@ const char* GetFileDeviceString(DEVICE_TYPE deviceType);
         va_end(args);                                                  \
     }
 
+#pragma code_seg(push)
+#pragma code_seg("_KTEXT")
 DECL_LOG(Debug, DPFLTR_INFO_LEVEL);
 DECL_LOG(Info, DPFLTR_INFO_LEVEL);
 DECL_LOG(Warn, DPFLTR_WARNING_LEVEL);
 DECL_LOG(Error, DPFLTR_ERROR_LEVEL);
+#pragma code_seg(pop)
 
 #define internal_LOG(LEVEL, FUNCTION, FILE, LINE, FMT, ...) \
     do {                                                    \

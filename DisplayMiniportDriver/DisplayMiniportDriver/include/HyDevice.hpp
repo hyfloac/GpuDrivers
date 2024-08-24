@@ -227,6 +227,8 @@ private:
 
     NTSTATUS AreVidPnPathFieldsValid(const D3DKMDT_VIDPN_PRESENT_PATH* pPath) const noexcept;
     NTSTATUS AreVidPnSourceModeFieldsValid(const D3DKMDT_VIDPN_SOURCE_MODE* pSourceMode) const noexcept;
+
+    void LogVidPn(D3DKMDT_HVIDPN hVidPn) noexcept;
 private:
     static BOOLEAN SynchronizeVidSchNotifyInterrupt(PVOID Params) noexcept;
 private:
