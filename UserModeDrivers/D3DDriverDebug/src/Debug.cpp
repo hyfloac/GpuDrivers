@@ -74,7 +74,7 @@ static void TestLoadDriver()
     }
 
     char keyNameBuffer[256];
-    DWORD keyNameSize;
+    DWORD keyNameSize = sizeof(keyNameBuffer);
 
     status = RegEnumKeyExA(
         pciKey,
@@ -318,6 +318,8 @@ static HMODULE GetDriverHandle()
 
 extern "C" int EnableD3DDebugLogging(const int enable)
 {
+    TestLoadDriver();
+
     HMODULE driver = GetDriverHandle();
 
     if(!driver)

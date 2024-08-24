@@ -164,10 +164,14 @@ int RunD3D9(const bool enableDebug) noexcept
     return 0;
 }
 
+static LRESULT CALLBACK StaticWindowProc(HWND hWnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam) noexcept;
+
 int RunD3D10(const bool enableDebug) noexcept
 {
     OutputDebugStringA("Starting D3D10 Tester.\n");
     ConPrinter::PrintLn(u8"Starting D3D10 Tester.");
+
+    EnableD3DDebugLogging(1);
 
     CComPtr<IDXGIFactory1> dxgiFactory;
 
@@ -220,11 +224,137 @@ int RunD3D10(const bool enableDebug) noexcept
         return 2;
     }
 
-    EnableD3DDebugLogging(1);
+    // EnableD3DDebugLogging(1);
 
     adapter.Release();
 
     ConPrinter::PrintLn(u8"Device successfully created.");
 
+
+    WNDCLASSEXW windowClass { };
+
+    windowClass.cbSize = sizeof(WNDCLASSEXW);
+    windowClass.style = CS_DBLCLKS;
+    windowClass.lpfnWndProc = StaticWindowProc;
+    windowClass.cbClsExtra = 0;
+    windowClass.cbWndExtra = 0;
+    windowClass.hInstance = GetModuleHandleW(nullptr);
+    windowClass.hIcon = nullptr;
+    windowClass.hCursor = nullptr;
+    windowClass.hbrBackground = nullptr;
+    windowClass.lpszMenuName = nullptr;
+    windowClass.lpszClassName = L"TauWndCls";
+    windowClass.hIconSm = nullptr;
+
+    RegisterClassExW(&windowClass);
+
+    HWND hWnd = CreateWindowExW(
+        0,
+        windowClass.lpszClassName,
+        L"D3D10 Test",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        800,
+        600,
+        nullptr,
+        nullptr,
+        windowClass.hInstance,
+        nullptr
+    );
+
+    (void) ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+
+    DXGI_SWAP_CHAIN_DESC swapChainDesc {};
+    swapChainDesc.BufferDesc.Width = 800;
+    swapChainDesc.BufferDesc.Height = 600;
+    swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+    swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+    swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Quality = 0;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = 2;
+    swapChainDesc.OutputWindow = hWnd;
+    swapChainDesc.Windowed = true;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapChainDesc.Flags = 0;
+
+    CComPtr<IDXGISwapChain> swapChain;
+    status = dxgiFactory->CreateSwapChain(device, &swapChainDesc, &swapChain);
+
+    if(!SUCCEEDED(status))
+    {
+        ConPrinter::PrintLn(u8"Failed to create Swap Chain: 0x{XP0}", status);
+        LogError(status);
+
+        return 3;
+    }
+
+    CComPtr<ID3D10RenderTargetView> backBufferRtv;
+
+    {
+        CComPtr<ID3D10Texture2D> backBuffer;
+
+        status = swapChain->GetBuffer(0, __uuidof(ID3D10Texture2D), reinterpret_cast<void**>(&backBuffer));
+
+        if(!SUCCEEDED(status))
+        {
+            ConPrinter::PrintLn(u8"Failed to get back buffer: 0x{XP0}", status);
+            LogError(status);
+
+            return 4;
+        }
+
+        status = device->CreateRenderTargetView(backBuffer, nullptr, &backBufferRtv);
+
+        if(!SUCCEEDED(status))
+        {
+            ConPrinter::PrintLn(u8"Failed to create render target view for back buffer: 0x{XP0}", status);
+            LogError(status);
+
+            return 5;
+        }
+
+        device->OMSetRenderTargets(1, &(backBufferRtv.p), nullptr);
+    }
+
     return 0;
+}
+
+static LRESULT CALLBACK StaticWindowProc(HWND hWnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam) noexcept
+{
+    if(uMsg == WM_NCCREATE)
+    {
+        const CREATESTRUCTW* const createStruct = reinterpret_cast<CREATESTRUCTW*>(lParam);
+
+        // if(!createStruct->lpCreateParams)
+        // {
+        //     return FALSE;
+        // }
+
+        (void) SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(createStruct->lpCreateParams));
+    }
+
+    switch(uMsg)
+    {
+        case WM_CREATE:
+        case WM_ACTIVATE:
+        case WM_SIZE:
+        case WM_MOVE:
+            break;
+        default: return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+    }
+    return 0;
+
+    // Window* const windowPtr = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+
+    // if(!windowPtr)
+    // {
+    //     return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+    // }
+
+    // return windowPtr->WindowProc(hWnd, uMsg, wParam, lParam);
 }

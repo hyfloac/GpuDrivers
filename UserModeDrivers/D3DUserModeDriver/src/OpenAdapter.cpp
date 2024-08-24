@@ -15,6 +15,15 @@ bool g_DebugEnable = false;
 extern "C" int __declspec(dllexport) EnableD3DDebugLogging(const int enable)
 {
     g_DebugEnable = enable ? true : false;
+
+    if(g_DebugEnable)
+    {
+        // As a DLL create a Console window.
+        Console::Create();
+        // Initialize the Console window to the correct settings.
+        Console::Init();
+    }
+
     return 0;
 }
 
