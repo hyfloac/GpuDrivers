@@ -3,18 +3,31 @@
 #include <ConPrinter.hpp>
 #include <new>
 
+#include "Logging.hpp"
+
+#include "d3d10/device/SetBlendState10.hpp"
+
+#include "d3d10/device/CalcPrivateBlendStateSize10.hpp"
+#include "d3d10/device/CreateBlendState10.hpp"
+
 #include "d3d10/device/DestroyDevice10.hpp"
 
 GsAdapter10::GsAdapter10(
-    const D3D10DDI_HRTADAPTER driverHandle, 
+    const D3D10DDI_HRTADAPTER runtimeHandle, 
     const D3DDDI_ADAPTERCALLBACKS& adapterCallbacks
 ) noexcept
-    : m_DriverHandle(driverHandle)
+    : m_RuntimeHandle(runtimeHandle)
     , m_AdapterCallbacks(adapterCallbacks)
 { }
 
 SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZE& calcPrivateDeviceSize) noexcept
 {
+#if ENABLE_DEBUG_LOGGING
+    if(g_DebugEnable)
+    {
+        TRACE_ENTRYPOINT();
+    }
+#endif
     (void) calcPrivateDeviceSize;
 
     return sizeof(GsDevice10);
@@ -54,15 +67,23 @@ SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZ
 
 HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexcept
 {
+#if ENABLE_DEBUG_LOGGING
+    if(g_DebugEnable)
+    {
+        TRACE_ENTRYPOINT();
+    }
+#endif
+
     GsDevice10* device;
     //   It seems like in D3D10 creation of the device was changed to have
-    // the driver allocate storage (using pfnCalcPrivateDeviceSize), and
-    // then provide that buffer to the UMD.
+    // the D3D10 runtime allocate storage (using pfnCalcPrivateDeviceSize),
+    // and then provide that buffer to the UMD.
     if(!createDevice.hDrvDevice.pDrvPrivate)
     {
         device = new(::std::nothrow) GsDevice10(
             createDevice.hRTDevice,     // driverHandle
             *createDevice.pKTCallbacks, // deviceCallbacks
+            createDevice.hRTCoreLayer,  // runtimeCoreLayerHandle
             *createDevice.pUMCallbacks  // umCallbacks
         );
 
@@ -70,9 +91,10 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     }
     else
     {
-        device = new(createDevice.hDrvDevice.pDrvPrivate) GsDevice10(
+        device = ::new(createDevice.hDrvDevice.pDrvPrivate) GsDevice10(
             createDevice.hRTDevice,     // driverHandle
             *createDevice.pKTCallbacks, // deviceCallbacks
+            createDevice.hRTCoreLayer,  // runtimeCoreLayerHandle
             *createDevice.pUMCallbacks  // umCallbacks
         );
     }
@@ -116,7 +138,8 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetRenderTargets);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnShaderResourceViewReadAfterWriteHazard);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnResourceReadAfterWriteHazard);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetBlendState);
+    // GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetBlendState);
+    createDevice.pDeviceFuncs->pfnSetBlendState = GsSetBlendState10;
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetDepthStencilState);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetRasterizerState);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnQueryEnd);
@@ -159,8 +182,10 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateElementLayoutSize);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateElementLayout);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyElementLayout);
-    GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateBlendStateSize);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateBlendState);
+    // GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateBlendStateSize);
+    createDevice.pDeviceFuncs->pfnCalcPrivateBlendStateSize = GsCalcPrivateBlendStateSize10;
+    // GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateBlendState);
+    createDevice.pDeviceFuncs->pfnCreateBlendState = GsCreateBlendState10;
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyBlendState);
     GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateDepthStencilStateSize);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateDepthStencilState);

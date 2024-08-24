@@ -9,3 +9,9 @@ extern "C" {
 #include <d3dhal.h>
 #include <d3dhalex.h>
 }
+
+extern "C++" {
+
+extern bool g_DebugEnable;
+
+}

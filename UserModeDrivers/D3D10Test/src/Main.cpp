@@ -18,6 +18,7 @@ void PrintHelp(int argCount, char* args[]) noexcept
     ConPrinter::PrintLn(u8"  -h: Print this message.");
     ConPrinter::PrintLn(u8"  --debug: Enables debug mode for D3D.");
     ConPrinter::PrintLn(u8"  --d3d9: Run in D3D9 mode.");
+    ConPrinter::PrintLn(u8"  --d3d10: Run in D3D10 mode.");
 }
 
 // From https://learn.microsoft.com/en-us/windows/win32/seccrypto/retrieving-error-messages
@@ -98,6 +99,10 @@ int main(int argCount, char* args[])
             {
                 d3dVersion = 9;
             }
+            else if(strcmp(args[i], "--d3d10") == 0)
+            {
+                d3dVersion = 10;
+            }
         }
     }
 
@@ -124,11 +129,49 @@ int main(int argCount, char* args[])
     return 0;
 }
 
+static LRESULT CALLBACK StaticWindowProc(HWND hWnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam) noexcept;
+
+static HWND StartWindow(const int width, const int height) noexcept
+{
+    WNDCLASSEXW windowClass { };
+
+    windowClass.cbSize = sizeof(WNDCLASSEXW);
+    windowClass.style = CS_DBLCLKS;
+    windowClass.lpfnWndProc = StaticWindowProc;
+    windowClass.cbClsExtra = 0;
+    windowClass.cbWndExtra = 0;
+    windowClass.hInstance = GetModuleHandleW(nullptr);
+    windowClass.hIcon = nullptr;
+    windowClass.hCursor = nullptr;
+    windowClass.hbrBackground = nullptr;
+    windowClass.lpszMenuName = nullptr;
+    windowClass.lpszClassName = L"GsWndCls";
+    windowClass.hIconSm = nullptr;
+
+    RegisterClassExW(&windowClass);
+
+    HWND hWnd = CreateWindowExW(
+        0,
+        windowClass.lpszClassName,
+        L"D3D10 Test",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        800,
+        600,
+        nullptr,
+        nullptr,
+        windowClass.hInstance,
+        nullptr
+    );
+
+    return hWnd;
+}
+
 int RunD3D9(const bool enableDebug) noexcept
 {
     OutputDebugStringA("Starting D3D9 Tester.\n");
     ConPrinter::PrintLn(u8"Starting D3D9 Tester.");
-
 
     CComPtr<IDirect3D9> direct3D9 = Direct3DCreate9(D3D_SDK_VERSION);
 
@@ -164,12 +207,15 @@ int RunD3D9(const bool enableDebug) noexcept
     return 0;
 }
 
-static LRESULT CALLBACK StaticWindowProc(HWND hWnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam) noexcept;
-
 int RunD3D10(const bool enableDebug) noexcept
 {
     OutputDebugStringA("Starting D3D10 Tester.\n");
     ConPrinter::PrintLn(u8"Starting D3D10 Tester.");
+
+    constexpr int Width = 800;
+    constexpr int Height = 600;
+
+    HWND hWnd = StartWindow(Width, Height);
 
     EnableD3DDebugLogging(1);
 
@@ -188,7 +234,7 @@ int RunD3D10(const bool enableDebug) noexcept
     for(UINT i = 0; dxgiFactory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i)
     {
         DXGI_ADAPTER_DESC1 desc;
-        adapter->GetDesc1(&desc);
+        (void) adapter->GetDesc1(&desc);
 
         ConPrinter::PrintLn(u8"Desc: {}, Vendor: 0x{X}, Device: 0x{X}", desc.Description, desc.VendorId, desc.DeviceId);
 
@@ -217,57 +263,20 @@ int RunD3D10(const bool enableDebug) noexcept
         ConPrinter::PrintLn(u8"Failed to create ID3D10Device: 0x{XP0}", status);
         LogError(status);
 
-        // TestLoadDriver();
-
-        Sleep(10000);
-
         return 2;
     }
+
+    ConPrinter::PrintLn(u8"Device successfully created.");
 
     // EnableD3DDebugLogging(1);
 
     adapter.Release();
 
-    ConPrinter::PrintLn(u8"Device successfully created.");
-
-
-    WNDCLASSEXW windowClass { };
-
-    windowClass.cbSize = sizeof(WNDCLASSEXW);
-    windowClass.style = CS_DBLCLKS;
-    windowClass.lpfnWndProc = StaticWindowProc;
-    windowClass.cbClsExtra = 0;
-    windowClass.cbWndExtra = 0;
-    windowClass.hInstance = GetModuleHandleW(nullptr);
-    windowClass.hIcon = nullptr;
-    windowClass.hCursor = nullptr;
-    windowClass.hbrBackground = nullptr;
-    windowClass.lpszMenuName = nullptr;
-    windowClass.lpszClassName = L"TauWndCls";
-    windowClass.hIconSm = nullptr;
-
-    RegisterClassExW(&windowClass);
-
-    HWND hWnd = CreateWindowExW(
-        0,
-        windowClass.lpszClassName,
-        L"D3D10 Test",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        800,
-        600,
-        nullptr,
-        nullptr,
-        windowClass.hInstance,
-        nullptr
-    );
-
-    (void) ShowWindow(hWnd, SW_SHOWNOACTIVATE);
+    // (void) ShowWindow(hWnd, SW_SHOWNOACTIVATE);
 
     DXGI_SWAP_CHAIN_DESC swapChainDesc {};
-    swapChainDesc.BufferDesc.Width = 800;
-    swapChainDesc.BufferDesc.Height = 600;
+    swapChainDesc.BufferDesc.Width = Width;
+    swapChainDesc.BufferDesc.Height = Height;
     swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
     swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -298,7 +307,7 @@ int RunD3D10(const bool enableDebug) noexcept
     {
         CComPtr<ID3D10Texture2D> backBuffer;
 
-        status = swapChain->GetBuffer(0, __uuidof(ID3D10Texture2D), reinterpret_cast<void**>(&backBuffer));
+        status = swapChain->GetBuffer(0, IID_ID3D10Texture2D, reinterpret_cast<void**>(&backBuffer));
 
         if(!SUCCEEDED(status))
         {
@@ -319,6 +328,11 @@ int RunD3D10(const bool enableDebug) noexcept
         }
 
         device->OMSetRenderTargets(1, &(backBufferRtv.p), nullptr);
+    }
+
+    {
+        constexpr float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        device->OMSetBlendState(nullptr, blendFactor, 0);
     }
 
     return 0;

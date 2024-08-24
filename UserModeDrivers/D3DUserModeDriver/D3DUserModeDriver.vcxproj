@@ -167,7 +167,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -198,7 +198,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -229,7 +229,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -260,7 +260,7 @@
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>TauUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -271,8 +271,12 @@
     <ClCompile Include="src\d3d10\CalcPrivateDeviceSize10.cpp" />
     <ClCompile Include="src\d3d10\CloseAdapter10.cpp" />
     <ClCompile Include="src\d3d10\CreateDevice10.cpp" />
+    <ClCompile Include="src\d3d10\device\CalcPrivateBlendStateSize10.cpp" />
+    <ClCompile Include="src\d3d10\device\CreateBlendState10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyDevice10.cpp" />
+    <ClCompile Include="src\d3d10\device\SetBlendState10.cpp" />
     <ClCompile Include="src\d3d10\GsAdapter10.cpp" />
+    <ClCompile Include="src\d3d10\GsBlendState10.cpp" />
     <ClCompile Include="src\d3d10\GsDevice10.cpp" />
     <ClCompile Include="src\d3d9\CloseAdapter9.cpp" />
     <ClCompile Include="src\d3d9\CreateDevice9.cpp" />
@@ -289,14 +293,19 @@
     <ClInclude Include="include\d3d10\CalcPrivateDeviceSize10.hpp" />
     <ClInclude Include="include\d3d10\CloseAdapter10.hpp" />
     <ClInclude Include="include\d3d10\CreateDevice10.hpp" />
+    <ClInclude Include="include\d3d10\device\CalcPrivateBlendStateSize10.hpp" />
+    <ClInclude Include="include\d3d10\device\CreateBlendState10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyDevice10.hpp" />
+    <ClInclude Include="include\d3d10\device\SetBlendState10.hpp" />
     <ClInclude Include="include\d3d10\GsAdapter10.hpp" />
+    <ClInclude Include="include\d3d10\GsBlendState10.hpp" />
     <ClInclude Include="include\d3d9\CloseAdapter9.hpp" />
     <ClInclude Include="include\d3d9\CreateDevice9.hpp" />
     <ClInclude Include="include\d3d9\GetCaps9.hpp" />
     <ClInclude Include="include\d3d9\GsAdapter9.hpp" />
     <ClInclude Include="include\d3d9\GsDevice9.hpp" />
     <ClInclude Include="include\d3d9\device\SetRenderState9.hpp" />
+    <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\WindowsNtPolyfill.hpp" />
     <ClInclude Include="include\d3d10\GsDevice10.hpp" />
   </ItemGroup>
