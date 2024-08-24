@@ -3,20 +3,18 @@
 #include "d3d10/GsAdapter10.hpp"
 #include "Logging.hpp"
 
-HRESULT GsCloseAdapterD3D10(D3D10DDI_HADAPTER hAdapter)
+HRESULT GsCloseAdapterD3D10(
+    const D3D10DDI_HADAPTER hAdapter
+)
 {
-#if ENABLE_DEBUG_LOGGING
-    if(g_DebugEnable)
-    {
-        TRACE_ENTRYPOINT_ARG(
-            u8"hAdapter: 0x{XP0}",
-            hAdapter.pDrvPrivate
-        );
-    }
-#endif
+    TRACE_ENTRYPOINT_ARG(
+        u8"hAdapter: 0x{XP0}",
+        hAdapter.pDrvPrivate
+    );
 
     if(!hAdapter.pDrvPrivate)
     {
+        LOG_ERROR(u8"hAdapter was not set.");
         return E_INVALIDARG;
     }
 

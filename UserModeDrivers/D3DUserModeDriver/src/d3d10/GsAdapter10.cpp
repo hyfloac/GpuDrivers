@@ -6,9 +6,14 @@
 #include "Logging.hpp"
 
 #include "d3d10/device/SetBlendState10.hpp"
+#include "d3d10/device/SetDepthStencilState10.hpp"
 
 #include "d3d10/device/CalcPrivateBlendStateSize10.hpp"
 #include "d3d10/device/CreateBlendState10.hpp"
+#include "d3d10/device/DestroyBlendState10.hpp"
+#include "d3d10/device/CalcPrivateDepthStencilStateSize10.hpp"
+#include "d3d10/device/CreateDepthStencilState10.hpp"
+#include "d3d10/device/DestroyDepthStencilState10.hpp"
 
 #include "d3d10/device/DestroyDevice10.hpp"
 
@@ -22,13 +27,9 @@ GsAdapter10::GsAdapter10(
 
 SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZE& calcPrivateDeviceSize) noexcept
 {
-#if ENABLE_DEBUG_LOGGING
-    if(g_DebugEnable)
-    {
-        TRACE_ENTRYPOINT();
-    }
-#endif
-    (void) calcPrivateDeviceSize;
+    TRACE_ENTRYPOINT();
+
+    UNUSED(calcPrivateDeviceSize);
 
     return sizeof(GsDevice10);
 }
@@ -38,7 +39,10 @@ SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZ
         using fun_t = void(*)(); \
         fun_t fun = []() -> void \
         { \
-            ConPrinter::PrintLn("{}", #PTR); \
+            if(g_DebugEnable) \
+            { \
+                ConPrinter::PrintLn("{}", #PTR); \
+            } \
         }; \
         (PTR) = reinterpret_cast<decltype(PTR)>(fun); \
     }
@@ -48,7 +52,10 @@ SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZ
         using fun_t = BOOL(*)(); \
         fun_t fun = []() -> BOOL \
         { \
-            ConPrinter::PrintLn("{}", #PTR); \
+            if(g_DebugEnable) \
+            { \
+                ConPrinter::PrintLn("{}", #PTR); \
+            } \
             return FALSE; \
         }; \
         (PTR) = reinterpret_cast<decltype(PTR)>(fun); \
@@ -59,7 +66,10 @@ SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZ
         using fun_t = SIZE_T(*)(); \
         fun_t fun = []() -> SIZE_T \
         { \
-            ConPrinter::PrintLn("{}", #PTR); \
+            if(g_DebugEnable) \
+            { \
+                ConPrinter::PrintLn("{}", #PTR); \
+            } \
             return 0; \
         }; \
         (PTR) = reinterpret_cast<decltype(PTR)>(fun); \
@@ -67,12 +77,7 @@ SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZ
 
 HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexcept
 {
-#if ENABLE_DEBUG_LOGGING
-    if(g_DebugEnable)
-    {
-        TRACE_ENTRYPOINT();
-    }
-#endif
+    TRACE_ENTRYPOINT();
 
     GsDevice10* device;
     //   It seems like in D3D10 creation of the device was changed to have
@@ -138,9 +143,8 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetRenderTargets);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnShaderResourceViewReadAfterWriteHazard);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnResourceReadAfterWriteHazard);
-    // GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetBlendState);
     createDevice.pDeviceFuncs->pfnSetBlendState = GsSetBlendState10;
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetDepthStencilState);
+    createDevice.pDeviceFuncs->pfnSetDepthStencilState = GsSetDepthStencilState10;
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnSetRasterizerState);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnQueryEnd);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnQueryBegin);
@@ -182,14 +186,12 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateElementLayoutSize);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateElementLayout);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyElementLayout);
-    // GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateBlendStateSize);
     createDevice.pDeviceFuncs->pfnCalcPrivateBlendStateSize = GsCalcPrivateBlendStateSize10;
-    // GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateBlendState);
     createDevice.pDeviceFuncs->pfnCreateBlendState = GsCreateBlendState10;
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyBlendState);
-    GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateDepthStencilStateSize);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateDepthStencilState);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyDepthStencilState);
+    createDevice.pDeviceFuncs->pfnDestroyBlendState = GsDestroyBlendState10;
+    createDevice.pDeviceFuncs->pfnCalcPrivateDepthStencilStateSize = GsCalcPrivateDepthStencilStateSize10;
+    createDevice.pDeviceFuncs->pfnCreateDepthStencilState = GsCreateDepthStencilState10;
+    createDevice.pDeviceFuncs->pfnDestroyDepthStencilState = GsDestroyDepthStencilState10;
     GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateRasterizerStateSize);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateRasterizerState);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyRasterizerState);

@@ -1,14 +1,8 @@
 #pragma once
 
+#include "Config.h"
+#include "DriverDebug.hpp"
 #include <intrin.h>
-
-#ifndef ENABLE_DEBUG_LOGGING
-    #if defined(_DEBUG)
-        #define ENABLE_DEBUG_LOGGING (1)
-    #else
-        #define ENABLE_DEBUG_LOGGING (0)
-    #endif
-#endif
 
 #pragma warning(push)
 #pragma warning(disable: 4505)
@@ -18,11 +12,11 @@ static void __declspec(noinline) GsGetCallAddress(void** address)
 }
 #pragma warning(pop)
 
-#if ENABLE_DEBUG_LOGGING
+#if GS_ENABLE_DEBUG_LOGGING
 #include <ConPrinter.hpp>
 #endif
 
-#if ENABLE_DEBUG_LOGGING
+#if GS_ENABLE_DEBUG_LOGGING
 template<typename... Args>
 static void GsLog(
     const c8* const level,
@@ -32,8 +26,11 @@ static void GsLog(
     const Args&... args
 ) noexcept
 {
-    ConPrinter::Print(u8"[{}](0x{XP0}) {}:{}: ", level, address, functionName, line);
-    ConPrinter::PrintLn(args...);
+    if(g_DebugEnable)
+    {
+        ConPrinter::Print(u8"[{}](0x{XP0}) {}:{}: ", level, address, functionName, line);
+        ConPrinter::PrintLn(args...);
+    }
 }
 
 #define DECL_LOG(NAME) \
@@ -58,7 +55,7 @@ DECL_LOG(Error);
 #define internal_LOG(LEVEL, FUNCTION, FILE, LINE, ...)
 #endif
 
-#if ENABLE_DEBUG_LOGGING
+#if GS_ENABLE_ENTRYPOINT_TRACING
   #define TRACE_ENTRYPOINT() internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__, "")
   #define TRACE_ENTRYPOINT_ARG(...) internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #else 
@@ -67,11 +64,12 @@ DECL_LOG(Error);
 #endif
 
 
-#if defined(_DEBUG) && _DEBUG
-#define LOG_DEBUG(...) internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
+#if GS_ENABLE_DEBUG_LOGGING
+  #define LOG_DEBUG(...) internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #else
-#define LOG_DEBUG(...) do { } while(false)
+  #define LOG_DEBUG(...) do { } while(false)
 #endif
+
 #define LOG_INFO(...) internal_LOG(Info, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #define LOG_WARN(...) internal_LOG(Warn, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #define LOG_ERROR(...) internal_LOG(Error, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)

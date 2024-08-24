@@ -4,6 +4,7 @@
 #include <Objects.hpp>
 
 class GsBlendState10;
+class GsDepthStencilState10;
 
 class GsDevice10 final
 {
@@ -28,6 +29,11 @@ public:
         const UINT SampleMask
     ) noexcept;
 
+    void SetDepthStencilState(
+        const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState,
+        const UINT StencilRef
+    ) noexcept;
+
     SIZE_T CalcPrivateBlendStateSize(
         const D3D10_DDI_BLEND_DESC* pBlendDesc
     ) const noexcept;
@@ -36,6 +42,24 @@ public:
         const D3D10_DDI_BLEND_DESC* pBlendDesc,
         const D3D10DDI_HBLENDSTATE hBlendState,
         const D3D10DDI_HRTBLENDSTATE hRtBlendState
+    ) noexcept;
+
+    void DestroyBlendState(
+        const D3D10DDI_HBLENDSTATE hBlendState
+    ) noexcept;
+
+    SIZE_T CalcPrivateDepthStencilStateSize(
+        const D3D10_DDI_DEPTH_STENCIL_DESC* pDepthStencilState
+    ) const noexcept;
+
+    void CreateDepthStencilState(
+        const D3D10_DDI_DEPTH_STENCIL_DESC* const pDepthStencilDesc,
+        const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState,
+        const D3D10DDI_HRTDEPTHSTENCILSTATE hRtDepthStencilState
+    ) noexcept;
+
+    void DestroyDepthStencilState(
+        const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState
     ) noexcept;
 private:
     D3D10DDI_HRTDEVICE m_DriverHandle;
@@ -46,4 +70,7 @@ private:
     GsBlendState10* m_BlendState;
     float m_BlendFactor[4];
     UINT m_SampleMask;
+
+    GsDepthStencilState10* m_DepthStencilState;
+    UINT m_StencilRef;
 };

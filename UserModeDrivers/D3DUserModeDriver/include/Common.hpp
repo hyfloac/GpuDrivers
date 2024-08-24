@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.h"
 #include <WindowsNtPolyfill.hpp>
 #include <Windows.h>
 extern "C" {
@@ -10,8 +11,4 @@ extern "C" {
 #include <d3dhalex.h>
 }
 
-extern "C++" {
-
-extern bool g_DebugEnable;
-
-}
+#include "DriverDebug.hpp"

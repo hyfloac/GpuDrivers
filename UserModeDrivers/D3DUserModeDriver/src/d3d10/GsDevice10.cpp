@@ -1,5 +1,6 @@
 #include "d3d10/GsDevice10.hpp"
 #include "d3d10/GsBlendState10.hpp"
+#include "d3d10/GsDepthStencilState10.hpp"
 #include "Logging.hpp"
 
 GsDevice10::GsDevice10(
@@ -15,6 +16,8 @@ GsDevice10::GsDevice10(
     , m_BlendState(nullptr)
     , m_BlendFactor { }
     , m_SampleMask(0)
+    , m_DepthStencilState(nullptr)
+    , m_StencilRef(0)
 { }
 
 void GsDevice10::SetBlendState(
@@ -23,18 +26,10 @@ void GsDevice10::SetBlendState(
     const UINT SampleMask
 ) noexcept
 {
-#if ENABLE_DEBUG_LOGGING
-    if(g_DebugEnable)
-    {
-        TRACE_ENTRYPOINT();
-    }
-#endif
+    TRACE_ENTRYPOINT();
 
     if(!hBlendState.pDrvPrivate)
     {
-        // This should never happen.
-        //   If the user sets the blend state to null, the D3D10 runtime sets
-        // passes the default state it created.
         m_BlendState = nullptr;
     }
     else
@@ -50,14 +45,30 @@ void GsDevice10::SetBlendState(
     m_SampleMask = SampleMask;
 }
 
-SIZE_T GsDevice10::CalcPrivateBlendStateSize(const D3D10_DDI_BLEND_DESC* pBlendDesc) const noexcept
+void GsDevice10::SetDepthStencilState(
+    const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState, 
+    const UINT StencilRef
+) noexcept
 {
-#if ENABLE_DEBUG_LOGGING
-    if(g_DebugEnable)
+    TRACE_ENTRYPOINT();
+
+    if(!hDepthStencilState.pDrvPrivate)
     {
-        TRACE_ENTRYPOINT();
+        m_DepthStencilState = nullptr;
     }
-#endif
+    else
+    {
+        m_DepthStencilState = GsDepthStencilState10::FromHandle(hDepthStencilState);
+    }
+
+    m_StencilRef = StencilRef;
+}
+
+SIZE_T GsDevice10::CalcPrivateBlendStateSize(
+    const D3D10_DDI_BLEND_DESC* pBlendDesc
+) const noexcept
+{
+    TRACE_ENTRYPOINT();
 
     UNUSED(pBlendDesc);
 
@@ -70,12 +81,7 @@ void GsDevice10::CreateBlendState(
     const D3D10DDI_HRTBLENDSTATE hRtBlendState
 ) noexcept
 {
-#if ENABLE_DEBUG_LOGGING
-    if(g_DebugEnable)
-    {
-        TRACE_ENTRYPOINT();
-    }
-#endif
+    TRACE_ENTRYPOINT();
 
     if(!hBlendState.pDrvPrivate)
     {
@@ -87,4 +93,81 @@ void GsDevice10::CreateBlendState(
         *pBlendDesc,
         hRtBlendState
     );
+}
+
+void GsDevice10::DestroyBlendState(
+    const D3D10DDI_HBLENDSTATE hBlendState
+) noexcept
+{
+    TRACE_ENTRYPOINT();
+
+    if(!hBlendState.pDrvPrivate)
+    {
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_HANDLE);
+        return;
+    }
+
+    GsBlendState10* const blendState = GsBlendState10::FromHandle(hBlendState);
+
+    if(blendState == m_BlendState)
+    {
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_ACCESSDENIED);
+        return;
+    }
+
+    blendState->~GsBlendState10();
+}
+
+SIZE_T GsDevice10::CalcPrivateDepthStencilStateSize(
+    const D3D10_DDI_DEPTH_STENCIL_DESC* pDepthStencilState
+) const noexcept
+{
+    TRACE_ENTRYPOINT();
+
+    UNUSED(pDepthStencilState);
+
+    return sizeof(GsDepthStencilState10);
+}
+
+void GsDevice10::CreateDepthStencilState(
+    const D3D10_DDI_DEPTH_STENCIL_DESC* const pDepthStencilDesc, 
+    const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState, 
+    const D3D10DDI_HRTDEPTHSTENCILSTATE hRtDepthStencilState
+) noexcept
+{
+    TRACE_ENTRYPOINT();
+
+    if(!hDepthStencilState.pDrvPrivate)
+    {
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_OUTOFMEMORY);
+        return;
+    }
+
+    ::new(hDepthStencilState.pDrvPrivate) GsDepthStencilState10(
+        *pDepthStencilDesc,
+        hRtDepthStencilState
+    );
+}
+
+void GsDevice10::DestroyDepthStencilState(
+    const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState
+) noexcept
+{
+    TRACE_ENTRYPOINT();
+
+    if(!hDepthStencilState.pDrvPrivate)
+    {
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_HANDLE);
+        return;
+    }
+
+    GsDepthStencilState10* const depthStencilState = GsDepthStencilState10::FromHandle(hDepthStencilState);
+
+    if(depthStencilState == m_DepthStencilState)
+    {
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_ACCESSDENIED);
+        return;
+    }
+
+    depthStencilState->~GsDepthStencilState10();
 }

@@ -330,11 +330,6 @@ int RunD3D10(const bool enableDebug) noexcept
         device->OMSetRenderTargets(1, &(backBufferRtv.p), nullptr);
     }
 
-    {
-        constexpr float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        device->OMSetBlendState(nullptr, blendFactor, 0);
-    }
-
     return 0;
 }
 

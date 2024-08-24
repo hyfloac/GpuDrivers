@@ -129,6 +129,12 @@
       <AdditionalDependencies>d3d9.lib;d3d10.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;D3DDriverDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <CustomBuildStep>
+      <Command>"$(FrameworkSDKDir)bin\$(TargetPlatformVersion)\x64\signtool.exe" sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /fd SHA256 /td SHA256 $(TargetPath) &gt; "$(OutDir)sign\$(ProjectName)-sign.out"</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(OutDir)sign\$(ProjectName)-sign.out</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -160,6 +166,12 @@
       <AdditionalDependencies>d3d9.lib;d3d10.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;D3DDriverDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <CustomBuildStep>
+      <Command>"$(FrameworkSDKDir)bin\$(TargetPlatformVersion)\x64\signtool.exe" sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /fd SHA256 /td SHA256 $(TargetPath) &gt; "$(OutDir)sign\$(ProjectName)-sign.out"</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(OutDir)sign\$(ProjectName)-sign.out</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -190,6 +202,12 @@
       <AdditionalDependencies>d3d9.lib;d3d10.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;D3DDriverDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <CustomBuildStep>
+      <Command>"$(FrameworkSDKDir)bin\$(TargetPlatformVersion)\x64\signtool.exe" sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /fd SHA256 /td SHA256 $(TargetPath) &gt; "$(OutDir)sign\$(ProjectName)-sign.out"</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(OutDir)sign\$(ProjectName)-sign.out</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -223,6 +241,12 @@
       <AdditionalDependencies>d3d9.lib;d3d10.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;D3DDriverDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <CustomBuildStep>
+      <Command>"$(FrameworkSDKDir)bin\$(TargetPlatformVersion)\x64\signtool.exe" sign /v /a /tr http://timestamp.globalsign.com/tsa/r6advanced1 /fd SHA256 /td SHA256 $(TargetPath) &gt; "$(OutDir)sign\$(ProjectName)-sign.out"</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(OutDir)sign\$(ProjectName)-sign.out</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp" />
