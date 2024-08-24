@@ -273,6 +273,8 @@
     <ClCompile Include="src\d3d10\CreateDevice10.cpp" />
     <ClCompile Include="src\d3d10\device\CalcPrivateBlendStateSize10.cpp" />
     <ClCompile Include="src\d3d10\device\CalcPrivateDepthStencilStateSize10.cpp" />
+    <ClCompile Include="src\d3d10\device\CheckFormatSupport10.cpp" />
+    <ClCompile Include="src\d3d10\device\CheckMultisampleQualityLevels10.cpp" />
     <ClCompile Include="src\d3d10\device\CreateBlendState10.cpp" />
     <ClCompile Include="src\d3d10\device\CreateDepthStencilState10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyDepthStencilState10.cpp" />
@@ -302,6 +304,8 @@
     <ClInclude Include="include\d3d10\CreateDevice10.hpp" />
     <ClInclude Include="include\d3d10\device\CalcPrivateBlendStateSize10.hpp" />
     <ClInclude Include="include\d3d10\device\CalcPrivateDepthStencilStateSize10.hpp" />
+    <ClInclude Include="include\d3d10\device\CheckFormatSupport10.hpp" />
+    <ClInclude Include="include\d3d10\device\CheckMultisampleQualityLevels10.hpp" />
     <ClInclude Include="include\d3d10\device\CreateBlendState10.hpp" />
     <ClInclude Include="include\d3d10\device\CreateDepthStencilState10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyBlendState10.hpp" />

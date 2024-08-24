@@ -96,6 +96,12 @@
     <ClCompile Include="src\d3d10\device\SetDepthStencilState10.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\d3d10\device\CheckMultisampleQualityLevels10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\device\CheckFormatSupport10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\d3d9\GetCaps9.hpp">
@@ -180,6 +186,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\d3d10\device\SetDepthStencilState10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\device\CheckMultisampleQualityLevels10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\device\CheckFormatSupport10.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

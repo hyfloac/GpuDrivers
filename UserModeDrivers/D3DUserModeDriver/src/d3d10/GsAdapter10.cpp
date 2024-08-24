@@ -15,6 +15,9 @@
 #include "d3d10/device/CreateDepthStencilState10.hpp"
 #include "d3d10/device/DestroyDepthStencilState10.hpp"
 
+#include "d3d10/device/CheckFormatSupport10.hpp"
+#include "d3d10/device/CheckMultisampleQualityLevels10.hpp"
+
 #include "d3d10/device/DestroyDevice10.hpp"
 
 GsAdapter10::GsAdapter10(
@@ -209,8 +212,8 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateQuery);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyQuery);
 
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCheckFormatSupport);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCheckMultisampleQualityLevels);
+    createDevice.pDeviceFuncs->pfnCheckFormatSupport = GsCheckFormatSupport10;
+    createDevice.pDeviceFuncs->pfnCheckMultisampleQualityLevels = GsCheckMultisampleQualityLevels10;
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCheckCounterInfo);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCheckCounter);
 

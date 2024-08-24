@@ -61,6 +61,17 @@ public:
     void DestroyDepthStencilState(
         const D3D10DDI_HDEPTHSTENCILSTATE hDepthStencilState
     ) noexcept;
+
+    void CheckFormatSupport(
+        const DXGI_FORMAT Format,
+        UINT* const pFormatSupport
+    ) noexcept;
+
+    void CheckMultisampleQualityLevels(
+        const DXGI_FORMAT Format,
+        const UINT SampleCount,
+        UINT* const pNumQualityLevels
+    ) noexcept;
 private:
     D3D10DDI_HRTDEVICE m_DriverHandle;
     const D3DDDI_DEVICECALLBACKS m_DeviceCallbacks;
