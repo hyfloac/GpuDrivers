@@ -3,6 +3,8 @@
 #include <d3d9.h>
 #include <d3d10.h>
 #include <dxgi.h>
+#include <dxgi1_2.h>
+#include <dxgi1_3.h>
 #include <atlbase.h>
 #include <new>
 #include <D3DDebug.h>
@@ -24,7 +26,7 @@ void PrintHelp(int argCount, char* args[]) noexcept
 // From https://learn.microsoft.com/en-us/windows/win32/seccrypto/retrieving-error-messages
 static void LogError(const DWORD dwErr) noexcept
 {
-    WCHAR   wszMsgBuff[512];  // Buffer for text.
+    WCHAR wszMsgBuff[512];  // Buffer for text.
 
     // Try to get the message from the system errors.
     DWORD dwChars = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
@@ -64,6 +66,12 @@ static void LogError(const DWORD dwErr) noexcept
     }
 
     ConPrinter::PrintLn("{}", wszMsgBuff);
+}
+
+void LogHResultAndError(const HRESULT hResult) noexcept
+{
+    LogError(hResult);
+    LogError(GetLastError());
 }
 
 int RunD3D9(const bool enableDebug) noexcept;
@@ -219,6 +227,7 @@ int RunD3D10(const bool enableDebug) noexcept
 
     EnableD3DDebugLogging(1);
 
+#if 0
     CComPtr<IDXGIFactory1> dxgiFactory;
 
     HRESULT status = CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(&dxgiFactory));
@@ -226,9 +235,32 @@ int RunD3D10(const bool enableDebug) noexcept
     if(!SUCCEEDED(status))
     {
         ConPrinter::PrintLn(u8"Failed to create IDXGIFactory1: 0x{XP0}", status);
-        LogError(status);
+        LogHResultAndError(status);
         return 1;
     }
+#elif 0
+    CComPtr<IDXGIFactory2> dxgiFactory;
+
+    HRESULT status = CreateDXGIFactory1(IID_IDXGIFactory2, reinterpret_cast<void**>(&dxgiFactory));
+
+    if(!SUCCEEDED(status))
+    {
+        ConPrinter::PrintLn(u8"Failed to create IDXGIFactory2: 0x{XP0}", status);
+        LogHResultAndError(status);
+        return 1;
+    }
+#else
+    CComPtr<IDXGIFactory2> dxgiFactory;
+
+    HRESULT status = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_IDXGIFactory2, reinterpret_cast<void**>(&dxgiFactory));
+
+    if(!SUCCEEDED(status))
+    {
+        ConPrinter::PrintLn(u8"Failed to create IDXGIFactory2: 0x{XP0}", status);
+        LogHResultAndError(status);
+        return 1;
+    }
+#endif
 
     CComPtr<IDXGIAdapter1> adapter;
     for(UINT i = 0; dxgiFactory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i)
@@ -261,7 +293,7 @@ int RunD3D10(const bool enableDebug) noexcept
     if(!SUCCEEDED(status))
     {
         ConPrinter::PrintLn(u8"Failed to create ID3D10Device: 0x{XP0}", status);
-        LogError(status);
+        LogHResultAndError(status);
 
         return 2;
     }
@@ -274,6 +306,7 @@ int RunD3D10(const bool enableDebug) noexcept
 
     // (void) ShowWindow(hWnd, SW_SHOWNOACTIVATE);
 
+#if 1
     DXGI_SWAP_CHAIN_DESC swapChainDesc {};
     swapChainDesc.BufferDesc.Width = Width;
     swapChainDesc.BufferDesc.Height = Height;
@@ -293,11 +326,30 @@ int RunD3D10(const bool enableDebug) noexcept
 
     CComPtr<IDXGISwapChain> swapChain;
     status = dxgiFactory->CreateSwapChain(device, &swapChainDesc, &swapChain);
+#else
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc {};
+    swapChainDesc.Width = Width;
+    swapChainDesc.Height = Height;
+    swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.Stereo = 0;
+    swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Quality = 0;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = 2;
+    swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    // swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+    swapChainDesc.Flags = 0;
+
+    CComPtr<IDXGISwapChain1> swapChain;
+    status = dxgiFactory->CreateSwapChainForHwnd(device, hWnd, &swapChainDesc, nullptr, nullptr, &swapChain);
+#endif
 
     if(!SUCCEEDED(status))
     {
         ConPrinter::PrintLn(u8"Failed to create Swap Chain: 0x{XP0}", status);
-        LogError(status);
+        LogHResultAndError(status);
 
         return 3;
     }
@@ -312,7 +364,7 @@ int RunD3D10(const bool enableDebug) noexcept
         if(!SUCCEEDED(status))
         {
             ConPrinter::PrintLn(u8"Failed to get back buffer: 0x{XP0}", status);
-            LogError(status);
+            LogHResultAndError(status);
 
             return 4;
         }
@@ -322,12 +374,14 @@ int RunD3D10(const bool enableDebug) noexcept
         if(!SUCCEEDED(status))
         {
             ConPrinter::PrintLn(u8"Failed to create render target view for back buffer: 0x{XP0}", status);
-            LogError(status);
+            LogHResultAndError(status);
 
             return 5;
         }
 
-        device->OMSetRenderTargets(1, &(backBufferRtv.p), nullptr);
+        ID3D10RenderTargetView* renderTargets[1];
+        renderTargets[0] = backBufferRtv;
+        device->OMSetRenderTargets(1, renderTargets, nullptr);
     }
 
     return 0;

@@ -8,9 +8,9 @@ class GsDepthStencilState10 final
     DEFAULT_DESTRUCT(GsDepthStencilState10);
     DELETE_CM(GsDepthStencilState10);
 public:
-    static GsDepthStencilState10* FromHandle(const D3D10DDI_HDEPTHSTENCILSTATE depthStencilState) noexcept
+    static GsDepthStencilState10* FromHandle(const D3D10DDI_HDEPTHSTENCILSTATE handle) noexcept
     {
-        return static_cast<GsDepthStencilState10*>(depthStencilState.pDrvPrivate);
+        return static_cast<GsDepthStencilState10*>(handle.pDrvPrivate);
     }
 public:
     GsDepthStencilState10(

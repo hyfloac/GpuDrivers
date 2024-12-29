@@ -13,15 +13,6 @@ NTSTATUS HyCommitVidPn(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_COMMITVIDPN_C
 
     TRACE_ENTRYPOINT();
 
-    LOG_DEBUG(
-        "hFunctionalVidPn: 0x%016X, AffectedVidPnSourceId: %d, MonitorConnectivityChecks: %d, hPrimaryAllocation: 0x%016X, Flags: 0x%08X\n", 
-        pCommitVidPn->hFunctionalVidPn,
-        pCommitVidPn->AffectedVidPnSourceId,
-        pCommitVidPn->MonitorConnectivityChecks,
-        pCommitVidPn->hPrimaryAllocation,
-        pCommitVidPn->Flags
-    );
-
     // If hAdapter is null inform the kernel that the first parameter was invalid.
     // This should probably never happen.
     if(!hAdapter)
@@ -30,13 +21,22 @@ NTSTATUS HyCommitVidPn(IN_CONST_HANDLE hAdapter, IN_CONST_PDXGKARG_COMMITVIDPN_C
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    // If pPresentDisplayOnly is null inform the kernel that the second parameter was invalid.
+    // If pCommitVidPn is null inform the kernel that the second parameter was invalid.
     // This should probably never happen.
     if(!pCommitVidPn)
     {
         LOG_ERROR("Invalid Parameter: pCommitVidPn\n");
         return STATUS_INVALID_PARAMETER_1;
     }
+
+    LOG_DEBUG(
+        "hFunctionalVidPn: 0x%016X, AffectedVidPnSourceId: %d, MonitorConnectivityChecks: %d, hPrimaryAllocation: 0x%016X, Flags: 0x%08X\n",
+        pCommitVidPn->hFunctionalVidPn,
+        pCommitVidPn->AffectedVidPnSourceId,
+        pCommitVidPn->MonitorConnectivityChecks,
+        pCommitVidPn->hPrimaryAllocation,
+        pCommitVidPn->Flags
+    );
 
     // Get our context structure.
     HyMiniportDevice* const deviceContext = HyMiniportDevice::FromHandle(hAdapter);

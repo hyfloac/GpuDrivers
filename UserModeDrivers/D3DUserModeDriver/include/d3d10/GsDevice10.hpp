@@ -11,13 +11,13 @@ class GsDevice10 final
     DEFAULT_DESTRUCT(GsDevice10);
     DELETE_CM(GsDevice10);
 public:
-    static GsDevice10* FromHandle(D3D10DDI_HDEVICE device) noexcept
+    static GsDevice10* FromHandle(D3D10DDI_HDEVICE handle) noexcept
     {
-        return static_cast<GsDevice10*>(device.pDrvPrivate);
+        return static_cast<GsDevice10*>(handle.pDrvPrivate);
     }
 public:
     GsDevice10(
-        const D3D10DDI_HRTDEVICE driverHandle,
+        const D3D10DDI_HRTDEVICE runtimeHandle,
         const D3DDDI_DEVICECALLBACKS& deviceCallbacks,
         const D3D10DDI_HRTCORELAYER runtimeCoreLayerHandle,
         const D3D10DDI_CORELAYER_DEVICECALLBACKS& umCallbacks
@@ -34,12 +34,22 @@ public:
         const UINT StencilRef
     ) noexcept;
 
+    SIZE_T CalcPrivateResourceSize(
+        const D3D10DDIARG_CREATERESOURCE* const pCreateResource
+    ) const noexcept;
+
+    void CreateResource(
+        const D3D10DDIARG_CREATERESOURCE* const pCreateResource,
+        const D3D10DDI_HRESOURCE hResource,
+        const D3D10DDI_HRTRESOURCE hRtResource
+    ) noexcept;
+
     SIZE_T CalcPrivateBlendStateSize(
-        const D3D10_DDI_BLEND_DESC* pBlendDesc
+        const D3D10_DDI_BLEND_DESC* const pBlendDesc
     ) const noexcept;
 
     void CreateBlendState(
-        const D3D10_DDI_BLEND_DESC* pBlendDesc,
+        const D3D10_DDI_BLEND_DESC* const pBlendDesc,
         const D3D10DDI_HBLENDSTATE hBlendState,
         const D3D10DDI_HRTBLENDSTATE hRtBlendState
     ) noexcept;
@@ -49,7 +59,7 @@ public:
     ) noexcept;
 
     SIZE_T CalcPrivateDepthStencilStateSize(
-        const D3D10_DDI_DEPTH_STENCIL_DESC* pDepthStencilState
+        const D3D10_DDI_DEPTH_STENCIL_DESC* const pDepthStencilState
     ) const noexcept;
 
     void CreateDepthStencilState(
@@ -73,7 +83,7 @@ public:
         UINT* const pNumQualityLevels
     ) noexcept;
 private:
-    D3D10DDI_HRTDEVICE m_DriverHandle;
+    D3D10DDI_HRTDEVICE m_RuntimeHandle;
     const D3DDDI_DEVICECALLBACKS m_DeviceCallbacks;
     D3D10DDI_HRTCORELAYER m_RuntimeCoreLayerHandle;
     const D3D10DDI_CORELAYER_DEVICECALLBACKS m_UmCallbacks;

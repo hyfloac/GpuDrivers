@@ -189,6 +189,9 @@
     <ClCompile Include="src\SetVidPnSourceAddress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\CreateAllocation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\MemoryAllocator.h">
@@ -378,6 +381,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\SetVidPnSourceAddress.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CreateAllocation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shared\CreateAllocationDriverData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\shared\DriverDataIdentifiers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

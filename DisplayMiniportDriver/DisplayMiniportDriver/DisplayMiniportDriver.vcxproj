@@ -495,6 +495,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\CommitVidPn.cpp" />
     <ClCompile Include="src\ControlEtwLogging.cpp" />
     <ClCompile Include="src\ControlInterrupt.cpp" />
+    <ClCompile Include="src\CreateAllocation.cpp" />
     <ClCompile Include="src\CreateContext.cpp" />
     <ClCompile Include="src\CreateDevice.cpp" />
     <ClCompile Include="src\DestroyContext.cpp" />
@@ -556,6 +557,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\ControlEtwLogging.hpp" />
     <ClInclude Include="include\ControlInterrupt.hpp" />
+    <ClInclude Include="include\CreateAllocation.hpp" />
     <ClInclude Include="include\CreateContext.hpp" />
     <ClInclude Include="include\CreateDevice.hpp" />
     <ClInclude Include="include\D3DPolyFills.h" />
@@ -602,6 +604,8 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\SetPowerState.hpp" />
     <ClInclude Include="include\SetVidPnSourceAddress.hpp" />
     <ClInclude Include="include\SetVidPnSourceVisibility.hpp" />
+    <ClInclude Include="include\shared\CreateAllocationDriverData.hpp" />
+    <ClInclude Include="include\shared\DriverDataIdentifiers.hpp" />
     <ClInclude Include="include\StartDevice.hpp" />
     <ClInclude Include="include\StopDevice.hpp" />
     <ClInclude Include="include\StopDeviceAndReleasePostDisplayOwnership.hpp" />

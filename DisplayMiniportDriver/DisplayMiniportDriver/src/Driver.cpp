@@ -40,7 +40,7 @@ extern "C" {
 #include "ControlEtwLogging.hpp"
 #include "QueryAdapterInfo.hpp"
 #include "CreateDevice.hpp"
-
+#include "CreateAllocation.hpp"
 
 #include "CollectDbgInfo.hpp"
 #include "IsSupportedVidPn.hpp"
@@ -258,9 +258,9 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
 
     driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
     driverInitializationData.DxgkDdiCreateDevice = HyCreateDevice;
-    // driverInitializationData.DxgkDdiCreateAllocation = (PDXGKDDI_CREATEALLOCATION) DdiNoOpNTSTATUS;
-    // driverInitializationData.DxgkDdiDestroyAllocation = (PDXGKDDI_DESTROYALLOCATION) DdiNoOpNTSTATUS;
-    // driverInitializationData.DxgkDdiDescribeAllocation = (PDXGKDDI_DESCRIBEALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiCreateAllocation = GsCreateAllocation;
+    driverInitializationData.DxgkDdiDestroyAllocation = (PDXGKDDI_DESTROYALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDescribeAllocation = (PDXGKDDI_DESCRIBEALLOCATION) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiGetStandardAllocationDriverData = (PDXGKDDI_GETSTANDARDALLOCATIONDRIVERDATA) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiAcquireSwizzlingRange = (PDXGKDDI_ACQUIRESWIZZLINGRANGE) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiReleaseSwizzlingRange = (PDXGKDDI_RELEASESWIZZLINGRANGE) DdiNoOpNTSTATUS;

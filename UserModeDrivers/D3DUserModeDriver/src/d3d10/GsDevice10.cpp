@@ -1,15 +1,19 @@
 #include "d3d10/GsDevice10.hpp"
+#include "d3d10/GsResource10.hpp"
 #include "d3d10/GsBlendState10.hpp"
 #include "d3d10/GsDepthStencilState10.hpp"
+#include "d3d10/D3D10EnumDebug.hpp"
+#include "dxgi/DxgiEnumDebug.hpp"
+#include "CreateAllocationDriverData.hpp"
 #include "Logging.hpp"
 
 GsDevice10::GsDevice10(
-    const D3D10DDI_HRTDEVICE driverHandle, 
+    const D3D10DDI_HRTDEVICE runtimeHandle,
     const D3DDDI_DEVICECALLBACKS& deviceCallbacks,
     const D3D10DDI_HRTCORELAYER runtimeCoreLayerHandle,
     const D3D10DDI_CORELAYER_DEVICECALLBACKS& umCallbacks
 ) noexcept
-    : m_DriverHandle(driverHandle)
+    : m_RuntimeHandle(runtimeHandle)
     , m_DeviceCallbacks(deviceCallbacks)
     , m_RuntimeCoreLayerHandle(runtimeCoreLayerHandle)
     , m_UmCallbacks(umCallbacks)
@@ -64,8 +68,157 @@ void GsDevice10::SetDepthStencilState(
     m_StencilRef = StencilRef;
 }
 
+SIZE_T GsDevice10::CalcPrivateResourceSize(
+    const D3D10DDIARG_CREATERESOURCE* const pCreateResource
+) const noexcept
+{
+    TRACE_ENTRYPOINT();
+
+    UNUSED(pCreateResource);
+
+    return sizeof(GsResource10);
+}
+
+void GsDevice10::CreateResource(
+    const D3D10DDIARG_CREATERESOURCE* const pCreateResource, 
+    const D3D10DDI_HRESOURCE hResource, 
+    const D3D10DDI_HRTRESOURCE hRtResource
+) noexcept
+{
+    TRACE_ENTRYPOINT();
+
+    if(!pCreateResource)
+    {
+        LOG_ERROR("pCreateResource was not set.");
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
+        return;
+    }
+
+    LOG_DEBUG(
+        "pMipInfoList: 0x{XP0}, pInitialDataUP: 0x{XP0}, ResourceDimension: {}, Usage: 0x{XP0}, BindFlags: 0x{XP0}, MapFlags: 0x{XP0}, MiscFlags: 0x{XP0}, Format: {}, SampleDesc.Count: {}, SampleDesc.Quality: {}, MipLevels: {}, ArraySize: {}, pPrimaryDesc: 0x{XP0}",
+        pCreateResource->pMipInfoList,
+        pCreateResource->pInitialDataUP,
+        D3D10ResourceTypeToString(pCreateResource->ResourceDimension),
+        pCreateResource->Usage,
+        pCreateResource->BindFlags,
+        pCreateResource->MapFlags,
+        pCreateResource->MiscFlags,
+        DxgiFormatToString(pCreateResource->Format),
+        pCreateResource->SampleDesc.Count,
+        pCreateResource->SampleDesc.Quality,
+        pCreateResource->MipLevels,
+        pCreateResource->ArraySize,
+        pCreateResource->pPrimaryDesc
+    );
+
+    if(!hResource.pDrvPrivate)
+    {
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
+        return;
+    }
+
+    UINT64 pixelSize = 4;
+
+    if(pCreateResource->Format == DXGI_FORMAT_R8G8B8A8_UNORM)
+    {
+        pixelSize = 4;
+    }
+
+    UINT64 physicalSize = 0;
+
+    for(UINT i = 0; i < pCreateResource->MipLevels; ++i)
+    {
+        LOG_DEBUG(
+            "[Mip {}] TexelWidth: {}, TexelHeight {}, TexelDepth {}, PhysicalWidth {}, PhysicalHeight {}, PhysicalDepth: {}",
+            i,
+            pCreateResource->pMipInfoList[i].TexelWidth,
+            pCreateResource->pMipInfoList[i].TexelHeight,
+            pCreateResource->pMipInfoList[i].TexelDepth,
+            pCreateResource->pMipInfoList[i].PhysicalWidth,
+            pCreateResource->pMipInfoList[i].PhysicalHeight,
+            pCreateResource->pMipInfoList[i].PhysicalDepth
+        );
+
+        physicalSize += pixelSize * pCreateResource->pMipInfoList[i].PhysicalWidth * pCreateResource->pMipInfoList[i].PhysicalHeight * pCreateResource->pMipInfoList[i].PhysicalDepth;
+    }
+
+    CreateAllocationDriverData allocationData {};
+    allocationData.V1.Base.Magic = CREATE_ALLOCATION_MAGIC;
+    allocationData.V1.Base.Version = CreateAllocationDriverData_V1::Version;
+    allocationData.V1.PhysicalSize = physicalSize;
+
+    AllocationInfoDriverData allocationInfo {};
+    allocationInfo.V1.Base.Magic = ALLOCATION_INFO_MAGIC;
+    allocationInfo.V1.Base.Version = AllocationInfoDriverData_V1::Version;
+    allocationInfo.V1.PhysicalSize = physicalSize;
+    allocationInfo.V1.Flags.PrivateFormat = false;
+    allocationInfo.V1.Flags.Swizzled = true;
+    allocationInfo.V1.Flags.CubeTexture = pCreateResource->ResourceDimension == D3D10DDIRESOURCE_TEXTURECUBE;
+    allocationInfo.V1.Flags.VolumeTexture = pCreateResource->ResourceDimension == D3D10DDIRESOURCE_TEXTURE3D;
+    if(pCreateResource->ResourceDimension == D3D10DDIRESOURCE_BUFFER)
+    {
+        allocationInfo.V1.Flags.VertexBuffer = (pCreateResource->BindFlags & D3D10_DDI_BIND_VERTEX_BUFFER) == D3D10_DDI_BIND_VERTEX_BUFFER;
+        allocationInfo.V1.Flags.IndexBuffer = (pCreateResource->BindFlags & D3D10_DDI_BIND_INDEX_BUFFER) == D3D10_DDI_BIND_INDEX_BUFFER;
+    }
+    else
+    {
+        allocationInfo.V1.Flags.VertexBuffer = false;
+        allocationInfo.V1.Flags.IndexBuffer = false;
+    }
+    allocationInfo.V1.Flags.Reserved = 0;
+
+
+    allocationInfo.V1.Format = D3DDDIFMT_UNKNOWN;
+
+    switch(pCreateResource->Format)
+    {
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+            allocationInfo.V1.Format = D3DDDIFMT_A8R8G8B8;
+            break;
+        default:
+            LOG_ERROR("Unsupported format: {}", DxgiFormatToString(pCreateResource->Format));
+            m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
+            return;
+    }
+
+    if(pCreateResource->pMipInfoList && pCreateResource->MipLevels > 0)
+    {
+        allocationInfo.V1.Width = pCreateResource->pMipInfoList[0].TexelWidth;
+        allocationInfo.V1.Height = pCreateResource->pMipInfoList[0].TexelHeight;
+        allocationInfo.V1.Pitch = pCreateResource->pMipInfoList[0].TexelWidth;
+        allocationInfo.V1.Depth = pCreateResource->pMipInfoList[0].TexelDepth;
+        allocationInfo.V1.SlicePitch = pCreateResource->pMipInfoList[0].TexelWidth * pCreateResource->pMipInfoList[0].TexelHeight;
+    }
+
+    D3DDDICB_ALLOCATE allocate {};
+    allocate.pPrivateDriverData = &allocationData;
+    allocate.PrivateDriverDataSize = sizeof(allocationData.V1);
+    allocate.hResource = hRtResource.handle;
+    allocate.NumAllocations = 1;
+    D3DDDI_ALLOCATIONINFO allocationInfos[1];
+    allocationInfos[0].pSystemMem = nullptr;
+    allocationInfos[0].pPrivateDriverData = &allocationInfo;
+    allocationInfos[0].PrivateDriverDataSize = sizeof(allocationInfo.V1);
+    allocate.pAllocationInfo = allocationInfos;
+    HRESULT status = m_DeviceCallbacks.pfnAllocateCb(m_RuntimeHandle.handle, &allocate);
+
+    if(!SUCCEEDED(status))
+    {
+        LOG_ERROR("Failed to allocate resource: 0x{XP0}", status);
+        LogWindowsHResultAndError(status);
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, status);
+        return;
+    }
+
+    UNUSED(status);
+
+    ::new(hResource.pDrvPrivate) GsResource10(
+        hRtResource
+    );
+}
+
 SIZE_T GsDevice10::CalcPrivateBlendStateSize(
-    const D3D10_DDI_BLEND_DESC* pBlendDesc
+    const D3D10_DDI_BLEND_DESC* const pBlendDesc
 ) const noexcept
 {
     TRACE_ENTRYPOINT();
@@ -76,16 +229,23 @@ SIZE_T GsDevice10::CalcPrivateBlendStateSize(
 }
 
 void GsDevice10::CreateBlendState(
-    const D3D10_DDI_BLEND_DESC* pBlendDesc, 
+    const D3D10_DDI_BLEND_DESC* const pBlendDesc,
     const D3D10DDI_HBLENDSTATE hBlendState, 
     const D3D10DDI_HRTBLENDSTATE hRtBlendState
 ) noexcept
 {
     TRACE_ENTRYPOINT();
 
+    if(!pBlendDesc)
+    {
+        LOG_ERROR("pBlendDesc was not set.");
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
+        return;
+    }
+
     if(!hBlendState.pDrvPrivate)
     {
-        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_OUTOFMEMORY);
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
         return;
     }
 
@@ -119,7 +279,7 @@ void GsDevice10::DestroyBlendState(
 }
 
 SIZE_T GsDevice10::CalcPrivateDepthStencilStateSize(
-    const D3D10_DDI_DEPTH_STENCIL_DESC* pDepthStencilState
+    const D3D10_DDI_DEPTH_STENCIL_DESC* const pDepthStencilState
 ) const noexcept
 {
     TRACE_ENTRYPOINT();
@@ -137,9 +297,16 @@ void GsDevice10::CreateDepthStencilState(
 {
     TRACE_ENTRYPOINT();
 
+    if(!pDepthStencilDesc)
+    {
+        LOG_ERROR("pDepthStencilDesc was not set.");
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
+        return;
+    }
+
     if(!hDepthStencilState.pDrvPrivate)
     {
-        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_OUTOFMEMORY);
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, E_INVALIDARG);
         return;
     }
 

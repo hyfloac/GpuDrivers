@@ -155,6 +155,7 @@ public:
 
     NTSTATUS QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) noexcept;
     NTSTATUS CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevice) noexcept;
+    NTSTATUS CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCreateAllocation) noexcept;
 
     NTSTATUS CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pCollectDbgInfo) noexcept;
     NTSTATUS IsSupportedVidPn(INOUT_PDXGKARG_ISSUPPORTEDVIDPN pIsSupportedVidPn) noexcept;

@@ -106,7 +106,7 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\DisplayMiniportDriver\DisplayMiniportDriver\include\shared;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -115,7 +115,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\DisplayMiniportDriver\DisplayMiniportDriver\include\shared;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -124,7 +124,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\DisplayMiniportDriver\DisplayMiniportDriver\include\shared;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -133,7 +133,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\DisplayMiniportDriver\DisplayMiniportDriver\include\shared;$(IncludePath)</IncludePath>
     <TimeStampServer>http://timestamp.globalsign.com/scripts/timstamp.dll</TimeStampServer>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -162,8 +162,10 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -193,8 +195,10 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -224,8 +228,10 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -255,8 +261,10 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <CompileAs>Default</CompileAs>
-      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0xC001;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>D3D_UMD_INTERFACE_VERSION=0x000C;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>5030;4100;4244;4309;4251;4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LargeAddressAware>true</LargeAddressAware>
@@ -273,10 +281,12 @@
     <ClCompile Include="src\d3d10\CreateDevice10.cpp" />
     <ClCompile Include="src\d3d10\device\CalcPrivateBlendStateSize10.cpp" />
     <ClCompile Include="src\d3d10\device\CalcPrivateDepthStencilStateSize10.cpp" />
+    <ClCompile Include="src\d3d10\device\CalcPrivateResourceSize10.cpp" />
     <ClCompile Include="src\d3d10\device\CheckFormatSupport10.cpp" />
     <ClCompile Include="src\d3d10\device\CheckMultisampleQualityLevels10.cpp" />
     <ClCompile Include="src\d3d10\device\CreateBlendState10.cpp" />
     <ClCompile Include="src\d3d10\device\CreateDepthStencilState10.cpp" />
+    <ClCompile Include="src\d3d10\device\CreateResource10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyDepthStencilState10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyBlendState10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyDevice10.cpp" />
@@ -286,6 +296,7 @@
     <ClCompile Include="src\d3d10\GsBlendState10.cpp" />
     <ClCompile Include="src\d3d10\GsDepthStencilState10.cpp" />
     <ClCompile Include="src\d3d10\GsDevice10.cpp" />
+    <ClCompile Include="src\d3d10\GsResource10.cpp" />
     <ClCompile Include="src\d3d9\CloseAdapter9.cpp" />
     <ClCompile Include="src\d3d9\CreateDevice9.cpp" />
     <ClCompile Include="src\d3d9\GetCaps9.cpp" />
@@ -293,6 +304,7 @@
     <ClCompile Include="src\d3d9\GsDevice9.cpp" />
     <ClCompile Include="src\d3d9\device\SetRenderState9.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
+    <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\OpenAdapter.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -302,12 +314,15 @@
     <ClInclude Include="include\d3d10\CalcPrivateDeviceSize10.hpp" />
     <ClInclude Include="include\d3d10\CloseAdapter10.hpp" />
     <ClInclude Include="include\d3d10\CreateDevice10.hpp" />
+    <ClInclude Include="include\d3d10\D3D10EnumDebug.hpp" />
     <ClInclude Include="include\d3d10\device\CalcPrivateBlendStateSize10.hpp" />
     <ClInclude Include="include\d3d10\device\CalcPrivateDepthStencilStateSize10.hpp" />
+    <ClInclude Include="include\d3d10\device\CalcPrivateResourceSize10.hpp" />
     <ClInclude Include="include\d3d10\device\CheckFormatSupport10.hpp" />
     <ClInclude Include="include\d3d10\device\CheckMultisampleQualityLevels10.hpp" />
     <ClInclude Include="include\d3d10\device\CreateBlendState10.hpp" />
     <ClInclude Include="include\d3d10\device\CreateDepthStencilState10.hpp" />
+    <ClInclude Include="include\d3d10\device\CreateResource10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyBlendState10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyDepthStencilState10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyDevice10.hpp" />
@@ -316,6 +331,7 @@
     <ClInclude Include="include\d3d10\GsAdapter10.hpp" />
     <ClInclude Include="include\d3d10\GsBlendState10.hpp" />
     <ClInclude Include="include\d3d10\GsDepthStencilState10.hpp" />
+    <ClInclude Include="include\d3d10\GsResource10.hpp" />
     <ClInclude Include="include\d3d9\CloseAdapter9.hpp" />
     <ClInclude Include="include\d3d9\CreateDevice9.hpp" />
     <ClInclude Include="include\d3d9\GetCaps9.hpp" />
@@ -323,6 +339,7 @@
     <ClInclude Include="include\d3d9\GsDevice9.hpp" />
     <ClInclude Include="include\d3d9\device\SetRenderState9.hpp" />
     <ClInclude Include="include\DriverDebug.hpp" />
+    <ClInclude Include="include\dxgi\DxgiEnumDebug.hpp" />
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\WindowsNtPolyfill.hpp" />
     <ClInclude Include="include\d3d10\GsDevice10.hpp" />

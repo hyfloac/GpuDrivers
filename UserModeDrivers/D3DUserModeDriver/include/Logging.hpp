@@ -59,8 +59,8 @@ DECL_LOG(Error);
   #define TRACE_ENTRYPOINT() internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__, "")
   #define TRACE_ENTRYPOINT_ARG(...) internal_LOG(Debug, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #else 
-  #define TRACE_ENTRYPOINT()
-  #define TRACE_ENTRYPOINT_ARG(...)
+  #define TRACE_ENTRYPOINT() do { } while(false)
+  #define TRACE_ENTRYPOINT_ARG(...) do { } while(false)
 #endif
 
 
@@ -73,3 +73,7 @@ DECL_LOG(Error);
 #define LOG_INFO(...) internal_LOG(Info, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #define LOG_WARN(...) internal_LOG(Warn, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
 #define LOG_ERROR(...) internal_LOG(Error, __FUNCTION__, __FILE__, __LINE__ , ## __VA_ARGS__)
+
+void LogWindowsError(const DWORD dwErr) noexcept;
+
+void LogWindowsHResultAndError(const HRESULT hResult) noexcept;

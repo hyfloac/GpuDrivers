@@ -2,11 +2,16 @@
 #include "d3d10/GsDevice10.hpp"
 #include <ConPrinter.hpp>
 #include <new>
+#include <comdef.h>
 
 #include "Logging.hpp"
 
 #include "d3d10/device/SetBlendState10.hpp"
 #include "d3d10/device/SetDepthStencilState10.hpp"
+
+#include "d3d10/device/CalcPrivateResourceSize10.hpp"
+
+#include "d3d10/device/CreateResource10.hpp"
 
 #include "d3d10/device/CalcPrivateBlendStateSize10.hpp"
 #include "d3d10/device/CreateBlendState10.hpp"
@@ -81,6 +86,35 @@ SIZE_T GsAdapter10::CalcPrivateDeviceSize(const D3D10DDIARG_CALCPRIVATEDEVICESIZ
 HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexcept
 {
     TRACE_ENTRYPOINT();
+
+    // This doesn't need to happen, and will not work until WDDM 2.5
+    if constexpr(false)
+    {
+        UINT privateData = 42;
+
+        D3DDDICB_CREATECONTEXT createContext {};
+        createContext.NodeOrdinal = 0;
+        createContext.EngineAffinity = 0;
+        createContext.Flags.Value = 0;
+        createContext.Flags.NullRendering = false;
+        createContext.Flags.InitialData = false;
+        createContext.Flags.DisableGpuTimeout = true;
+        createContext.Flags.SynchronizationOnly = false;
+        createContext.Flags.HwQueueSupported = true;
+        createContext.Flags.NoKmdAccess = false;
+        createContext.pPrivateDriverData = &privateData;
+        createContext.PrivateDriverDataSize = sizeof(privateData);
+
+        HRESULT status = createDevice.pKTCallbacks->pfnCreateContextCb(createDevice.hRTDevice.handle, &createContext);
+
+        if(!SUCCEEDED(status))
+        {
+            LogWindowsError(status);
+            LogWindowsError(GetLastError());
+        }
+
+        (void) status;
+    }
 
     GsDevice10* device;
     //   It seems like in D3D10 creation of the device was changed to have
@@ -172,9 +206,9 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnResourceUnmap);
     GEN_NOOP_BOOL(createDevice.pDeviceFuncs->pfnResourceIsStagingBusy);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnRelocateDeviceFuncs);
-    GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateResourceSize);
+    createDevice.pDeviceFuncs->pfnCalcPrivateResourceSize = GsCalcPrivateResourceSize10;
     GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateOpenedResourceSize);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnCreateResource);
+    createDevice.pDeviceFuncs->pfnCreateResource = GsCreateResource10;
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnOpenResource);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDestroyResource);
     GEN_NOOP_SIZE(createDevice.pDeviceFuncs->pfnCalcPrivateShaderResourceViewSize);

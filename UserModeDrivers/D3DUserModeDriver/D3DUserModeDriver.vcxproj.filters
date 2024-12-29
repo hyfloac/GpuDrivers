@@ -102,6 +102,18 @@
     <ClCompile Include="src\d3d10\device\CheckFormatSupport10.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\d3d10\device\CalcPrivateResourceSize10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\device\CreateResource10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\d3d10\GsResource10.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Logging.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\d3d9\GetCaps9.hpp">
@@ -192,6 +204,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\d3d10\device\CheckFormatSupport10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\device\CalcPrivateResourceSize10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\device\CreateResource10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\GsResource10.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dxgi\DxgiEnumDebug.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\d3d10\D3D10EnumDebug.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

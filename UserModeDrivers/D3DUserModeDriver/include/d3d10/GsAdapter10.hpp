@@ -8,9 +8,9 @@ class GsAdapter10 final
     DEFAULT_DESTRUCT(GsAdapter10);
     DELETE_CM(GsAdapter10);
 public:
-    static GsAdapter10* FromHandle(const D3D10DDI_HADAPTER adapter) noexcept
+    static GsAdapter10* FromHandle(const D3D10DDI_HADAPTER handle) noexcept
     {
-        return static_cast<GsAdapter10*>(adapter.pDrvPrivate);
+        return static_cast<GsAdapter10*>(handle.pDrvPrivate);
     }
 public:
     GsAdapter10(

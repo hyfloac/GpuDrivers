@@ -5,6 +5,7 @@ extern "C" {
 #include "Common.h"
 #include <wdmguid.h>
 #include "RegisterMemCopy.h"
+#include "shared/CreateAllocationDriverData.hpp"
 #include <ntstrsafe.h>
 
 #ifdef __cplusplus
@@ -783,29 +784,6 @@ NTSTATUS HyMiniportDevice::QueryAdapterInfo(IN_CONST_PDXGKARG_QUERYADAPTERINFO p
     }
 }
 
-NTSTATUS HyMiniportDevice::CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevice) noexcept
-{
-    CHECK_IRQL(PASSIVE_LEVEL);
-    LOG_DEBUG("System Device: %d, GDI Device: %d, pInfo: %p\n", pCreateDevice->Flags.SystemDevice, pCreateDevice->Flags.GdiDevice, pCreateDevice->pInfo);
-
-    GsLogicalDevice* logicalDevice = new GsLogicalDevice(
-        pCreateDevice->hDevice,            // dxgkHandle
-        pCreateDevice->Flags.SystemDevice, // isSystemDevice
-        pCreateDevice->Flags.GdiDevice     // isGdiDevice
-    );
-
-    if(!logicalDevice)
-    {
-        LOG_WARN("Failed to allocate Logical Device.\n");
-        return STATUS_NO_MEMORY;
-    }
-
-    pCreateDevice->hDevice = logicalDevice;
-    pCreateDevice->pInfo = &logicalDevice->DeviceInfo();
-
-    return STATUS_SUCCESS;
-}
-
 NTSTATUS HyMiniportDevice::FillUmDriverPrivate(IN_CONST_PDXGKARG_QUERYADAPTERINFO pQueryAdapterInfo) const noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
@@ -1232,6 +1210,181 @@ NTSTATUS HyMiniportDevice::CollectDbgInfo(IN_CONST_PDXGKARG_COLLECTDBGINFO pColl
     {
         
     }
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS HyMiniportDevice::CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevice) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+    LOG_DEBUG(
+        "System Device: %d, GDI Device: %d, pInfo: %p\n",
+        pCreateDevice->Flags.SystemDevice,
+        pCreateDevice->Flags.GdiDevice,
+        pCreateDevice->pInfo
+    );
+
+    GsLogicalDevice* logicalDevice = new GsLogicalDevice(
+        pCreateDevice->hDevice,            // dxgkHandle
+        pCreateDevice->Flags.SystemDevice, // isSystemDevice
+        pCreateDevice->Flags.GdiDevice     // isGdiDevice
+    );
+
+    if(!logicalDevice)
+    {
+        LOG_WARN("Failed to allocate Logical Device.\n");
+        return STATUS_NO_MEMORY;
+    }
+
+    pCreateDevice->hDevice = logicalDevice;
+    pCreateDevice->pInfo = &logicalDevice->DeviceInfo();
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCreateAllocation) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    if(pCreateAllocation->PrivateDriverDataSize < sizeof(DriverDataBase))
+    {
+        LOG_ERROR("Driver data is too small to be ours.\n");
+
+        return STATUS_GRAPHICS_DRIVER_MISMATCH;
+    }
+
+    const CreateAllocationDriverData* const driverData = static_cast<const CreateAllocationDriverData*>(pCreateAllocation->pPrivateDriverData);
+
+    if(driverData->Base.Magic != CREATE_ALLOCATION_MAGIC)
+    {
+        LOG_ERROR("Driver data did not have a correct signature.\n");
+
+        return STATUS_GRAPHICS_DRIVER_MISMATCH;
+    }
+
+    if(driverData->Base.Version < CreateAllocationDriverData_V1::Version)
+    {
+        LOG_ERROR(
+            "Driver data version (%d) is too old for us to handle.\n",
+            driverData->Base.Version
+        );
+
+        return STATUS_GRAPHICS_DRIVER_MISMATCH;
+    }
+
+    if(sizeof(CreateAllocationDriverData_V1) > pCreateAllocation->PrivateDriverDataSize)
+    {
+        LOG_ERROR(
+            "Mismatch between CreateAllocationDriverData_V1 (%zu) [0x%zX] and pCreateAllocation->PrivateDriverDataSize (%u) [0x%X]\n",
+            sizeof(CreateAllocationDriverData_V1),
+            pCreateAllocation->PrivateDriverDataSize,
+            pCreateAllocation->PrivateDriverDataSize
+        );
+
+        return STATUS_GRAPHICS_DRIVER_MISMATCH;
+    }
+
+    if(pCreateAllocation->NumAllocations == 0)
+    {
+        LOG_ERROR(
+            "Invalid number of allocations (%u)\n",
+            pCreateAllocation->NumAllocations
+        );
+
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    for(UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+    {
+        DXGK_ALLOCATIONINFO& allocationInfo = pCreateAllocation->pAllocationInfo[i];
+
+        if(allocationInfo.PrivateDriverDataSize < sizeof(DriverDataBase))
+        {
+            LOG_ERROR("Allocation info %u driver data is too small to be ours.\n", i);
+
+            return STATUS_GRAPHICS_DRIVER_MISMATCH;
+        }
+
+        const AllocationInfoDriverData* const aiDriverData = static_cast<const AllocationInfoDriverData*>(allocationInfo.pPrivateDriverData);
+
+        if(aiDriverData->Base.Magic != ALLOCATION_INFO_MAGIC)
+        {
+            LOG_ERROR("Allocation info %u driver data did not have a correct signature.\n", i);
+
+            return STATUS_GRAPHICS_DRIVER_MISMATCH;
+        }
+
+        if(aiDriverData->Base.Version < AllocationInfoDriverData_V1::Version)
+        {
+            LOG_ERROR(
+                "Allocation info %u driver data version (%d) is too old for us to handle.\n",
+                i,
+                driverData->Base.Version
+            );
+
+            return STATUS_GRAPHICS_DRIVER_MISMATCH;
+        }
+
+        if(sizeof(AllocationInfoDriverData_V1) > allocationInfo.PrivateDriverDataSize)
+        {
+            LOG_ERROR(
+                "Mismatch between AllocationInfoDriverData_V1 (%zu) [0x%zX] and allocationInfo.PrivateDriverDataSize (%u) [0x%X]\n",
+                sizeof(AllocationInfoDriverData_V1),
+                allocationInfo.PrivateDriverDataSize,
+                allocationInfo.PrivateDriverDataSize
+            );
+
+            return STATUS_GRAPHICS_DRIVER_MISMATCH;
+        }
+    }
+
+    pCreateAllocation->hResource = HyAllocate(PagedPool, 4, 'sRSG');
+
+    for(UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+    {
+        DXGK_ALLOCATIONINFO& allocationInfo = pCreateAllocation->pAllocationInfo[i];
+
+        const AllocationInfoDriverData* const aiDriverData = static_cast<const AllocationInfoDriverData*>(allocationInfo.pPrivateDriverData);
+
+        allocationInfo.Size = aiDriverData->V1.PhysicalSize;
+        allocationInfo.MaximumRenamingListLength = 0;
+        allocationInfo.Flags.Value = 0;
+        allocationInfo.AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_NORMAL;
+
+        if(allocationInfo.pAllocationUsageHint)
+        {
+            allocationInfo.pAllocationUsageHint->Version = 1;
+            allocationInfo.pAllocationUsageHint->v1.Flags.PrivateFormat = aiDriverData->V1.Flags.PrivateFormat;
+            allocationInfo.pAllocationUsageHint->v1.Flags.Swizzled = aiDriverData->V1.Flags.Swizzled;
+            allocationInfo.pAllocationUsageHint->v1.Flags.MipMap = aiDriverData->V1.Flags.MipMapped;
+            allocationInfo.pAllocationUsageHint->v1.Flags.Cube = aiDriverData->V1.Flags.CubeTexture;
+            allocationInfo.pAllocationUsageHint->v1.Flags.Volume = aiDriverData->V1.Flags.VolumeTexture;
+            allocationInfo.pAllocationUsageHint->v1.Flags.Vertex = aiDriverData->V1.Flags.VertexBuffer;
+            allocationInfo.pAllocationUsageHint->v1.Flags.Index = aiDriverData->V1.Flags.IndexBuffer;
+            allocationInfo.pAllocationUsageHint->v1.Flags.Reserved = 0;
+
+            if(aiDriverData->V1.Flags.PrivateFormat)
+            {
+                allocationInfo.pAllocationUsageHint->v1.PrivateFormat = aiDriverData->V1.PrivateFormat;
+            }
+            else
+            {
+                allocationInfo.pAllocationUsageHint->v1.Format = aiDriverData->V1.Format;
+            }
+
+            allocationInfo.pAllocationUsageHint->v1.SwizzledFormat = 0;
+            allocationInfo.pAllocationUsageHint->v1.ByteOffset = 0;
+            allocationInfo.pAllocationUsageHint->v1.Width = aiDriverData->V1.Width;
+            allocationInfo.pAllocationUsageHint->v1.Height = aiDriverData->V1.Height;
+            allocationInfo.pAllocationUsageHint->v1.Pitch = aiDriverData->V1.Pitch;
+            allocationInfo.pAllocationUsageHint->v1.Depth = aiDriverData->V1.Depth;
+            allocationInfo.pAllocationUsageHint->v1.SlicePitch = aiDriverData->V1.SlicePitch;
+        }
+
+        allocationInfo.hAllocation = HyAllocate(PagedPool, 4, 'lASG');
+    }
+
+    LOG_DEBUG("Successfully completed allocation.\n");
 
     return STATUS_SUCCESS;
 }
