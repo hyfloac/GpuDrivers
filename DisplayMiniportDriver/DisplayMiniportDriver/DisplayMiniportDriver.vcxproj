@@ -491,6 +491,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
   <ItemGroup>
     <ClCompile Include="src\AddDevice.cpp" />
     <ClCompile Include="src\BlockTransfer.cpp" />
+    <ClCompile Include="src\CloseAllocation.cpp" />
     <ClCompile Include="src\CollectDbgInfo.cpp" />
     <ClCompile Include="src\CommitVidPn.cpp" />
     <ClCompile Include="src\ControlEtwLogging.cpp" />
@@ -498,6 +499,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\CreateAllocation.cpp" />
     <ClCompile Include="src\CreateContext.cpp" />
     <ClCompile Include="src\CreateDevice.cpp" />
+    <ClCompile Include="src\DestroyAllocation.cpp" />
     <ClCompile Include="src\DestroyContext.cpp" />
     <ClCompile Include="src\DestroyDevice.cpp" />
     <ClCompile Include="src\DeviceComms.cpp" />
@@ -527,6 +529,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\MemoryAllocator.c" />
     <ClCompile Include="src\NotifyAcpiEvent.cpp" />
+    <ClCompile Include="src\OpenAllocation.cpp" />
     <ClCompile Include="src\PresentDisplayOnly.cpp" />
     <ClCompile Include="src\QueryAdapterInfo.cpp" />
     <ClCompile Include="src\QueryChildRelations.cpp" />
@@ -550,6 +553,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="DriverVersionNumbers.h" />
     <ClInclude Include="include\AddDevice.hpp" />
     <ClInclude Include="include\BlockTransfer.hpp" />
+    <ClInclude Include="include\CloseAllocation.hpp" />
     <ClInclude Include="include\CollectDbgInfo.hpp" />
     <ClInclude Include="include\CommitVidPn.hpp" />
     <ClInclude Include="include\Common.h" />
@@ -561,6 +565,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\CreateContext.hpp" />
     <ClInclude Include="include\CreateDevice.hpp" />
     <ClInclude Include="include\D3DPolyFills.h" />
+    <ClInclude Include="include\DestroyAllocation.hpp" />
     <ClInclude Include="include\DestroyContext.hpp" />
     <ClInclude Include="include\DestroyDevice.hpp" />
     <ClInclude Include="include\DeviceComms.hpp" />
@@ -588,6 +593,7 @@ xcopy /y $(SolutionDir)..\UserModeDrivers\bin\x64\$(Configuration)\D3DUserModeDr
     <ClInclude Include="include\Logging.h" />
     <ClInclude Include="include\GsMemoryManager.hpp" />
     <ClInclude Include="include\Objects.hpp" />
+    <ClInclude Include="include\OpenAllocation.hpp" />
     <ClInclude Include="include\PresentDisplayOnly.hpp" />
     <ClInclude Include="include\RecommendFunctionalVidPn.hpp" />
     <ClInclude Include="include\RecommendMonitorModes.hpp" />

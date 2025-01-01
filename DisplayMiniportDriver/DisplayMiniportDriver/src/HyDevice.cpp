@@ -1338,7 +1338,11 @@ NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCre
         }
     }
 
-    pCreateAllocation->hResource = HyAllocate(PagedPool, 4, 'sRSG');
+    {
+        UINT* const x = HY_ALLOC(UINT, PagedPool, POOL_TAG_RESOURCE);
+        *x = POOL_TAG_RESOURCE;
+        pCreateAllocation->hResource = x;
+    }
 
     for(UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
     {
@@ -1347,9 +1351,38 @@ NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCre
         const AllocationInfoDriverData* const aiDriverData = static_cast<const AllocationInfoDriverData*>(allocationInfo.pPrivateDriverData);
 
         allocationInfo.Size = aiDriverData->V1.PhysicalSize;
+
+        constexpr bool UseApertureSegment = GsMemoryManager::EnableApertureSegment && true;
+
+        if constexpr(UseApertureSegment)
+        {
+            allocationInfo.PreferredSegment.SegmentId0 = 0;
+            allocationInfo.PreferredSegment.Direction0 = 0;
+        }
+        else
+        {
+            if constexpr(GsMemoryManager::EnableApertureSegment)
+            {
+                allocationInfo.PreferredSegment.SegmentId0 = 1;
+                allocationInfo.PreferredSegment.Direction0 = 0;
+            }
+            else
+            {
+                allocationInfo.PreferredSegment.SegmentId0 = 2;
+                allocationInfo.PreferredSegment.Direction0 = 0;
+            }
+        }
+
+        allocationInfo.SupportedReadSegmentSet |= 1;
+        allocationInfo.SupportedWriteSegmentSet |= 1;
+
         allocationInfo.MaximumRenamingListLength = 0;
+        {
+            UINT* const x = HY_ALLOC(UINT, PagedPool, POOL_TAG_RESOURCE);
+            *x = POOL_TAG_RESOURCE + 1;
+            allocationInfo.hAllocation = x;
+        }
         allocationInfo.Flags.Value = 0;
-        allocationInfo.AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_NORMAL;
 
         if(allocationInfo.pAllocationUsageHint)
         {
@@ -1381,10 +1414,27 @@ NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCre
             allocationInfo.pAllocationUsageHint->v1.SlicePitch = aiDriverData->V1.SlicePitch;
         }
 
-        allocationInfo.hAllocation = HyAllocate(PagedPool, 4, 'lASG');
+        allocationInfo.AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_NORMAL;
     }
 
     LOG_DEBUG("Successfully completed allocation.\n");
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS HyMiniportDevice::DestroyAllocation(IN_CONST_PDXGKARG_DESTROYALLOCATION pDestroyAllocation) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    for(UINT i = 0; i < pDestroyAllocation->NumAllocations; ++i)
+    {
+        HY_FREE(pDestroyAllocation->pAllocationList[i], POOL_TAG_RESOURCE);
+    }
+
+    if(pDestroyAllocation->Flags.DestroyResource)
+    {
+        HY_FREE(pDestroyAllocation->hResource, POOL_TAG_RESOURCE);
+    }
 
     return STATUS_SUCCESS;
 }

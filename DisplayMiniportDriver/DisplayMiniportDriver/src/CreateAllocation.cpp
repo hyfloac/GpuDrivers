@@ -29,7 +29,7 @@ NTSTATUS GsCreateAllocation(
     if(!pCreateAllocation)
     {
         LOG_ERROR("Invalid Parameter: pCreateAllocation\n");
-        return STATUS_INVALID_PARAMETER_1;
+        return STATUS_INVALID_PARAMETER_2;
     }
 
     LOG_DEBUG(

@@ -11,6 +11,7 @@ extern "C" {
 #define POOL_TAG_LOGGING          ('gLSG')
 #define POOL_TAG_PRESENT          ('rPSG')
 #define POOL_TAG_GRAPHICS_CONTEXT ('CGSG')
+#define POOL_TAG_RESOURCE         ('sRSG')
 
 void* HyAllocate(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);
 void* HyAllocateZeroed(POOL_TYPE PoolType, SIZE_T NumberOfBytes, ULONG Tag);

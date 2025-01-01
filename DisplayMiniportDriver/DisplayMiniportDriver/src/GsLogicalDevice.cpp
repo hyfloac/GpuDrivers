@@ -69,6 +69,47 @@ NTSTATUS GsLogicalDevice::CreateContext(INOUT_PDXGKARG_CREATECONTEXT pCreateCont
     return STATUS_SUCCESS;
 }
 
+NTSTATUS GsLogicalDevice::OpenAllocation(IN_CONST_PDXGKARG_OPENALLOCATION pOpenAllocation) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    if(!pOpenAllocation->Flags.Create)
+    {
+        return STATUS_SUCCESS;
+    }
+
+    if(pOpenAllocation->Flags.ReadOnly)
+    {
+        return STATUS_SUCCESS;
+    }
+
+    // Set the hDeviceSpecificAllocation member of each pOpenAllocation to some metadata structure, or just some dynamically allocated integer for now.
+
+    for(UINT i = 0; i < pOpenAllocation->NumAllocations; ++i)
+    {
+        DXGK_OPENALLOCATIONINFO& allocation = pOpenAllocation->pOpenAllocation[i];
+        {
+            UINT* const x = HY_ALLOC(UINT, PagedPool, POOL_TAG_RESOURCE);
+            *x = POOL_TAG_RESOURCE + 2;
+            allocation.hDeviceSpecificAllocation = x;
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS GsLogicalDevice::CloseAllocation(IN_CONST_PDXGKARG_CLOSEALLOCATION pCloseAllocation) noexcept
+{
+    CHECK_IRQL(PASSIVE_LEVEL);
+
+    for(UINT i = 0; i < pCloseAllocation->NumAllocations; ++i)
+    {
+        HY_FREE(pCloseAllocation->pOpenHandleList[i], POOL_TAG_RESOURCE);
+    }
+
+    return STATUS_SUCCESS;
+}
+
 #pragma code_seg()
 
 

@@ -27,6 +27,8 @@ public:
     [[nodiscard]] DXGK_DEVICEINFO& DeviceInfo() noexcept { return m_DeviceInfo; }
 
     NTSTATUS CreateContext(INOUT_PDXGKARG_CREATECONTEXT pCreateContext) noexcept;
+    NTSTATUS OpenAllocation(IN_CONST_PDXGKARG_OPENALLOCATION pOpenAllocation) noexcept;
+    NTSTATUS CloseAllocation(IN_CONST_PDXGKARG_CLOSEALLOCATION pCloseAllocation) noexcept;
 private:
     HANDLE m_DxgkHandle;  // NOLINT(clang-diagnostic-unused-private-field)
     UINT m_IsSystemDevice : 1;

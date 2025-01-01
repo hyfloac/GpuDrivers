@@ -41,6 +41,7 @@ extern "C" {
 #include "QueryAdapterInfo.hpp"
 #include "CreateDevice.hpp"
 #include "CreateAllocation.hpp"
+#include "DestroyAllocation.hpp"
 
 #include "CollectDbgInfo.hpp"
 #include "IsSupportedVidPn.hpp"
@@ -60,6 +61,8 @@ extern "C" {
 
 #include "ControlInterrupt.hpp"
 #include "DestroyDevice.hpp"
+#include "OpenAllocation.hpp"
+#include "CloseAllocation.hpp"
 
 #include "CreateContext.hpp"
 #include "DestroyContext.hpp"
@@ -259,8 +262,8 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     driverInitializationData.DxgkDdiQueryAdapterInfo = HyQueryAdapterInfo;
     driverInitializationData.DxgkDdiCreateDevice = HyCreateDevice;
     driverInitializationData.DxgkDdiCreateAllocation = GsCreateAllocation;
-    driverInitializationData.DxgkDdiDestroyAllocation = (PDXGKDDI_DESTROYALLOCATION) DdiNoOpNTSTATUS;
-    driverInitializationData.DxgkDdiDescribeAllocation = (PDXGKDDI_DESCRIBEALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiDestroyAllocation = GsDestroyAllocation;
+    // driverInitializationData.DxgkDdiDescribeAllocation = (PDXGKDDI_DESCRIBEALLOCATION) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiGetStandardAllocationDriverData = (PDXGKDDI_GETSTANDARDALLOCATIONDRIVERDATA) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiAcquireSwizzlingRange = (PDXGKDDI_ACQUIRESWIZZLINGRANGE) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiReleaseSwizzlingRange = (PDXGKDDI_RELEASESWIZZLINGRANGE) DdiNoOpNTSTATUS;
@@ -291,8 +294,8 @@ _Use_decl_annotations_ NTSTATUS DriverEntryReal(IN PDRIVER_OBJECT DriverObject, 
     // driverInitializationData.DxgkDdiCreateOverlay = (PDXGKDDI_CREATEOVERLAY) DdiNoOpNTSTATUS;
     //
     driverInitializationData.DxgkDdiDestroyDevice = HyDestroyDevice;
-    // driverInitializationData.DxgkDdiOpenAllocation = (PDXGKDDI_OPENALLOCATIONINFO) DdiNoOpNTSTATUS;
-    // driverInitializationData.DxgkDdiCloseAllocation = (PDXGKDDI_CLOSEALLOCATION) DdiNoOpNTSTATUS;
+    driverInitializationData.DxgkDdiOpenAllocation = GsOpenAllocation;
+    driverInitializationData.DxgkDdiCloseAllocation = GsCloseAllocation;
     // driverInitializationData.DxgkDdiRender = (PDXGKDDI_RENDER) DdiNoOpNTSTATUS;
     // driverInitializationData.DxgkDdiPresent = (PDXGKDDI_PRESENT) DdiNoOpNTSTATUS;
     //
@@ -353,8 +356,8 @@ _Use_decl_annotations_ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN P
 #if !HY_BUILD_AS_KMDOD
 static void PrefillDriverInitializationData(DRIVER_INITIALIZATION_DATA& driverInitializationData) noexcept
 {
-    GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiCreateDevice);
-    GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiCreateAllocation);
+    // GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiCreateDevice);
+    // GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiCreateAllocation);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiDestroyAllocation);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiDescribeAllocation);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiGetStandardAllocationDriverData);
@@ -380,8 +383,8 @@ static void PrefillDriverInitializationData(DRIVER_INITIALIZATION_DATA& driverIn
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiStopCapture);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiCreateOverlay);
 
-    GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiDestroyDevice);
-    GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiOpenAllocation);
+    // GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiDestroyDevice);
+    // GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiOpenAllocation);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiCloseAllocation);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiRender);
     GEN_NOOP_NTSTATUS(driverInitializationData.DxgkDdiPresent);
