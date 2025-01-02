@@ -1242,6 +1242,31 @@ NTSTATUS HyMiniportDevice::CreateDevice(INOUT_PDXGKARG_CREATEDEVICE pCreateDevic
     return STATUS_SUCCESS;
 }
 
+static void SetPreferredSegment(DXGK_SEGMENTPREFERENCE& PreferredSegment, const UINT PreferenceSlot, const UINT SegmentId) noexcept
+{
+    // Segments use 1-based indexing in PreferredSegment.
+    switch(PreferenceSlot)
+    {
+        case 0:
+            PreferredSegment.SegmentId0 = SegmentId + 1;
+            break;
+        case 1:
+            PreferredSegment.SegmentId1 = SegmentId + 1;
+            break;
+        case 2:
+            PreferredSegment.SegmentId2 = SegmentId + 1;
+            break;
+        case 3:
+            PreferredSegment.SegmentId3 = SegmentId + 1;
+            break;
+        case 4:
+            PreferredSegment.SegmentId4 = SegmentId + 1;
+            break;
+        default:
+            break;
+    }
+}
+
 NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCreateAllocation) noexcept
 {
     CHECK_IRQL(PASSIVE_LEVEL);
@@ -1352,37 +1377,111 @@ NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCre
 
         allocationInfo.Size = aiDriverData->V1.PhysicalSize;
 
-        constexpr bool UseApertureSegment = GsMemoryManager::EnableApertureSegment && true;
+        allocationInfo.HintedBank.Value = 0;
 
-        if constexpr(UseApertureSegment)
+        allocationInfo.PreferredSegment.Value = 0;
+        allocationInfo.PreferredSegment.SegmentId0 = 0;
+        allocationInfo.PreferredSegment.Direction0 = 0;
+        allocationInfo.PreferredSegment.SegmentId1 = 0;
+        allocationInfo.PreferredSegment.Direction1 = 0;
+        allocationInfo.PreferredSegment.SegmentId2 = 0;
+        allocationInfo.PreferredSegment.Direction2 = 0;
+        allocationInfo.PreferredSegment.SegmentId3 = 0;
+        allocationInfo.PreferredSegment.Direction3 = 0;
+        allocationInfo.PreferredSegment.SegmentId4 = 0;
+        allocationInfo.PreferredSegment.Direction4 = 0;
+
+
+        UINT preferredSegmentSlot = 0;
+
+        if(aiDriverData->V1.Flags.Swizzled)
         {
-            allocationInfo.PreferredSegment.SegmentId0 = 0;
-            allocationInfo.PreferredSegment.Direction0 = 0;
+            // Swizzled formats have to be done through the aperture.
+            // https://learn.microsoft.com/en-us/windows-hardware/drivers/display/mapping-virtual-addresses-to-a-memory-segment
+            if constexpr(!GsMemoryManager::EnableApertureSegment)
+            {
+                return STATUS_NO_MEMORY;
+            }
+
+            if(m_MemoryManager.ApertureSegmentId() == GsMemoryManager::InvalidSegmentId)
+            {
+                return STATUS_NO_MEMORY;
+            }
+
+            SetPreferredSegment(allocationInfo.PreferredSegment, preferredSegmentSlot++, m_MemoryManager.ApertureSegmentId());
         }
         else
         {
-            if constexpr(GsMemoryManager::EnableApertureSegment)
+            // Prefer the Visible segment, but fallback to the Aperture segment.
+            if(m_MemoryManager.CpuVisibleSegmentId() == GsMemoryManager::InvalidSegmentId)
             {
-                allocationInfo.PreferredSegment.SegmentId0 = 1;
-                allocationInfo.PreferredSegment.Direction0 = 0;
+                if constexpr(GsMemoryManager::EnableApertureSegment)
+                {
+                    SetPreferredSegment(allocationInfo.PreferredSegment, preferredSegmentSlot++, m_MemoryManager.ApertureSegmentId());
+                }
+                else
+                {
+                    return STATUS_NO_MEMORY;
+                }
             }
             else
             {
-                allocationInfo.PreferredSegment.SegmentId0 = 2;
-                allocationInfo.PreferredSegment.Direction0 = 0;
+                SetPreferredSegment(allocationInfo.PreferredSegment, preferredSegmentSlot++, m_MemoryManager.CpuVisibleSegmentId());
+
+                if constexpr(GsMemoryManager::EnableApertureSegment && false)
+                {
+                    if(m_MemoryManager.ApertureSegmentId() != GsMemoryManager::InvalidSegmentId)
+                    {
+                        SetPreferredSegment(allocationInfo.PreferredSegment, preferredSegmentSlot++, m_MemoryManager.ApertureSegmentId());
+                    }
+                }
             }
         }
 
-        allocationInfo.SupportedReadSegmentSet |= 1;
-        allocationInfo.SupportedWriteSegmentSet |= 1;
+        allocationInfo.SupportedReadSegmentSet = 0;
+        allocationInfo.SupportedWriteSegmentSet = 0;
+        allocationInfo.EvictionSegmentSet = 0;
+
+        if(m_MemoryManager.CpuVisibleSegmentId() != GsMemoryManager::InvalidSegmentId)
+        {
+            allocationInfo.SupportedReadSegmentSet  |= 1 << m_MemoryManager.CpuVisibleSegmentId();
+            allocationInfo.SupportedWriteSegmentSet |= 1 << m_MemoryManager.CpuVisibleSegmentId();
+        }
+
+        if constexpr(GsMemoryManager::EnableApertureSegment)
+        {
+            if(m_MemoryManager.ApertureSegmentId() != GsMemoryManager::InvalidSegmentId)
+            {
+                allocationInfo.SupportedReadSegmentSet  |= 1 << m_MemoryManager.ApertureSegmentId();
+                allocationInfo.SupportedWriteSegmentSet |= 1 << m_MemoryManager.ApertureSegmentId();
+                allocationInfo.EvictionSegmentSet       |= 1 << m_MemoryManager.ApertureSegmentId();
+            }
+        }
 
         allocationInfo.MaximumRenamingListLength = 0;
+
         {
             UINT* const x = HY_ALLOC(UINT, PagedPool, POOL_TAG_RESOURCE);
             *x = POOL_TAG_RESOURCE + 1;
             allocationInfo.hAllocation = x;
         }
+
         allocationInfo.Flags.Value = 0;
+        allocationInfo.Flags.CpuVisible = aiDriverData->V1.Flags.CpuRead || aiDriverData->V1.Flags.CpuWrite;
+        allocationInfo.Flags.PermanentSysMem = aiDriverData->V1.Flags.PermanentSysMem;
+        allocationInfo.Flags.Cached = false;
+        allocationInfo.Flags.Protected = false;
+        allocationInfo.Flags.ExistingSysMem = false;
+        allocationInfo.Flags.ExistingKernelSysMem = false;
+        allocationInfo.Flags.FromEndOfSegment = false;
+        allocationInfo.Flags.Swizzled = aiDriverData->V1.Flags.Swizzled;
+        allocationInfo.Flags.Overlay = false;
+        allocationInfo.Flags.Capture = false;
+        allocationInfo.Flags.UseAlternateVA = false;
+        allocationInfo.Flags.SynchronousPaging = false;
+        allocationInfo.Flags.LinkMirrored = false;
+        allocationInfo.Flags.LinkInstanced = false;
+        allocationInfo.Flags.HistoryBuffer = false;
 
         if(allocationInfo.pAllocationUsageHint)
         {
@@ -1417,7 +1516,24 @@ NTSTATUS HyMiniportDevice::CreateAllocation(INOUT_PDXGKARG_CREATEALLOCATION pCre
         allocationInfo.AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_NORMAL;
     }
 
-    LOG_DEBUG("Successfully completed allocation.\n");
+    for(UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+    {
+        DXGK_ALLOCATIONINFO& allocationInfo = pCreateAllocation->pAllocationInfo[i];
+
+        LOG_DEBUG(
+            "[Allocation %u] pPrivateDriverData: 0x%p, PrivateDriverDataSize: %u, Alignment: %u, HintedBank: 0x%08X, PreferredSegment: 0x%08X, SupportedReadSegmentSet: %u, SupportedWriteSegmentSet: %u, EvictionSegmentSet: %u, pAllocationUsageHint: 0x%p\n",
+            i,
+            allocationInfo.pPrivateDriverData,
+            allocationInfo.PrivateDriverDataSize,
+            allocationInfo.Alignment,
+            allocationInfo.HintedBank.Value,
+            allocationInfo.PreferredSegment.Value,
+            allocationInfo.SupportedReadSegmentSet,
+            allocationInfo.SupportedWriteSegmentSet,
+            allocationInfo.EvictionSegmentSet,
+            allocationInfo.pAllocationUsageHint
+        );
+    }
 
     return STATUS_SUCCESS;
 }

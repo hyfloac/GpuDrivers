@@ -88,8 +88,10 @@ class GsMemoryManager final
     DEFAULT_DESTRUCT(GsMemoryManager);
     DELETE_CM(GsMemoryManager);
 public:
-    static constexpr inline bool EnableExtensiveLogging = true;
+    static inline constexpr bool EnableExtensiveLogging = true;
     static inline constexpr bool EnableApertureSegment = true;
+
+    static inline constexpr UINT InvalidSegmentId = 0xFFFFFFFF;
 public:
     NTSTATUS Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& deviceInfo, const DXGKRNL_INTERFACE& dxgkInterface) noexcept;
     NTSTATUS InitSegments(const ULONGLONG vramSize) noexcept;
@@ -102,6 +104,11 @@ public:
 
     [[nodiscard]] UINT ActiveSegments() const noexcept { return m_ActiveSegments; }
     [[nodiscard]] const GsSegment* EmbeddedSegments() const noexcept { return m_EmbeddedSegments; }
+
+    [[nodiscard]] UINT ApertureSegmentId() const noexcept { return m_ApertureSegmentId; }
+    [[nodiscard]] UINT CpuInvisibleSegmentId() const noexcept { return m_CpuInvisibleSegmentId; }
+    [[nodiscard]] UINT CpuVisibleSegmentId() const noexcept { return m_CpuVisibleSegmentId; }
+
     [[nodiscard]] UINT PagingBufferSegmentId() const noexcept { return m_PagingBufferSegmentId; }
     [[nodiscard]] UINT PagingBufferSize() const noexcept { return m_PagingBufferSize; }
 private:
@@ -116,6 +123,11 @@ private:
 
     UINT m_ActiveSegments;
     GsSegment m_EmbeddedSegments[8];
+
+    UINT m_ApertureSegmentId;
+    UINT m_CpuInvisibleSegmentId;
+    UINT m_CpuVisibleSegmentId;
+
     UINT m_PagingBufferSegmentId;
     UINT m_PagingBufferSize;
 };

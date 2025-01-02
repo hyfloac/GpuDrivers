@@ -6,6 +6,9 @@
 
 #include "Logging.hpp"
 
+#include "d3d10/device/DynamicResourceMapDiscard10.hpp"
+#include "d3d10/device/DynamicResourceUnmap.hpp"
+
 #include "d3d10/device/SetBlendState10.hpp"
 #include "d3d10/device/SetDepthStencilState10.hpp"
 
@@ -166,8 +169,10 @@ HRESULT GsAdapter10::CreateDevice(D3D10DDIARG_CREATEDEVICE& createDevice) noexce
     // !!! BEGIN MIDDLE-FREQUENCY !!!
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDrawIndexedInstanced);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDrawInstanced);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDynamicResourceMapDiscard);
-    GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDynamicResourceUnmap);
+    // GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDynamicResourceMapDiscard);
+    // GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnDynamicResourceUnmap);
+    createDevice.pDeviceFuncs->pfnDynamicResourceMapDiscard = GsDynamicResourceMapDiscard10;
+    createDevice.pDeviceFuncs->pfnDynamicResourceUnmap = GsDynamicResourceUnmap;
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnGsSetConstantBuffers);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnGsSetShader);
     GEN_NOOP_VOID(createDevice.pDeviceFuncs->pfnIaSetTopology);

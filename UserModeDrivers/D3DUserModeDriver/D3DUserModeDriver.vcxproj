@@ -290,6 +290,8 @@
     <ClCompile Include="src\d3d10\device\DestroyDepthStencilState10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyBlendState10.cpp" />
     <ClCompile Include="src\d3d10\device\DestroyDevice10.cpp" />
+    <ClCompile Include="src\d3d10\device\DynamicResourceMapDiscard10.cpp" />
+    <ClCompile Include="src\d3d10\device\DynamicResourceUnmap.cpp" />
     <ClCompile Include="src\d3d10\device\SetBlendState10.cpp" />
     <ClCompile Include="src\d3d10\device\SetDepthStencilState10.cpp" />
     <ClCompile Include="src\d3d10\GsAdapter10.cpp" />
@@ -326,6 +328,8 @@
     <ClInclude Include="include\d3d10\device\DestroyBlendState10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyDepthStencilState10.hpp" />
     <ClInclude Include="include\d3d10\device\DestroyDevice10.hpp" />
+    <ClInclude Include="include\d3d10\device\DynamicResourceMapDiscard10.hpp" />
+    <ClInclude Include="include\d3d10\device\DynamicResourceUnmap.hpp" />
     <ClInclude Include="include\d3d10\device\SetBlendState10.hpp" />
     <ClInclude Include="include\d3d10\device\SetDepthStencilState10.hpp" />
     <ClInclude Include="include\d3d10\GsAdapter10.hpp" />

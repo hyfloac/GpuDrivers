@@ -94,17 +94,21 @@ NTSTATUS GsMemoryManager::Init(const UINT16 deviceId, const DXGK_DEVICE_INFO& de
     return STATUS_SUCCESS;
 }
 
-NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
+NTSTATUS GsMemoryManager::InitSegments(ULONGLONG vramSize) noexcept
 {
-    const UINT64 cpuVisibleVramSize = 4 * vramSize;
+    const ULONGLONG barSize = m_MappedBarMap.Region1.Length;
 
-    LOG_DEBUG("cpuVisibleVramSize: 0x%016llX, vramSize: 0x%016llX, Region1 Length: 0x%016llX\n", cpuVisibleVramSize, vramSize, m_MappedBarMap.Region1.Length);
+    const UINT64 cpuVisibleVramSize = min(barSize, vramSize);
+    const UINT64 cpuInvisibleVramSize = barSize >= vramSize ? 0 : vramSize - barSize;
+
+    LOG_DEBUG("cpuVisibleVramSize: 0x%016llX, vramSize: 0x%016llX, Region1 Length: 0x%016llX\n", cpuVisibleVramSize, vramSize, barSize);
 
     m_ActiveSegments = 0;
 
     if constexpr(EnableApertureSegment)
     {
-        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+        m_ApertureSegmentId = m_ActiveSegments++;
+        GsSegment& descriptor = m_EmbeddedSegments[m_ApertureSegmentId];
 
         const SIZE_T size = static_cast<SIZE_T>(4) * vramSize;
 
@@ -126,15 +130,23 @@ NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
         descriptor.Flags.Bits.PreservedDuringHibernate = 1;
         descriptor.Flags.Bits.DirectFlip = 0;
         descriptor.Flags.Bits.Use64KBPages = 0;
+        descriptor.Flags.Bits.SupportsCpuHostAperture = 0;
+    }
+    else
+    {
+        m_ApertureSegmentId = InvalidSegmentId;
     }
 
+    if(cpuInvisibleVramSize > 0)
     {
-        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+        m_CpuInvisibleSegmentId = m_ActiveSegments++;
+        GsSegment& descriptor = m_EmbeddedSegments[m_CpuInvisibleSegmentId];
 
         // CPU Invisible Segment
-        descriptor.BaseAddress.QuadPart = 0;
-        descriptor.CpuTranslatedAddress.QuadPart = static_cast<LONGLONG>(m_MappedBarMap.Region1.Start);
-        descriptor.Size = min(m_MappedBarMap.Region1.Length, vramSize);
+        // Start Invisible segment after Visible segment.
+        descriptor.BaseAddress.QuadPart = static_cast<LONGLONG>(cpuVisibleVramSize);
+        descriptor.CpuTranslatedAddress.QuadPart = 0;
+        descriptor.Size = cpuInvisibleVramSize;
         descriptor.CommitLimit = descriptor.Size;
 
         descriptor.Flags.Value = 0;
@@ -145,22 +157,27 @@ NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
         descriptor.Flags.Bits.CacheCoherent = 1;
         descriptor.Flags.Bits.PitchAlignment = 0;
         descriptor.Flags.Bits.PopulatedFromSystemMemory = 0;
-        descriptor.Flags.Bits.PreservedDuringStandby = 0;
-        descriptor.Flags.Bits.PreservedDuringHibernate = 0;
-        descriptor.Flags.Bits.DirectFlip = 1;
-        descriptor.Flags.Bits.Use64KBPages = 1;
+        descriptor.Flags.Bits.PreservedDuringStandby = 1;
+        descriptor.Flags.Bits.PreservedDuringHibernate = 1;
+        descriptor.Flags.Bits.DirectFlip = 0;
+        descriptor.Flags.Bits.Use64KBPages = 0;
         descriptor.Flags.Bits.SupportsCpuHostAperture = 1;
+    }
+    else
+    {
+        m_CpuInvisibleSegmentId = InvalidSegmentId;
     }
 
     if(cpuVisibleVramSize != 0)
     {
-        GsSegment& descriptor = m_EmbeddedSegments[m_ActiveSegments++];
+        m_CpuVisibleSegmentId = m_ActiveSegments++;
+        GsSegment& descriptor = m_EmbeddedSegments[m_CpuVisibleSegmentId];
 
         // CPU Visible Segment
         descriptor.BaseAddress.QuadPart = 0;
-        descriptor.CpuTranslatedAddress.QuadPart = 0;
+        descriptor.CpuTranslatedAddress.QuadPart = static_cast<LONGLONG>(m_MappedBarMap.Region1.Start);
         descriptor.Size = cpuVisibleVramSize;
-        descriptor.CommitLimit = 0xFFFFFFFFFFFFFFFF;
+        descriptor.CommitLimit = descriptor.Size;
 
         descriptor.Flags.Value = 0;
         descriptor.Flags.Bits.Aperture = 0;
@@ -174,6 +191,11 @@ NTSTATUS GsMemoryManager::InitSegments(const ULONGLONG vramSize) noexcept
         descriptor.Flags.Bits.PreservedDuringHibernate = 1;
         descriptor.Flags.Bits.DirectFlip = 0;
         descriptor.Flags.Bits.Use64KBPages = 0;
+        descriptor.Flags.Bits.SupportsCpuHostAperture = 0;
+    }
+    else
+    {
+        m_CpuVisibleSegmentId = InvalidSegmentId;
     }
 
     m_PagingBufferSegmentId = 0;

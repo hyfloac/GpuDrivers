@@ -23,6 +23,19 @@ public:
         const D3D10DDI_CORELAYER_DEVICECALLBACKS& umCallbacks
     ) noexcept;
 
+    void DynamicResourceMapDiscard(
+        const D3D10DDI_HRESOURCE hResource,
+        const UINT Subresource,
+        const D3D10_DDI_MAP MapType,
+        const UINT MapFlags,
+        D3D10DDI_MAPPED_SUBRESOURCE* const pMappedSubresource
+    ) noexcept;
+
+    void DynamicResourceUnmap(
+        const D3D10DDI_HRESOURCE hResource,
+        const UINT Subresource
+    ) noexcept;
+
     void SetBlendState(
         const D3D10DDI_HBLENDSTATE hBlendState,
         const FLOAT BlendFactor[4],

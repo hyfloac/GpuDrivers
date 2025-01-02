@@ -24,6 +24,119 @@ GsDevice10::GsDevice10(
     , m_StencilRef(0)
 { }
 
+void GsDevice10::DynamicResourceMapDiscard(
+    const D3D10DDI_HRESOURCE hResource,
+    const UINT Subresource,
+    const D3D10_DDI_MAP MapType,
+    const UINT MapFlags,
+    D3D10DDI_MAPPED_SUBRESOURCE* const pMappedSubresource
+) noexcept
+{
+    GsResource10* const resource = GsResource10::FromHandle(hResource);
+
+    // constexpr UINT64 PAGE_SIZE = 4096;
+    //
+    // UINT64 pageCount = resource->Desc().PhysicalSize / PAGE_SIZE;
+    //
+    // if(pageCount * PAGE_SIZE < resource->Desc().PhysicalSize)
+    // {
+    //     ++pageCount;
+    // }
+    //
+    // UINT* pages = new UINT[pageCount];
+    // for(UINT i = 0; i < pageCount; ++i)
+    // {
+    //     pages[i] = i;
+    // }
+
+    D3DDDICB_LOCK lock {};
+    lock.hAllocation = resource->AllocationHandle();
+    lock.PrivateDriverData = 0;
+    // lock.NumPages = static_cast<UINT>(pageCount);
+    // lock.pPages = pages;
+    lock.NumPages = 0;
+    lock.pPages = nullptr;
+    lock.pData = nullptr;
+    lock.Flags.Value = 0;
+
+    switch(MapType)
+    {
+        case D3D10_DDI_MAP_READ:
+            lock.Flags.ReadOnly = true;
+            lock.Flags.WriteOnly = false;
+            break;
+        case D3D10_DDI_MAP_WRITE:
+        case D3D10_DDI_MAP_WRITE_DISCARD:
+        case D3D10_DDI_MAP_WRITE_NOOVERWRITE:
+            lock.Flags.ReadOnly = false;
+            lock.Flags.WriteOnly = true;
+            break;
+        case D3D10_DDI_MAP_READWRITE:
+            lock.Flags.ReadOnly = false;
+            lock.Flags.WriteOnly = false;
+            break;
+        default:
+            lock.Flags.ReadOnly = false;
+            lock.Flags.WriteOnly = false;
+            break;
+    }
+
+    lock.Flags.DonotWait = (MapFlags & D3D10_DDI_MAP_FLAG_DONOTWAIT) == D3D10_DDI_MAP_FLAG_DONOTWAIT;
+    lock.Flags.IgnoreSync = false;
+    lock.Flags.LockEntire = true; // TODO: This is only for debug.
+    lock.Flags.DonotEvict = true; // TODO: This is only for debug.
+    lock.Flags.AcquireAperture = false; // TODO: This is only for debug.
+    lock.Flags.Discard = true; 
+    lock.Flags.UseAlternateVA = false;
+    lock.Flags.IgnoreReadSync = false; // TODO: This is only for debug.
+    lock.Flags.Reserved = 0;
+
+    HRESULT status = m_DeviceCallbacks.pfnLockCb(m_RuntimeHandle.handle, &lock);
+
+    // delete[] pages;
+
+    if(!SUCCEEDED(status))
+    {
+        LOG_ERROR("Failed to lock resource: 0x{XP0}", status);
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, status);
+        return;
+    }
+
+    resource->Allocation() = lock.pData;
+    // We need to replace here, because we've discarded the old allocation.
+    resource->AllocationHandle() = lock.hAllocation;
+    pMappedSubresource->pData = lock.pData;
+    pMappedSubresource->RowPitch = resource->Desc().Pitch;
+    pMappedSubresource->DepthPitch = resource->Desc().SlicePitch;
+}
+
+void GsDevice10::DynamicResourceUnmap(
+    const D3D10DDI_HRESOURCE hResource,
+    const UINT Subresource
+) noexcept
+{
+    GsResource10* const resource = GsResource10::FromHandle(hResource);
+
+    // We need two handles if we have a swizzled texture.
+    // https://learn.microsoft.com/en-us/windows-hardware/drivers/display/mapping-virtual-addresses-to-a-memory-segment
+    D3DKMT_HANDLE handles[2];
+    handles[0] = resource->AllocationHandle();
+    handles[1] = 0;
+
+    D3DDDICB_UNLOCK unlock {};
+    unlock.NumAllocations = 1;
+    unlock.phAllocations = handles;
+
+    HRESULT status = m_DeviceCallbacks.pfnUnlockCb(m_RuntimeHandle.handle, &unlock);
+
+    if(!SUCCEEDED(status))
+    {
+        LOG_ERROR("Failed to unlock resource: 0x{XP0}", status);
+        m_UmCallbacks.pfnSetErrorCb(m_RuntimeCoreLayerHandle, status);
+        return;
+    }
+}
+
 void GsDevice10::SetBlendState(
     const D3D10DDI_HBLENDSTATE hBlendState, 
     const FLOAT BlendFactor[4], 
@@ -117,7 +230,7 @@ void GsDevice10::CreateResource(
         return;
     }
 
-    UINT64 pixelSize = 4;
+    UINT pixelSize = 4;
 
     if(pCreateResource->Format == DXGI_FORMAT_R8G8B8A8_UNORM)
     {
@@ -152,7 +265,7 @@ void GsDevice10::CreateResource(
     allocationInfo.V1.Base.Version = AllocationInfoDriverData_V1::Version;
     allocationInfo.V1.PhysicalSize = physicalSize;
     allocationInfo.V1.Flags.PrivateFormat = false;
-    allocationInfo.V1.Flags.Swizzled = true;
+    allocationInfo.V1.Flags.Swizzled = false;
     allocationInfo.V1.Flags.CubeTexture = pCreateResource->ResourceDimension == D3D10DDIRESOURCE_TEXTURECUBE;
     allocationInfo.V1.Flags.VolumeTexture = pCreateResource->ResourceDimension == D3D10DDIRESOURCE_TEXTURE3D;
     if(pCreateResource->ResourceDimension == D3D10DDIRESOURCE_BUFFER)
@@ -166,8 +279,6 @@ void GsDevice10::CreateResource(
         allocationInfo.V1.Flags.IndexBuffer = false;
     }
     allocationInfo.V1.Flags.Reserved = 0;
-
-
     allocationInfo.V1.Format = D3DDDIFMT_UNKNOWN;
 
     switch(pCreateResource->Format)
@@ -185,9 +296,9 @@ void GsDevice10::CreateResource(
     {
         allocationInfo.V1.Width = pCreateResource->pMipInfoList[0].TexelWidth;
         allocationInfo.V1.Height = pCreateResource->pMipInfoList[0].TexelHeight;
-        allocationInfo.V1.Pitch = pCreateResource->pMipInfoList[0].TexelWidth;
+        allocationInfo.V1.Pitch = pCreateResource->pMipInfoList[0].PhysicalWidth * pixelSize;
         allocationInfo.V1.Depth = pCreateResource->pMipInfoList[0].TexelDepth;
-        allocationInfo.V1.SlicePitch = pCreateResource->pMipInfoList[0].TexelWidth * pCreateResource->pMipInfoList[0].TexelHeight;
+        allocationInfo.V1.SlicePitch = pCreateResource->pMipInfoList[0].PhysicalWidth * pCreateResource->pMipInfoList[0].PhysicalHeight * pixelSize;
     }
 
     D3DDDICB_ALLOCATE allocate {};
@@ -195,10 +306,18 @@ void GsDevice10::CreateResource(
     allocate.PrivateDriverDataSize = sizeof(allocationData.V1);
     allocate.hResource = hRtResource.handle;
     allocate.NumAllocations = 1;
-    D3DDDI_ALLOCATIONINFO allocationInfos[1];
+    D3DDDI_ALLOCATIONINFO allocationInfos[1] {};
+    allocationInfos[0].hAllocation = 0;
     allocationInfos[0].pSystemMem = nullptr;
     allocationInfos[0].pPrivateDriverData = &allocationInfo;
     allocationInfos[0].PrivateDriverDataSize = sizeof(allocationInfo.V1);
+    allocationInfos[0].VidPnSourceId = 0;
+    allocationInfos[0].Flags.Primary = 0;
+#if ((DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN8) || \
+     (D3D_UMD_INTERFACE_VERSION >= D3D_UMD_INTERFACE_VERSION_WIN8))
+    allocationInfos[0].Flags.Stereo = 0;
+#endif
+    allocationInfos[0].Flags.Reserved = 0;
     allocate.pAllocationInfo = allocationInfos;
     HRESULT status = m_DeviceCallbacks.pfnAllocateCb(m_RuntimeHandle.handle, &allocate);
 
@@ -210,10 +329,28 @@ void GsDevice10::CreateResource(
         return;
     }
 
-    UNUSED(status);
+    GsResourceDesc10 desc {};
+    desc.Width = allocationInfo.V1.Width;
+    desc.Height = allocationInfo.V1.Height;
+    desc.Depth = allocationInfo.V1.Depth;
+    desc.MipLevels = pCreateResource->MipLevels;
+    desc.ArraySize = pCreateResource->ArraySize;
+    desc.Pitch = allocationInfo.V1.Pitch;
+    desc.SlicePitch = allocationInfo.V1.SlicePitch;
+    desc.Usage = pCreateResource->Usage;
+    desc.BindFlags = pCreateResource->BindFlags;
+    desc.MapFlags = pCreateResource->MapFlags;
+    desc.MiscFlags = pCreateResource->MiscFlags;
+    desc.Format = pCreateResource->Format;
+    desc.DriverFormat = allocationInfo.V1.Format;
+    desc.SampleDesc.Count = pCreateResource->SampleDesc.Count;
+    desc.SampleDesc.Quality = pCreateResource->SampleDesc.Quality;
+    desc.PhysicalSize = physicalSize;
 
     ::new(hResource.pDrvPrivate) GsResource10(
-        hRtResource
+        hRtResource,
+        allocationInfos[0].hAllocation,
+        desc
     );
 }
 

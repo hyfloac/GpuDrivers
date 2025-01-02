@@ -37,7 +37,10 @@ struct AllocationInfoDriverData_V1 final
         UINT VolumeTexture : 1;
         UINT VertexBuffer : 1;
         UINT IndexBuffer : 1;
-        UINT Reserved : 25;
+        UINT CpuRead : 1;
+        UINT CpuWrite : 1;
+        UINT PermanentSysMem : 1;
+        UINT Reserved : 23;
     } Flags;
     union
     {

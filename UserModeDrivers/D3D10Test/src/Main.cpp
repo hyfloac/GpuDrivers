@@ -325,7 +325,7 @@ int RunD3D10(const bool enableDebug) noexcept
     swapChainDesc.Flags = 0;
 
     CComPtr<IDXGISwapChain> swapChain;
-    status = dxgiFactory->CreateSwapChain(device, &swapChainDesc, &swapChain);
+    // status = dxgiFactory->CreateSwapChain(device, &swapChainDesc, &swapChain);
 #else
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc {};
     swapChainDesc.Width = Width;
@@ -356,6 +356,7 @@ int RunD3D10(const bool enableDebug) noexcept
 
     CComPtr<ID3D10RenderTargetView> backBufferRtv;
 
+    if constexpr(false)
     {
         CComPtr<ID3D10Texture2D> backBuffer;
 
@@ -382,6 +383,64 @@ int RunD3D10(const bool enableDebug) noexcept
         ID3D10RenderTargetView* renderTargets[1];
         renderTargets[0] = backBufferRtv;
         device->OMSetRenderTargets(1, renderTargets, nullptr);
+    }
+
+    {
+        CComPtr<ID3D10Texture2D> testTexture;
+
+        D3D10_TEXTURE2D_DESC desc {};
+        desc.Width = 1024;
+        desc.Height = 768;
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.SampleDesc.Quality = 0;
+        desc.Usage = D3D10_USAGE_DEFAULT;
+        desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
+        desc.CPUAccessFlags = 0;
+        desc.MiscFlags = 0;
+
+        status = device->CreateTexture2D(
+            &desc,
+            nullptr,
+            &testTexture
+        );
+
+        if(!SUCCEEDED(status))
+        {
+            ConPrinter::PrintLn(u8"Failed to create debug texture: 0x{XP0}", status);
+            LogHResultAndError(status);
+
+            return 6;
+        }
+
+        BYTE* textureData = new BYTE[1024 * 768 * 4];
+
+        for(SIZE_T y = 0; y < 768; ++y)
+        {
+            for(SIZE_T x = 0; x < 1024; ++x)
+            {
+                UINT* pixel = reinterpret_cast<UINT*>(textureData + y * 1024 * 4 + x * 4);
+
+                const float r = static_cast<float>(x) / 1024.0f;
+                const float g = static_cast<float>(y) / 768.0f;
+
+                const BYTE rByte = static_cast<BYTE>(r * 255.0f);
+                const BYTE gByte = static_cast<BYTE>(g * 255.0f);
+
+                *pixel = (rByte << 24) | (gByte << 16);
+            }
+        }
+
+        device->UpdateSubresource(
+            testTexture,
+            0,
+            nullptr,
+            textureData,
+            1024 * 4,
+            1024 * 768 * 4
+        );
     }
 
     return 0;
